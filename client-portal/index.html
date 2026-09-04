@@ -122,6 +122,13 @@
       }
       .next-action { border-color: var(--g); background: #fffaf0; }
       .next-action .who { display:inline-block; margin-bottom:8px; padding:4px 9px; border-radius:999px; background:#f1e4be; color:#5c4718; font-size:12px; font-weight:700; }
+      .return-tracker { display:grid; gap:0; }
+      .return-tracker-step { position:relative; padding:10px 0 10px 32px; font-weight:700; }
+      .return-tracker-step::before { content:""; position:absolute; left:0; top:12px; width:20px; height:20px; border-radius:50%; background:#efe9dc; border:1px solid var(--l); }
+      .return-tracker-step.done::before { content:"✓"; display:grid; place-items:center; background:#e4f2e8; border-color:#9ab8a1; color:#365c43; font-size:13px; }
+      .return-tracker-step.alert::before { content:"!"; display:grid; place-items:center; background:#fff0f4; border-color:#d38aa7; color:#7b1832; font-size:13px; }
+      .return-tracker-arrow { margin:0 0 0 8px; color:var(--m); line-height:1; }
+      .return-tracker-detail { margin:7px 0 4px 32px; padding:12px; border-radius:10px; background:#fff8ef; border:1px solid var(--l); }
       button:disabled { cursor:not-allowed; opacity:.58; }
       .selected {
         outline: 2px solid var(--b);
@@ -271,6 +278,7 @@
       savePartnerProducts: httpsCallable(f, "saveClientPartnerProducts"),
       returnCopies: httpsCallable(f, "loadClientReturnCopyRequests"),
       requestReturnCopy: httpsCallable(f, "requestClientReturnCopy"),
+      messagePreparer: httpsCallable(f, "messageClientTaxPreparer"),
       recover: httpsCallable(f, "sendClientPortalAccess"),
         },
         s = {
@@ -460,14 +468,19 @@
         const button=document.createElement("button");button.textContent=(view.requests||[]).length?"Request Another Copy":"Request Return Copy";button.onclick=requestReturnCopy;host.append(button);
       }
       async function requestReturnCopy(button=null){const actionButton=button||(document.activeElement instanceof HTMLButtonElement?document.activeElement:null);return once("return-copy",actionButton,async()=>{const message=$("returnCopiesMsg");message.textContent="Sending request…";try{await c.requestReturnCopy(args());s.returnCopies=(await c.returnCopies(args())).data;renderReturnCopies();message.textContent="Return Copy Requested ✓ Your tax professional has been notified.";}catch(e){message.textContent=err(e);}})}
+      function trackerStep(host,label,tone="",arrow=true){const row=document.createElement("div");row.className="return-tracker-step "+tone;row.textContent=label;host.append(row);if(arrow){const down=document.createElement("div");down.className="return-tracker-arrow";down.textContent="↓";host.append(down);}}
+      function messageMyTaxPreparer(button){return once("return-status-message:"+(s.item?.returnId||""),button,async()=>{const message=$("filingStatusMessage");message.textContent="Sending your request…";try{await c.messagePreparer(args());message.textContent="Message sent ✓ Your tax preparer has been notified.";}catch(e){message.textContent=err(e,"Your tax preparer could not be notified. Please try again.");}})}
       function renderFilingStatus() {
-        const card = $("filingStatusCard"), host = $("filingStatus"), filing = s.item?.filingStatus;
-        if (!filing || !["FILED", "ACCEPTED", "REJECTED", "IRS_FUNDED"].includes(filing.key)) {
-          card.classList.add("hidden");
-          return;
-        }
+        const card=$("filingStatusCard"),host=$("filingStatus"),tracker=s.item?.statusTracker;
+        host.replaceChildren();
+        if(!tracker?.filed){card.classList.add("hidden");return;}
         card.classList.remove("hidden");
-        host.textContent = filing.label || "Your return has been filed.";
+        const flow=document.createElement("div");flow.className="return-tracker";trackerStep(flow,"RETURN FILED","done",true);
+        if(tracker.rejected){trackerStep(flow,"RETURN REJECTED — ACTION NEEDED","alert",false);host.append(flow);const detail=document.createElement("div");detail.className="return-tracker-detail";const intro=document.createElement("p");intro.textContent="Your return was rejected and needs attention.";detail.append(intro);if(tracker.rejectionReason){const reason=document.createElement("p"),label=document.createElement("strong");label.textContent="Reason: ";reason.append(label,tracker.rejectionReason);detail.append(reason);}if(tracker.clientActionSteps){const next=document.createElement("p"),label=document.createElement("strong");label.textContent="Next Step: ";next.append(label,tracker.clientActionSteps);detail.append(next);}const message=document.createElement("div"),button=document.createElement("button");button.type="button";button.textContent="MESSAGE MY TAX PREPARER";button.onclick=()=>messageMyTaxPreparer(button);message.append(button);detail.append(message);host.append(detail);const feedback=document.createElement("p");feedback.id="filingStatusMessage";feedback.className="msg";host.append(feedback);return;}
+        if(!tracker.accepted){trackerStep(flow,"IRS REVIEW","",false);host.append(flow);return;}
+        trackerStep(flow,"IRS REVIEW","done",true);trackerStep(flow,"RETURN ACCEPTED","done",tracker.bankProduct);
+        if(tracker.bankProduct){if(tracker.approved){trackerStep(flow,"RETURN APPROVED","done",Boolean(tracker.directDepositDate));if(tracker.directDepositDate)trackerStep(flow,"DIRECT DEPOSIT DATE — "+tracker.directDepositDate,"done",false);}else trackerStep(flow,"RETURN APPROVED","",false);}
+        host.append(flow);
       }
       function renderFinancial() {
         let x = s.financial,
