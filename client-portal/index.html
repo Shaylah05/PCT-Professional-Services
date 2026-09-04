@@ -174,6 +174,7 @@
           <div id="result"></div>
           <div id="docs"></div>
         </div>
+        <div id="signatureInvitationCard" class="card hidden"><div id="signatureInvitation"></div></div>
         <div id="intakeConsentCard" class="card hidden">
           <h2>Committed Filing Intake</h2>
           <p class="small">These consent statuses are shown for reference. They were completed during your filing intake and are not signed again during return review.</p>
@@ -226,19 +227,7 @@
           <div id="ptf" class="hidden">
             <h3>Return information</h3>
             <div id="ptfinfo"></div>
-            <h3>
-              Have you completed the electronic signature invitation for your
-              tax return?
-            </h3>
-            <button id="yes" class="choice plain">Yes, I completed it</button
-            ><button id="no" class="choice plain">
-              No, I have not completed it / I don’t see the email
-            </button>
-            <p id="help" class="small hidden">
-              Check your inbox, spam/junk, Promotions, and other folders. Your
-              PCT tax professional has been notified to check the external
-              invitation if needed.
-            </p>
+            <p id="ptfSignatureGuidance" class="small"></p>
             <label
               ><input id="ack" type="checkbox" class="check" /> I understand
               changes must be requested before my return is transmitted.</label
@@ -367,7 +356,7 @@
         try {
           const [packet,financial,prepayment,priorInfo,documentRequests,partnerProducts,returnCopies]=await Promise.all([c.packet(args()),c.fin(args()),c.prep(args()),c.prior(args()),c.documentRequests(args()),c.partnerProducts(args()),c.returnCopies(args())]);
           s.packet=packet.data.packet;s.financial=financial.data.instructions;s.prepayment=prepayment.data.payment;s.priorInfo=priorInfo.data.information;s.documentRequests=documentRequests.data;s.partnerProducts=partnerProducts.data;s.returnCopies=returnCopies.data;
-          renderDocs();
+          renderDocs();renderExternalSignature();
           renderIntakeConsentStatus();
           renderFinancial();renderClientNextAction();
           renderPreparationFees();
@@ -403,6 +392,36 @@
           }
           d.append(r);
         });
+      }
+      const taxSlayerCustomerPortalUrl="https://www.taxofficemanagement.com/customerportal";
+      function signatureInvitationIsAvailable(signature){return ["INVITATION_SENT","INVITATION_RESENT","CLIENT_REPORTS_COMPLETE","NEEDS_AGENT_REVIEW","VERIFIED_COMPLETE"].includes(String(signature?.status||""));}
+      function signatureHelpLabel(value){return {EMAIL_NOT_FOUND:"I DON'T SEE THE EMAIL",LINK_NOT_WORKING:"LINK ISN'T WORKING",CANT_LOG_IN:"I CAN'T LOG IN",QUESTION:"I HAVE A QUESTION",OTHER:"OTHER"}[String(value||"")]||"";}
+      function renderExternalSignature(){
+        const card=$("signatureInvitationCard"),host=$("signatureInvitation"),signature=s.packet?.externalTaxSignature||{};
+        host.replaceChildren();
+        if(!signatureInvitationIsAvailable(signature)){card.classList.add("hidden");return;}
+        card.classList.remove("hidden");
+        const heading=document.createElement("h2"),notice=document.createElement("p");
+        if(signature.clientResponse==="YES"){
+          heading.textContent="YOUR TAX RETURN";
+          notice.textContent="You confirmed the electronic signature invitation. Use the TaxSlayer Customer Portal account you created from your tax preparer’s invitation. The documents available there depend on what has been sent through the tax software.";
+          const actions=document.createElement("div"),getCopy=document.createElement("a"),requestCopy=document.createElement("button"),copyNote=document.createElement("p");
+          actions.className="actions";getCopy.className="btn btn-gold";getCopy.href=taxSlayerCustomerPortalUrl;getCopy.target="_blank";getCopy.rel="noopener noreferrer";getCopy.textContent="GET A COPY OF MY RETURN ↗";
+          requestCopy.className="btn btn-soft";requestCopy.type="button";requestCopy.textContent="REQUEST A COPY FROM MY PREPARER";requestCopy.onclick=()=>requestReturnCopy(requestCopy);
+          copyNote.className="small";copyNote.textContent="PCT does not store your TaxSlayer username or password. If you need a backup copy, request it from your tax preparer using the existing secure Return Copy workflow.";
+          actions.append(getCopy,requestCopy);host.append(heading,notice,actions,copyNote);return;
+        }
+        heading.textContent="HAVE YOU COMPLETED THE ELECTRONIC SIGNATURE INVITATION SENT BY YOUR TAX PREPARER?";
+        notice.textContent="Check your inbox, spam/junk, Promotions and other email folders for the invitation from the tax software.";
+        const actions=document.createElement("div"),yes=document.createElement("button"),no=document.createElement("button"),status=document.createElement("div"),help=document.createElement("div");
+        actions.className="actions";yes.type="button";yes.className="btn btn-gold";yes.textContent="YES — COMPLETED";yes.onclick=()=>external("YES",{},yes);no.type="button";no.className="btn btn-soft";no.textContent="NO — I NEED HELP";no.onclick=()=>renderSignatureHelpForm(help,status);status.className="msg";help.className="hidden";actions.append(yes,no);host.append(heading,notice,actions,status,help);
+        if(signature.status==="NEEDS_AGENT_REVIEW"){const sent=document.createElement("p");sent.className="small";sent.textContent="UPDATE SENT ✓ Your tax preparer has been notified."+(signatureHelpLabel(signature.helpReason)?" Requested help: "+signatureHelpLabel(signature.helpReason)+".":"");host.insertBefore(sent,actions);}
+      }
+      function renderSignatureHelpForm(host,status){
+        host.classList.remove("hidden");host.replaceChildren();
+        const label=document.createElement("label"),select=document.createElement("select"),noteLabel=document.createElement("label"),note=document.createElement("textarea"),send=document.createElement("button");
+        label.textContent="How can your tax preparer help?";[["EMAIL_NOT_FOUND","I DON'T SEE THE EMAIL"],["LINK_NOT_WORKING","LINK ISN'T WORKING"],["CANT_LOG_IN","I CAN'T LOG IN"],["QUESTION","I HAVE A QUESTION"],["OTHER","OTHER"]].forEach(([value,text])=>{const option=document.createElement("option");option.value=value;option.textContent=text;select.append(option);});label.append(select);
+        noteLabel.textContent="Optional note";note.maxLength=1000;note.rows=3;noteLabel.append(note);send.type="button";send.className="btn btn-gold";send.textContent="SEND UPDATE TO MY TAX PREPARER";send.onclick=()=>external("NO",{helpReason:select.value,helpNote:note.value},send);host.append(label,noteLabel,send);
       }
       function friendlyConsentStatus(value) {
         const key=String(value||"").toUpperCase(),labels={SIGNED:"Signed ✓",NOT_APPLICABLE:"Not Applicable",DECLINED:"Declined",YES:"Yes",NO:"No",NOT_ANSWERED:"Not Answered",NOT_REQUIRED_YET:"Not Required Yet"};
@@ -440,7 +459,7 @@
         (view.requests||[]).forEach((request)=>{const row=document.createElement("div");row.className="row";const text=document.createElement("span");text.textContent=request.statusLabel+(request.sentAt?" · "+request.sentAt:"");row.append(text);if(request.sentConfirmed&&request.accessCode){const code=document.createElement("strong");code.textContent="PCT Return Access Code: "+request.accessCode;row.append(code);const copy=document.createElement("button");copy.className="plain";copy.textContent="Copy Return Access Code";copy.onclick=async()=>{try{await navigator.clipboard.writeText(request.accessCode);$("returnCopiesMsg").textContent="Code copied ✓"}catch(_){}};row.append(copy);}host.append(row);});
         const button=document.createElement("button");button.textContent=(view.requests||[]).length?"Request Another Copy":"Request Return Copy";button.onclick=requestReturnCopy;host.append(button);
       }
-      async function requestReturnCopy(){const button=document.activeElement instanceof HTMLButtonElement?document.activeElement:null;return once("return-copy",button,async()=>{const message=$("returnCopiesMsg");message.textContent="Sending request…";try{await c.requestReturnCopy(args());s.returnCopies=(await c.returnCopies(args())).data;renderReturnCopies();message.textContent="Return Copy Requested ✓ Your tax professional has been notified.";}catch(e){message.textContent=err(e);}})}
+      async function requestReturnCopy(button=null){const actionButton=button||(document.activeElement instanceof HTMLButtonElement?document.activeElement:null);return once("return-copy",actionButton,async()=>{const message=$("returnCopiesMsg");message.textContent="Sending request…";try{await c.requestReturnCopy(args());s.returnCopies=(await c.returnCopies(args())).data;renderReturnCopies();message.textContent="Return Copy Requested ✓ Your tax professional has been notified.";}catch(e){message.textContent=err(e);}})}
       function renderFilingStatus() {
         const card = $("filingStatusCard"), host = $("filingStatus"), filing = s.item?.filingStatus;
         if (!filing || !["FILED", "ACCEPTED", "REJECTED", "IRS_FUNDED"].includes(filing.key)) {
@@ -841,22 +860,19 @@
               ? "Refund "
               : "Amount Due ") +
             money(s.packet.permissionToFile.result?.amountCents);
-          $("help").classList.toggle(
-            "hidden",
-            !["NEEDS_AGENT_REVIEW", "INVITATION_RESENT"].includes(
-              s.packet.externalTaxSignature.status,
-            ),
-          );
+          const signature=s.packet.externalTaxSignature||{};
+          $("ptfSignatureGuidance").textContent=signatureInvitationIsAvailable(signature)
+            ? "Complete the external signature invitation section in your Return Workspace before signing Permission to File."
+            : "Your tax preparer must first record that the external signature invitation was sent for this tax-year return.";
         }
         show("docview");
       }
-      async function external(response) {
-        const button=document.activeElement instanceof HTMLButtonElement?document.activeElement:null;return once("external-signature-response",button,async()=>{try {
-          s.packet.externalTaxSignature = (
-            await c.ext({ ...args(), response })
-          ).data.externalTaxSignature;
-          $("help").classList.toggle("hidden", response !== "NO");
-          $("docmsg").textContent = "Saved ✓";
+      async function external(response, details={}, button=null) {
+        const actionButton=button||(document.activeElement instanceof HTMLButtonElement?document.activeElement:null);return once("external-signature-response",actionButton,async()=>{try {
+          await c.ext({ ...args(), response, ...details });
+          s.packet=(await c.packet(args())).data.packet;
+          renderDocs();renderExternalSignature();renderClientNextAction();
+          $("docmsg").textContent = response === "YES" ? "Saved ✓" : "UPDATE SENT ✓";
         } catch (e) {
           $("docmsg").textContent = err(e);
         }});
@@ -898,8 +914,6 @@
       };
       $("back").onclick = () => show("home");
       $("docback").onclick = () => show("work");
-      $("yes").onclick = () => external("YES");
-      $("no").onclick = () => external("NO");
       $("sign").onclick = sign;
     </script>
     <script type="module">
