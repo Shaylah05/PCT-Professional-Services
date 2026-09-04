@@ -1,0 +1,1339 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PCT Contractor Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #17120d;
+        --muted: #71675e;
+        --paper: #fffdf9;
+        --cream: #f8f2e8;
+        --line: #e6ddd1;
+        --gold: #c58a16;
+        --gold2: #f0c766;
+        --green: #20723b;
+        --red: #c6372d;
+        --orange: #b75b19;
+        --purple: #684297;
+        --shadow: 0 12px 35px #4a2f1113;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(120deg, #fbf8f2, #f5eee4);
+        color: var(--ink);
+        font:
+          14px/1.45 Manrope,
+          Arial,
+          sans-serif;
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+      .app {
+        display: grid;
+        grid-template-columns: 180px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+      .side {
+        background: linear-gradient(180deg, #090b0a, #12120f);
+        color: #fff;
+        padding: 24px 0;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+      }
+      .logo {
+        font:
+          700 48px Fraunces,
+          serif;
+        color: #e1b456;
+        padding: 0 28px;
+      }
+      .firm {
+        font-size: 9px;
+        letter-spacing: 0.32em;
+        padding: 8px 28px 28px;
+      }
+      .nav a {
+        display: block;
+        padding: 16px 20px;
+        color: #fff;
+        text-decoration: none;
+        border-left: 3px solid transparent;
+      }
+      .nav a.active {
+        color: #ffd465;
+        background: #30240f;
+        border-color: #d59a27;
+      }
+      .main {
+        padding: 28px 30px;
+      }
+      .head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+      }
+      .head h1 {
+        font:
+          700 38px Fraunces,
+          serif;
+        margin: 0;
+      }
+      .head p {
+        margin: 3px 0;
+        color: var(--muted);
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        padding: 10px 14px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .btn.gold {
+        background: linear-gradient(#d99b26, #bd7b05);
+        color: #fff;
+        border-color: #ad7107;
+      }
+      .btn.danger {
+        color: var(--red);
+        border-color: #f0a8a3;
+      }
+      .btn.small {
+        padding: 7px 10px;
+        font-size: 12px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin: 20px 0;
+      }
+      .stat,
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+      }
+      .stat {
+        padding: 18px;
+        display: flex;
+        gap: 14px;
+        align-items: center;
+      }
+      .ico {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: #fff1cc;
+        color: #ad6800;
+        font-weight: 900;
+        font-size: 22px;
+      }
+      .stat b {
+        font-size: 24px;
+      }
+      .stat span {
+        display: block;
+        color: var(--muted);
+      }
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(650px, 1fr) 450px;
+        gap: 14px;
+      }
+      .panel-title {
+        font:
+          700 21px Fraunces,
+          serif;
+        padding: 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .toolbar {
+        display: grid;
+        grid-template-columns: 1fr repeat(3, 120px);
+        gap: 10px;
+        padding: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid #d9cec0;
+        border-radius: 7px;
+        background: #fff;
+        padding: 10px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      th,
+      td {
+        padding: 12px 10px;
+        text-align: left;
+        border-bottom: 1px solid #eee5d9;
+        font-size: 12px;
+      }
+      th {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      tbody tr {
+        cursor: pointer;
+      }
+      tbody tr:hover,
+      tbody tr.selected {
+        background: #fff7e6;
+      }
+      .avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #eee;
+        vertical-align: middle;
+        margin-right: 8px;
+      }
+      .badge {
+        display: inline-block;
+        border-radius: 5px;
+        padding: 5px 8px;
+        font-size: 10px;
+        font-weight: 800;
+      }
+      .active-b {
+        background: #dff1df;
+        color: #1d672e;
+      }
+      .training-b {
+        background: #fff0df;
+        color: #b65110;
+      }
+      .suspended-b {
+        background: #ffe0df;
+        color: #a82620;
+      }
+      .detail-head {
+        display: flex;
+        gap: 16px;
+        padding: 16px;
+        align-items: center;
+      }
+      .detail-head .avatar {
+        width: 92px;
+        height: 92px;
+      }
+      .detail-head h2 {
+        font:
+          700 25px Fraunces,
+          serif;
+        margin: 0;
+      }
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--line);
+        overflow: auto;
+      }
+      .tabs button {
+        border: 0;
+        background: transparent;
+        padding: 12px 14px;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+      .tabs button.active {
+        color: #a65e00;
+        border-bottom: 2px solid #c5840f;
+      }
+      .detail-body {
+        padding: 16px;
+      }
+      .kv {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 9px;
+        padding: 7px 0;
+        border-bottom: 1px solid #f0e9df;
+      }
+      .kv b {
+        font-size: 11px;
+      }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 13px;
+        margin: 12px 0;
+        background: #fff;
+      }
+      .money {
+        font-size: 22px;
+        font-weight: 900;
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .ledger {
+        max-height: 420px;
+        overflow: auto;
+      }
+      .ledger-row {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 11px;
+        margin: 8px 0;
+      }
+      .ledger-row strong {
+        display: block;
+      }
+      .tiny {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .notice {
+        padding: 12px;
+        border-radius: 8px;
+        background: #fff4d8;
+        border: 1px solid #e9c77e;
+        margin: 10px 0;
+      }
+      .error {
+        background: #ffe5e2;
+        color: #8b261f;
+      }
+      .login {
+        max-width: 480px;
+        margin: 90px auto;
+        background: #fff;
+        padding: 28px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      .hidden {
+        display: none !important;
+      }
+      @media (max-width: 1150px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+        .detail {
+          order: -1;
+        }
+        .stats {
+          grid-template-columns: 1fr 1fr;
+        }
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .side {
+          position: static;
+          height: auto;
+        }
+        .nav {
+          display: flex;
+          overflow: auto;
+        }
+        .logo,
+        .firm {
+          display: none;
+        }
+      }
+      @media (max-width: 700px) {
+        .main {
+          padding: 18px 12px;
+        }
+        .stats {
+          grid-template-columns: 1fr;
+        }
+        .toolbar {
+          grid-template-columns: 1fr;
+        }
+        .workspace {
+          display: block;
+        }
+        .panel {
+          margin-bottom: 14px;
+        }
+        .table-wrap {
+          overflow: auto;
+        }
+      }
+    </style>
+    <script
+      defer
+      src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"
+    ></script>
+    <script
+      defer
+      src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"
+    ></script>
+    <script
+      defer
+      src="https://www.gstatic.com/firebasejs/10.12.4/firebase-functions-compat.js"
+    ></script>
+  </head>
+  <body>
+    <section id="login" class="login">
+      <h1>Contractor Manager</h1>
+      <p>Master Admin authentication is required.</p>
+      <input id="email" type="email" placeholder="Master Admin email" /><input
+        id="password"
+        type="password"
+        placeholder="Password"
+        style="margin-top: 8px"
+      /><button class="btn gold" style="margin-top: 10px" onclick="login()">
+        SIGN IN
+      </button>
+      <div id="loginMsg" class="notice hidden"></div>
+    </section>
+    <div id="app" class="app hidden">
+      <aside class="side">
+        <div class="logo">PCT</div>
+        <div class="firm">PROFESSIONAL<br />SERVICES LLC</div>
+        <nav class="nav">
+          <a href="/admin">⌂ Overview</a
+          ><a class="active" href="/contractors">♙ Contractor Manager</a
+          ><a href="/admin">▤ All Returns</a><a href="#payments">＄ Payments</a
+          ><a href="/status-audit">◷ Status Audit</a
+          ><a href="/admin">▱ Messages &amp; Support</a
+          ><a href="#reports">▥ Reports</a
+          ><a href="/launch-readiness">✓ Launch Readiness</a>
+        </nav>
+      </aside>
+      <main class="main">
+        <header class="head">
+          <div>
+            <h1>Contractor Manager</h1>
+            <p>Manage your preparer network, returns, roles and payments.</p>
+          </div>
+          <div class="actions">
+            <button class="btn gold" onclick="activateAgentPrompt()">
+              ＋ Add / Activate Agent</button
+            ><button class="btn" onclick="exportReport()">⇩ Export</button
+            ><button class="btn" onclick="refreshAll()">↻ Refresh</button>
+          </div>
+        </header>
+        <section class="stats">
+          <div class="stat">
+            <div class="ico">♙</div>
+            <div><span>Active Agents</span><b id="activeCount">0</b></div>
+          </div>
+          <div class="stat">
+            <div class="ico">＋</div>
+            <div><span>Pending Onboarding</span><b id="pendingCount">0</b></div>
+          </div>
+          <div class="stat">
+            <div class="ico">▤</div>
+            <div><span>Ledger Records</span><b id="ledgerCount">0</b></div>
+          </div>
+          <div class="stat">
+            <div class="ico">$</div>
+            <div><span>Payments Ready</span><b id="readyTotal">$0.00</b></div>
+          </div>
+        </section>
+        <div id="message" class="notice hidden"></div>
+        <section class="panel" style="margin-bottom:16px">
+          <div class="panel-title" style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+            <span>E-Learning Certification</span>
+            <span class="actions"><button class="btn small" onclick="loadOnboardingQueue()">Refresh Code</button></span>
+          </div>
+          <div class="notice">Only the authenticated Master Admin can view or change this code. Updating it immediately replaces the code for applicants who have not completed certification; it does not change existing certified agents.</div>
+          <div class="kv"><b>Current Certification Code</b><span id="activeTrainingCode">Loading…</span></div>
+          <div id="trainingCodeMeta" class="tiny" style="padding:10px 0">Loading code details…</div>
+          <div class="field"><label for="newTrainingCode">New Certification Code</label><input id="newTrainingCode" maxlength="24" autocomplete="off" placeholder="Enter a new code"></div>
+          <div class="actions"><button class="btn gold small" onclick="updateTrainingCode()">Update Certification Code</button></div>
+          <div id="trainingCodeResult" class="notice hidden"></div>
+        </section>
+        <section class="panel" style="margin-bottom:16px">
+          <div class="panel-title" style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+            <span>Agents Ready for Onboarding</span>
+            <span class="actions"><button class="btn small" onclick="loadOnboardingQueue()">Refresh Queue</button></span>
+          </div>
+          <div class="notice">The active e-learning certification code is managed above. Successful code entry continues the existing PTIN and onboarding workflow.</div>
+          <div class="table-wrap"><table><thead><tr><th>Agent</th><th>Business</th><th>Stage</th><th>Payment</th><th>PTIN</th><th>Waiting</th><th>Progress</th><th></th></tr></thead><tbody id="onboardingRows"><tr><td colspan="8">Sign in to load onboarding agents.</td></tr></tbody></table></div>
+          <div id="trainingCodeSummary" class="tiny" style="padding:10px 0">Training-code activity loads after sign-in.</div>
+        </section>
+        <section class="workspace">
+          <div class="panel">
+            <div class="panel-title">Agent Directory</div>
+            <div class="toolbar">
+              <input
+                id="search"
+                placeholder="Search agents by name or business…"
+                oninput="renderAgents()"
+              /><select id="statusFilter" onchange="renderAgents()">
+                <option value="">All statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="suspended">Suspended</option></select
+              ><select id="trainingFilter" onchange="renderAgents()">
+                <option value="">All training</option>
+                <option value="complete">Verified</option>
+                <option value="in_progress">In progress</option>
+                <option value="not_started">Not started</option></select
+              ><select id="payoutFilter" onchange="renderLedger()">
+                <option value="">All payouts</option>
+                <option value="pending">Pending</option>
+                <option value="available">Available</option>
+                <option value="processing">Processing</option>
+                <option value="paid">Paid</option>
+              </select>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Agent</th>
+                    <th>Business</th>
+                    <th>Status</th>
+                    <th>Training</th>
+                    <th>Public ID</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="agentRows"></tbody>
+              </table>
+            </div>
+          </div>
+          <aside class="panel detail">
+            <div id="emptyDetail" class="detail-body">
+              Select an agent to review profile, access, returns, earnings and
+              activity.
+            </div>
+            <div id="agentDetail" class="hidden">
+              <div class="detail-head">
+                <img
+                  id="detailPhoto"
+                  class="avatar"
+                  src="https://pct-tax-return-review.web.app/agent-image-placeholder.png"
+                  alt="Agent"
+                />
+                <div>
+                  <h2 id="detailName"></h2>
+                  <div id="detailBusiness"></div>
+                  <div>
+                    <span id="detailStatus" class="badge"></span>
+                    <span id="detailTraining" class="badge"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="tabs">
+                <button class="active" data-tab="profile">Profile</button
+                ><button data-tab="onboarding">Onboarding</button
+                ><button data-tab="access">Access &amp; Role</button
+                ><button data-tab="returns">Returns</button
+                ><button data-tab="earnings">Earnings &amp; Payments</button
+                ><button data-tab="funding">Return Funding</button
+                ><button data-tab="activity">Activity</button>
+              </div>
+              <div id="tabContent" class="detail-body"></div>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </div>
+    <script>
+      const config = {
+        apiKey: "AIzaSyAypfnHTCIMUD1oKPHrFElWA7jzs7aaRC4",
+        authDomain: "pct-tax-return-review.firebaseapp.com",
+        projectId: "pct-tax-return-review",
+        storageBucket: "pct-tax-return-review.firebasestorage.app",
+        messagingSenderId: "494334478239",
+        appId: "1:494334478239:web:1849b621d4dca4e0c95faa",
+      };
+      let auth,
+        fx,
+        agents = [],
+        onboardingAgents = [],
+        ledger = [],
+        fines = [],
+        selected = null,
+        currentTab = "profile";
+      const $ = (id) => document.getElementById(id),
+        money = (n) =>
+          "$" +
+          Number(n || 0).toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
+        esc = (s) =>
+          String(s ?? "").replace(
+            /[&<>"']/g,
+            (m) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[m],
+          );
+      const fmtTimestamp = (value) => {
+        const ms = value?.toDate ? value.toDate().getTime() : (value?.seconds ? Number(value.seconds) * 1000 : Date.parse(value));
+        return Number.isFinite(ms) ? new Date(ms).toLocaleString() : "Not recorded";
+      };
+      function call(name, data) {
+        return fx
+          .httpsCallable(name)(data || {})
+          .then((r) => r.data);
+      }
+      function say(text, error = false) {
+        const el = $("message");
+        el.textContent = text;
+        el.className = "notice" + (error ? " error" : "");
+        el.classList.remove("hidden");
+      }
+      window.addEventListener("DOMContentLoaded", () => {
+        firebase.initializeApp(config);
+        auth = firebase.auth();
+        fx = firebase.functions();
+        auth.onAuthStateChanged(async (user) => {
+          if (!user) {
+            $("login").classList.remove("hidden");
+            $("app").classList.add("hidden");
+            return;
+          }
+          const token = await user.getIdTokenResult(true),
+            email = String(user.email || "").toLowerCase();
+          if (!(
+            token.claims.role === "master_admin" ||
+            token.claims.admin === true ||
+            email === "shaylah455@gmail.com"
+          )) {
+            $("loginMsg").textContent = "Master Admin access is required.";
+            $("loginMsg").classList.remove("hidden");
+            await auth.signOut();
+            return;
+          }
+          $("login").classList.add("hidden");
+          $("app").classList.remove("hidden");
+          await refreshAll();
+        });
+      });
+      async function login() {
+        try {
+          await auth.signInWithEmailAndPassword(
+            $("email").value.trim(),
+            $("password").value,
+          );
+        } catch (e) {
+          $("loginMsg").textContent = "Sign-in failed.";
+          $("loginMsg").classList.remove("hidden");
+        }
+      }
+      async function refreshAll() {
+        say("Loading contractor network…");
+        try {
+          const [a, l] = await Promise.all([
+            call("getContractorManager", { pageSize: 50 }),
+            call("getAdminEarningsLedger", { pageSize: 50 }),
+          ]);
+          agents = a.agents || [];
+          ledger = l.records || [];
+          fines = a.fines || [];
+          renderStats();
+          renderAgents();
+          await loadOnboardingQueue();
+          if (selected) {
+            selected = agents.find((x) => x.uid === selected.uid) || selected;
+            renderDetail();
+          }
+          say("Contractor records refreshed.");
+        } catch (e) {
+          say(e.message || "Contractor data could not be loaded.", true);
+        }
+      }
+      async function loadOnboardingQueue() {
+        const host = $("onboardingRows");
+        if (!host || !fx) return;
+        host.innerHTML = '<tr><td colspan="8">Loading onboarding queue…</td></tr>';
+        try {
+          const result = await call("listOnboardingAgents", { pageSize: 50 });
+          const rows = result.agents || [];
+          onboardingAgents = rows;
+          host.innerHTML = rows.map((x) => `<tr><td><strong>${esc(x.displayName || "Unnamed agent")}</strong><div class="tiny">${esc(x.email)}</div></td><td>${esc(x.businessName || "—")}</td><td><span class="badge ${x.stage === "ACTIVE_AGENT" ? "active-b" : "training-b"}">${esc(String(x.stage || "").replaceAll("_", " "))}</span></td><td>${esc(x.paymentStatus || "—")}</td><td>${esc(x.ptinStatus || "—")}</td><td>${esc(x.daysWaiting || 0)} days</td><td>${esc(x.setupProgress || 0)}%</td><td><button class="btn small" onclick="openOnboardingAgent('${esc(x.agentUid)}')">Open Contractor</button></td></tr>`).join("") || '<tr><td colspan="8">No onboarding agents match this queue.</td></tr>';
+          const codeInfo=await call("getTrainingCertificationAdmin",{}),certification=codeInfo.certification||{},attempts=codeInfo.attempts||[];
+          $("activeTrainingCode").textContent=certification.currentCode||"Not configured";
+          $("trainingCodeMeta").textContent=`Last changed ${fmtTimestamp(certification.updatedAt)} · by ${certification.updatedBy||"system-initialization"}`;
+          $("trainingCodeSummary").textContent=`Active code version ${certification.version||"default"} · ${attempts.filter(x=>x.success).length} successful / ${attempts.filter(x=>!x.success).length} unsuccessful recent attempts`;
+        } catch (error) {
+          host.innerHTML = '<tr><td colspan="8">The onboarding queue could not be loaded.</td></tr>';
+        }
+      }
+      function openOnboardingAgent(uid) {
+        const match = agents.find((x) => x.uid === uid);
+        if (match) selectAgent(uid);
+        else {
+          const onboarding = onboardingAgents.find((x) => x.agentUid === uid);
+          if (!onboarding) return say("This onboarding record could not be opened.", true);
+          selected = {uid, displayName:onboarding.displayName || "New contractor", businessName:onboarding.businessName || "", email:onboarding.email || "", status:String(onboarding.stage || "onboarding").toLowerCase(), trainingStatus:onboarding.trainingCompletedAt ? "complete" : "in_progress", publicAgentId:""};
+          currentTab = "onboarding";
+          renderDetail();
+          document.querySelectorAll("[data-tab]").forEach((x) => x.classList.toggle("active", x.dataset.tab === currentTab));
+        }
+      }
+      async function rotateTrainingCode() {
+        const activation = prompt("Activation date and time (leave blank for now):", ""), expiration = prompt("Expiration date and time (leave blank for seven days):", ""), supplied = prompt("Optional code. Leave blank to generate a secure code:", "");
+        try {
+          const data = {};
+          if (activation) data.activationAt = new Date(activation).toISOString();
+          if (expiration) data.expirationAt = new Date(expiration).toISOString();
+          if (supplied) data.code = supplied;
+          const result = await call("rotateTrainingCompletionCode", data), out = $("trainingCodeResult");
+          out.classList.remove("hidden");
+          out.innerHTML = `<strong>New completion code — copy it now:</strong><div style="font-size:24px;margin:8px 0;letter-spacing:.08em">${esc(result.completionCode)}</div><div class="tiny">Version ${esc(result.version)} · expires ${esc(new Date(result.expirationAt).toLocaleString())} · it will not be shown again.</div>`;
+        } catch (error) { say(error.message || "The training code could not be rotated.", true); }
+      }
+      async function updateTrainingCode() {
+        const code = $("newTrainingCode").value.trim();
+        if (!code) return say("Enter a new certification code first.", true);
+        if (!confirm("Changing the certification code immediately invalidates the previous code for applicants who have not completed certification. Existing certified agents are not affected. Continue?")) return;
+        try {
+          const result = await call("setTrainingCertificationCode", {certificationCode: code}), out = $("trainingCodeResult");
+          $("activeTrainingCode").textContent = result.certificationCode;
+          $("newTrainingCode").value = "";
+          out.textContent = "Certification code updated successfully.";
+          out.className = "notice";
+          out.classList.remove("hidden");
+          await loadOnboardingQueue();
+        } catch (error) { say(error.message || "The certification code could not be updated.", true); }
+      }
+      function renderStats() {
+        const active = agents.filter((x) => x.status === "active").length,
+          pending = agents.length - active,
+          ready = ledger
+            .filter((x) => x.payoutStatus === "available")
+            .reduce((s, x) => s + Number(x.adjustedAgentEarnings || 0), 0);
+        $("activeCount").textContent = active;
+        $("pendingCount").textContent = pending;
+        $("ledgerCount").textContent = ledger.length;
+        $("readyTotal").textContent = money(ready);
+      }
+      function badgeClass(status) {
+        return status === "active" || status === "complete" || status === "paid"
+          ? "active-b"
+          : status === "suspended" || status === "terminated"
+            ? "suspended-b"
+            : "training-b";
+      }
+      function renderAgents() {
+        const q = $("search").value.toLowerCase(),
+          status = $("statusFilter").value,
+          training = $("trainingFilter").value,
+          rows = agents.filter(
+            (a) =>
+              (!q ||
+                (a.displayName + " " + a.businessName + " " + a.email)
+                  .toLowerCase()
+                  .includes(q)) &&
+              (!status || a.status === status) &&
+              (!training || a.trainingStatus === training),
+          );
+        $("agentRows").innerHTML =
+          rows
+            .map(
+              (a) =>
+                `<tr class="${selected?.uid === a.uid ? "selected" : ""}" onclick="selectAgent('${esc(a.uid)}')"><td><img class="avatar" src="${esc(a.photoUrl || "https://pct-tax-return-review.web.app/agent-image-placeholder.png")}" alt="">${esc(a.displayName)}</td><td>${esc(a.businessName || "—")}</td><td><span class="badge ${badgeClass(a.status)}">${esc(a.status)}</span></td><td><span class="badge ${badgeClass(a.trainingStatus)}">${esc(a.trainingStatus)}</span></td><td>${esc(a.publicAgentId || "Not active")}</td><td><button class="btn small" onclick="event.stopPropagation();selectAgent('${esc(a.uid)}')">View</button></td></tr>`,
+            )
+            .join("") || '<tr><td colspan="6">No agents match.</td></tr>';
+      }
+      function selectAgent(uid) {
+        selected = agents.find((x) => x.uid === uid);
+        currentTab = "profile";
+        renderAgents();
+        renderDetail();
+      }
+      document.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-tab]");
+        if (!b) return;
+        currentTab = b.dataset.tab;
+        document
+          .querySelectorAll("[data-tab]")
+          .forEach((x) =>
+            x.classList.toggle("active", x.dataset.tab === currentTab),
+          );
+        renderTab();
+      });
+      function renderDetail() {
+        if (!selected) return;
+        $("emptyDetail").classList.add("hidden");
+        $("agentDetail").classList.remove("hidden");
+        $("detailPhoto").src =
+          selected.photoUrl || "https://pct-tax-return-review.web.app/agent-image-placeholder.png";
+        $("detailName").textContent = selected.displayName;
+        $("detailBusiness").textContent =
+          selected.businessName || "Independent contractor preparer";
+        $("detailStatus").textContent = selected.status;
+        $("detailStatus").className = "badge " + badgeClass(selected.status);
+        $("detailTraining").textContent = selected.trainingStatus;
+        $("detailTraining").className =
+          "badge " + badgeClass(selected.trainingStatus);
+        renderTab();
+      }
+      function renderTab() {
+        if (!selected) return;
+        const mine = ledger.filter(
+          (x) => x.assignedPreparerId === selected.uid,
+        );
+        if (currentTab === "profile")
+          $("tabContent").innerHTML =
+            `<div class="kv"><b>Display Name</b><span>${esc(selected.displayName)}</span></div><div class="kv"><b>Business</b><span>${esc(selected.businessName || "—")}</span></div><div class="kv"><b>Email</b><span>${esc(selected.email || "—")}</span></div><div class="kv"><b>Phone</b><span>${esc(selected.phone || "—")}</span></div><div class="kv"><b>Public Agent ID</b><span>${esc(selected.publicAgentId || "Not active")}</span></div><div class="actions">${selected.publicAgentId ? `<a class="btn" target="_blank" rel="noopener noreferrer" href="/start/${encodeURIComponent(selected.publicAgentId)}">View Personalized Link ↗</a>` : ""}<a class="btn" href="/admin">View All Returns</a></div>`;
+        else if (currentTab === "onboarding") {
+          $("tabContent").innerHTML = '<div class="notice">Loading onboarding setup…</div>';
+          loadOnboardingAgentDetail();
+        }
+        else if (currentTab === "access")
+          $("tabContent").innerHTML =
+            `<div class="notice">Only Master Admin can activate, temporarily disable, or remove a contractor account. Each change is retained in the PCT activity history.</div><div class="actions"><button class="btn gold" onclick="setAccess('active')">Activate Access</button><button class="btn danger" onclick="setAccess('suspended')">Temporarily Disable</button><button class="btn danger" onclick="setAccess('terminated')">Remove From Portal</button></div>`;
+        else if (currentTab === "returns") {
+          $("tabContent").innerHTML =
+            '<div class="notice">Loading this contractor’s assigned returns…</div>';
+          loadContractorReturns();
+        }
+        else if (currentTab === "earnings")
+          $("tabContent").innerHTML =
+            `<div class="card"><b>Agent earnings</b><div class="money">${money(mine.reduce((s, x) => s + Number(x.adjustedAgentEarnings || 0), 0))}</div><div class="tiny">80% share after documented bank-product fees, fines, reversals and adjustments.</div></div><div class="ledger" id="ledgerRows"></div>`;
+        else if (currentTab === "funding")
+          $("tabContent").innerHTML =
+            `<div class="notice">Stripe-paid returns are settled only by verified webhook records. Use this form for bank-report funding and bank-product fees.</div><div class="form-grid"><input id="fundLead" placeholder="Lead / case ID"><input id="fundReturn" placeholder="Return ID"><input id="fundLedger" placeholder="Ledger ID"><input id="bankFee" type="number" step="0.01" min="0" placeholder="Bank-product fee"></div><select id="fundStatus" style="margin-top:8px"><option value="pending">Pending</option><option value="funded">Funded / available</option><option value="reversed">Reversed</option></select><button class="btn gold" style="margin-top:8px" onclick="saveFunding()">SAVE FUNDING</button><div class="card"><b>Assess agent fine</b><div class="tiny">The agent receives a five-day dispute window before the deduction becomes final.</div><input id="fineLedger" placeholder="Ledger ID"><input id="fineAmount" type="number" min="0.01" step="0.01" placeholder="Fine amount"><textarea id="fineReason" placeholder="Reason and policy reference"></textarea><button class="btn danger" onclick="assessFine()">ASSESS FINE</button></div><div class="card"><b>Fine history and disputes</b><div id="fineRows"></div></div>`;
+        else
+          $("tabContent").innerHTML =
+            '<div class="notice">Profile publication, access changes, funding updates, payment adjustments, fines and disputes are retained in protected audit records.</div>';
+        if (currentTab === "earnings") renderLedger();
+        if (currentTab === "funding") renderFineAdmin();
+      }
+      async function loadContractorReturns() {
+        if (!selected || currentTab !== "returns") return;
+        const host = $("tabContent");
+        try {
+          const result = await call("getContractorAgentReturns", {
+            agentId: selected.uid,
+            pageSize: 50,
+          });
+          const records = result.records || [];
+          host.innerHTML =
+            records
+              .map(
+                (item) =>
+                  `<div class="ledger-row"><strong>${esc(item.clientName || "Unnamed client")}</strong><div>${esc(item.taxYear || "—")} · ${esc(item.status || "New")}</div><div class="tiny">${esc(item.caseId || item.returnId || item.leadId)}</div><div class="actions"><a class="btn small" href="/admin?contractorAgent=${encodeURIComponent(selected.uid)}#return-${encodeURIComponent(item.leadId)}">Open Return</a></div></div>`,
+              )
+              .join("") ||
+            '<div class="tiny">This contractor does not have any assigned returns yet.</div>';
+        } catch (error) {
+          host.innerHTML =
+            '<div class="notice error">These returns could not be loaded. Please refresh and try again.</div>';
+        }
+      }
+      async function loadOnboardingAgentDetail() {
+        if (!selected || currentTab !== "onboarding") return;
+        const host = $("tabContent");
+        try {
+          const result = await call("getAdminOnboardingAgent", {agentUid:selected.uid}), o=result.onboarding||{}, tasks=result.tasks||[], software=o.taxSoftware||{}, deposit=o.directDeposit||{};
+          const attempts=result.redemptionAttempts||[], successCount=attempts.filter(x=>x.success).length, failedCount=attempts.length-successCount;
+          host.innerHTML = `<div class="notice"><strong>${esc(String(o.stage||"No onboarding record").replaceAll("_"," "))}</strong> · Payment ${esc(o.paymentStatus||"Not recorded")} · Training deadline ${o.trainingDeadline?esc(new Date(o.trainingDeadline.seconds*1000).toLocaleDateString()):"Not set"} · Code attempts: ${successCount} successful / ${failedCount} unsuccessful</div><div class="card"><b>Direct deposit provider setup</b><div class="tiny">PCT stores provider status and masked details only—never full bank or routing numbers.</div><div class="tiny">Current: ${esc(deposit.status||"Not started")} ${deposit.bankName?" · "+esc(deposit.bankName):""} ${deposit.accountLast4?" · ending "+esc(deposit.accountLast4):""}</div><input id="providerRecipientId" placeholder="Provider recipient/account ID" value="${esc(deposit.providerRecipientId||"")}"><input id="providerUrl" placeholder="https:// secure provider invitation URL"><div class="actions"><button class="btn gold" onclick="sendDepositInvite()">SEND / RESEND INVITATION</button>${deposit.providerRecipientId?'<button class="btn" onclick="confirmDepositSetup()">CONFIRM PROVIDER SETUP</button>':''}</div></div><div class="card"><b>Tax-software setup</b><input id="softwareUsername" placeholder="Username" value="${esc(software.username||"")}"><input id="softwareLoginUrl" placeholder="https:// login URL" value="${esc(software.loginUrl||"")}"><input id="softwareCredentialUrl" placeholder="https:// secure credential setup link" value="${esc(software.credentialUrl||"")}"><input id="softwareStatus" placeholder="Account status" value="${esc(software.accountStatus||"")}"><input id="softwareRole" placeholder="Software role" value="${esc(software.softwareRole||"")}"><input id="softwareYear" placeholder="Training year" value="${esc(software.trainingYear||"")}"><label class="tiny"><input id="credentialReady" type="checkbox" ${software.credentialDeliveryReady?"checked":""}> Secure credential delivery is ready</label><button class="btn gold" onclick="saveSoftwareSetup()">SAVE TAX-SOFTWARE SETUP</button></div><div class="card"><b>Required onboarding tasks</b>${tasks.sort((a,b)=>(a.order||0)-(b.order||0)).map(t=>`<div class="ledger-row"><strong>${esc(t.title)}</strong><div class="tiny">Agent sees: ${esc(t.agentVisibleStatus||t.status)}</div><select id="task_${esc(t.key)}"><option ${t.status==="PENDING"?"selected":""}>PENDING</option><option ${t.status==="IN_PROGRESS"?"selected":""}>IN_PROGRESS</option><option ${t.status==="BLOCKED"?"selected":""}>BLOCKED</option><option ${t.status==="COMPLETE"?"selected":""}>COMPLETE</option></select><button class="btn small" onclick="saveOnboardingTask('${esc(t.key)}')">SAVE TASK</button></div>`).join("")||'<div class="tiny">Tasks are created automatically after certification.</div>'}</div><div class="notice">When the first seven required tasks are complete, the account-ready email is prepared automatically. Production access turns on only after delivery is recorded.</div><div class="actions"><button class="btn gold" onclick="activateOnboardingAgent()">RETRY WELCOME / ACTIVATION</button><button class="btn" onclick="extendOnboardingDeadline()">EXTEND TRAINING DEADLINE</button></div>`;
+          renderAdminPtinPanel(result,host);
+        } catch (error) { host.innerHTML='<div class="notice error">No onboarding record is available for this contractor yet.</div>'; }
+      }
+      function renderAdminPtinPanel(result,host){
+        const records=result.ptinRecords||[],record=records[0]||{},verified=record.status==="VERIFIED",panel=document.createElement("div");panel.className="card";panel.id="adminPtinPanel";
+        panel.innerHTML=`<div class="panel-title">Annual PTIN Verification</div><div class="notice"><strong>${esc(record.status||"MISSING")}</strong> · Required year ${esc(result.onboarding?.requiredPtinYear||new Date().getFullYear())}</div>${record.recordId?`<div class="kv"><b>Legal name</b><span>${esc(record.legalName)}</span></div><div class="kv"><b>Typed PTIN</b><span>${esc(record.ptinNumber)}</span></div><div class="kv"><b>Calendar year</b><span>${esc(record.calendarYear)}</span></div><div class="kv"><b>Reported status</b><span>${esc(record.reportedStatus)}</span></div><div class="kv"><b>Document</b><span>${esc(record.originalFileName||"Uploaded proof")} · version ${esc(record.documentVersion)}</span></div><div id="adminPtinPreview" style="height:420px;background:#241d16;border-radius:9px;display:none;align-items:center;justify-content:center;overflow:auto;padding:12px"><img id="adminPtinImage" alt="PTIN supporting document" style="max-width:100%;max-height:100%;transform-origin:center"><iframe id="adminPtinPdf" title="PTIN supporting PDF" style="display:none;width:100%;height:100%;background:white"></iframe></div><div class="actions"><button class="btn" onclick="openAdminPtinDocument(${Number(record.calendarYear)})">OPEN SUPPORTING DOCUMENT</button><button class="btn" onclick="adminPtinZoom(0.25)">ZOOM +</button><button class="btn" onclick="adminPtinZoom(-0.25)">ZOOM −</button><button class="btn" onclick="adminPtinRotate()">ROTATE</button><button class="btn" onclick="adminPtinFullscreen()">FULL SCREEN</button></div><textarea id="ptinInternalNotes" placeholder="Internal review notes"></textarea><div class="actions"><button class="btn gold" onclick="reviewPtin('VERIFY',${Number(record.calendarYear)})" ${verified?"disabled":""}>VERIFY PTIN</button><button class="btn danger" onclick="reviewPtin('REQUEST_CORRECTION',${Number(record.calendarYear)})">REQUEST CORRECTION</button></div>`:'<div class="tiny">The agent has not submitted current-year PTIN proof.</div>'}<div class="tiny" style="margin-top:12px"><strong>Prior annual records:</strong> ${records.map(x=>esc(x.calendarYear+" · "+x.status+" · version "+x.documentVersion)).join(" | ")||"None"}</div><button class="btn small" onclick="changeRequiredPtinYear()">CHANGE REQUIRED PTIN YEAR</button>`;
+        host.insertBefore(panel,host.children[1]||host.firstChild);
+        const taxCard=Array.from(host.querySelectorAll(".card")).find(x=>/^Tax-software setup/i.test(x.querySelector("b")?.textContent||""));if(taxCard&&!verified){taxCard.insertAdjacentHTML("afterbegin",'<div class="warnbox">Tax-software setup is locked until Master Admin verifies the required current-year PTIN.</div>');taxCard.querySelectorAll("input,button").forEach(x=>x.disabled=true)}
+      }
+      let adminPtinZoomLevel=1,adminPtinRotation=0;
+      async function openAdminPtinDocument(year){try{const r=await call("getAdminPtinDocument",{agentUid:selected.uid,calendarYear:year}),d=r.document,url="data:"+d.contentType+";base64,"+d.dataBase64,frame=$("adminPtinPreview"),img=$("adminPtinImage"),pdf=$("adminPtinPdf");frame.style.display="flex";if(d.contentType==="application/pdf"){img.style.display="none";pdf.style.display="block";pdf.src=url}else{pdf.style.display="none";img.style.display="block";img.src=url}say("Protected PTIN document opened for review.")}catch(e){say(e.message||"The PTIN document could not be opened.",true)}}
+      function adminPtinZoom(delta){adminPtinZoomLevel=Math.max(.5,Math.min(3,adminPtinZoomLevel+delta));const img=$("adminPtinImage");if(img)img.style.transform=`scale(${adminPtinZoomLevel}) rotate(${adminPtinRotation}deg)`}
+      function adminPtinRotate(){adminPtinRotation=(adminPtinRotation+90)%360;adminPtinZoom(0)}
+      function adminPtinFullscreen(){const frame=$("adminPtinPreview");if(frame?.requestFullscreen)frame.requestFullscreen()}
+      async function reviewPtin(decision,year){let reason="";if(decision==="REQUEST_CORRECTION"){reason=prompt("Correction reason (name mismatch, unclear PTIN, wrong year, status not visible, blurry/cropped, expired, or other):","")||"";if(!reason.trim())return}try{await call("reviewPtinVerification",{agentUid:selected.uid,calendarYear:year,decision,reason,internalNotes:$("ptinInternalNotes")?.value.trim()||""});say(decision==="VERIFY"?"PTIN verified. Tax-software setup is now unlocked.":"Correction request sent to the agent.");loadOnboardingAgentDetail()}catch(e){say(e.message||"PTIN review could not be saved.",true)}}
+      async function changeRequiredPtinYear(){const year=prompt("Required PTIN calendar year:",String(new Date().getFullYear())),reason=prompt("Reason for changing the required year:","");if(!year||!reason)return;try{await call("setRequiredPtinYear",{calendarYear:Number(year),reason});say("Required PTIN year updated.");loadOnboardingAgentDetail()}catch(e){say(e.message||"The required PTIN year could not be updated.",true)}}
+      async function sendDepositInvite(){try{await call("sendDirectDepositInvitation",{agentUid:selected.uid,providerRecipientId:$("providerRecipientId").value.trim(),providerUrl:$("providerUrl").value.trim()});say("Direct-deposit invitation recorded and queued.");loadOnboardingAgentDetail()}catch(e){say(e.message||"Invitation could not be sent.",true)}}
+      async function confirmDepositSetup(){const bankName=prompt("Bank name returned by the payout provider (optional):",""),last4=prompt("Account last four digits only (optional):","");if(last4&&!/^\d{4}$/.test(last4))return say("Enter only four digits, or leave it blank.",true);try{await call("confirmDirectDepositSetup",{agentUid:selected.uid,status:"ACTIVE",bankName:bankName||"",accountLast4:last4||""});say("Payout provider setup confirmed.");loadOnboardingAgentDetail()}catch(e){say(e.message||"Provider setup could not be confirmed.",true)}}
+      async function saveSoftwareSetup(){try{await call("saveTaxSoftwareSetup",{agentUid:selected.uid,username:$("softwareUsername").value.trim(),loginUrl:$("softwareLoginUrl").value.trim(),credentialUrl:$("softwareCredentialUrl").value.trim(),accountStatus:$("softwareStatus").value.trim(),softwareRole:$("softwareRole").value.trim(),trainingYear:$("softwareYear").value.trim(),credentialDeliveryReady:$("credentialReady").checked});say("Tax-software setup saved.");loadOnboardingAgentDetail()}catch(e){say(e.message||"Tax-software setup could not be saved.",true)}}
+      async function saveOnboardingTask(key){try{await call("completeExternalOnboardingTask",{agentUid:selected.uid,taskKey:key,status:$("task_"+key).value,agentVisibleStatus:$("task_"+key).value.replaceAll("_"," ")});say("Onboarding task updated.");loadOnboardingAgentDetail()}catch(e){say(e.message||"Task could not be updated.",true)}}
+      async function activateOnboardingAgent(){try{await call("activatePreparedAgent",{agentUid:selected.uid});say("Welcome email queued. Production access activates only after delivery is recorded.");loadOnboardingAgentDetail()}catch(e){say(e.message||"The agent is not ready for activation.",true)}}
+      async function extendOnboardingDeadline(){const value=prompt("New training deadline:",""),reason=prompt("Reason for extension:","");if(!value||!reason)return;try{await call("extendTrainingDeadline",{agentUid:selected.uid,trainingDeadline:new Date(value).toISOString(),reason});say("Training deadline extended.");loadOnboardingAgentDetail()}catch(e){say(e.message||"Deadline could not be extended.",true)}}
+      function renderFineAdmin() {
+        const host = $("fineRows");
+        if (!host || !selected) return;
+        const mine = fines.filter((fine) => fine.agentId === selected.uid);
+        host.innerHTML =
+          mine
+            .map(
+              (fine) =>
+                `<div class="ledger-row"><strong>${money(fine.amount)} · ${esc(fine.status)}</strong><div>${esc(fine.reason)}</div>${fine.disputeReason ? `<div class="notice"><b>Agent dispute:</b> ${esc(fine.disputeReason)}</div>` : ""}<div class="tiny">Ledger ${esc(fine.ledgerId)}${fine.disputeWindowEndsAt ? ` · deadline ${new Date(fine.disputeWindowEndsAt).toLocaleString()}` : ""}</div>${fine.status === "disputed" ? `<div class="actions"><button class="btn small gold" onclick="resolveFine('${esc(fine.fineId)}','uphold')">Uphold &amp; Deduct</button><button class="btn small" onclick="resolveFine('${esc(fine.fineId)}','waive')">Waive Fine</button></div>` : ""}</div>`,
+            )
+            .join("") || '<div class="tiny">No fines for this agent.</div>';
+      }
+      function renderLedger() {
+        const host = $("ledgerRows");
+        if (!host || !selected) return;
+        const status = $("payoutFilter").value,
+          mine = ledger.filter(
+            (x) =>
+              x.assignedPreparerId === selected.uid &&
+              (!status || x.payoutStatus === status),
+          );
+        host.innerHTML =
+          mine
+            .map(
+              (x) =>
+                `<div class="ledger-row"><strong>${esc(x.caseId || x.returnId || x.ledgerId)}</strong><div>${money(x.amountCollected)} collected · ${money(x.adjustedAgentEarnings)} agent net</div><div class="tiny">${esc(x.paymentSource || "manual/bank")} · ${esc(x.paymentStatus || "unknown")} · payout ${esc(x.payoutStatus || "pending")} · ledger ${esc(x.ledgerId)}</div>${x.stripeTransactionId ? `<div class="tiny">Stripe transaction ${esc(x.stripeTransactionId)} · event ${esc(x.stripeEventId)}</div>` : ""}<div class="actions"><button class="btn small" onclick="setPayout('${esc(x.ledgerId)}','available')">Available</button><button class="btn small" onclick="setPayout('${esc(x.ledgerId)}','processing')">Processing</button><button class="btn small gold" onclick="setPayout('${esc(x.ledgerId)}','paid')">Paid</button></div></div>`,
+            )
+            .join("") ||
+          '<div class="tiny">No earnings records for this agent.</div>';
+      }
+      async function setAccess(status) {
+        if (
+          status === "terminated" &&
+          !confirm("Remove this contractor from portal access?")
+        )
+          return;
+        try {
+          await call("setPreparerNetworkStatus", { uid: selected.uid, status });
+          say("Access updated to " + status + ".");
+          await refreshAll();
+        } catch (e) {
+          say(e.message, true);
+        }
+      }
+      async function activateAgentPrompt() {
+        const uid = prompt("Enter the Firebase UID to activate:");
+        if (!uid) return;
+        try {
+          await call("setPreparerNetworkStatus", {
+            uid: uid.trim(),
+            status: "active",
+          });
+          say("Agent activated.");
+          await refreshAll();
+        } catch (e) {
+          say(e.message, true);
+        }
+      }
+      async function setPayout(id, status) {
+        try {
+          await call("setLedgerPayoutStatus", {
+            ledgerId: id,
+            payoutStatus: status,
+          });
+          say("Payout status updated.");
+          await refreshAll();
+        } catch (e) {
+          say(e.message, true);
+        }
+      }
+      async function saveFunding() {
+        try {
+          const result = await call("setReturnFundingStatus", {
+            leadId: $("fundLead").value.trim(),
+            returnId: $("fundReturn").value.trim(),
+            ledgerId: $("fundLedger").value.trim(),
+            fundingStatus: $("fundStatus").value,
+            bankProductFee: Number($("bankFee").value || 0),
+          });
+          say(
+            "Funding saved. Agent net: " +
+              (result.adjustedAgentEarnings == null
+                ? "ledger not linked"
+                : money(result.adjustedAgentEarnings)),
+          );
+          await refreshAll();
+        } catch (e) {
+          say(e.message, true);
+        }
+      }
+      async function assessFine() {
+        try {
+          const result = await call("assessAgentFine", {
+            agentId: selected.uid,
+            ledgerId: $("fineLedger").value.trim(),
+            amount: Number($("fineAmount").value),
+            reason: $("fineReason").value.trim(),
+          });
+          say(
+            "Fine recorded. Dispute window ends " +
+              new Date(result.disputeWindowEndsAt).toLocaleString() +
+              ".",
+          );
+          await refreshAll();
+        } catch (e) {
+          say(e.message, true);
+        }
+      }
+      async function resolveFine(fineId, resolution) {
+        const note = prompt(
+          resolution === "uphold"
+            ? "Optional note explaining why the fine is upheld:"
+            : "Optional note explaining why the fine is waived:",
+        );
+        if (note === null) return;
+        try {
+          await call("resolveAgentFine", { fineId, resolution, note });
+          say(
+            resolution === "uphold"
+              ? "Fine upheld and deducted."
+              : "Fine waived.",
+          );
+          await refreshAll();
+        } catch (e) {
+          say(e.message, true);
+        }
+      }
+      function exportReport() {
+        const rows = [
+          [
+            "Agent UID",
+            "Agent",
+            "Business",
+            "Status",
+            "Training",
+            "Ledger ID",
+            "Case",
+            "Collected",
+            "Agent Net",
+            "Payout",
+            "Payment Source",
+            "Stripe Transaction",
+            "Stripe Event",
+          ],
+        ];
+        agents.forEach((a) => {
+          const mine = ledger.filter((x) => x.assignedPreparerId === a.uid);
+          if (!mine.length)
+            rows.push([
+              a.uid,
+              a.displayName,
+              a.businessName,
+              a.status,
+              a.trainingStatus,
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+            ]);
+          mine.forEach((x) =>
+            rows.push([
+              a.uid,
+              a.displayName,
+              a.businessName,
+              a.status,
+              a.trainingStatus,
+              x.ledgerId,
+              x.caseId || x.returnId,
+              x.amountCollected,
+              x.adjustedAgentEarnings,
+              x.payoutStatus,
+              x.paymentSource,
+              x.stripeTransactionId,
+              x.stripeEventId,
+            ]),
+          );
+        });
+        const csv = rows
+            .map((r) =>
+              r
+                .map((v) => '"' + String(v ?? "").replaceAll('"', '""') + '"')
+                .join(","),
+            )
+            .join("\n"),
+          a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+        a.download = "pct-contractor-management.csv";
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+    </script>
+    
+    
+    <script>
+      /* Phase 12 Master Admin extension. It reuses the existing Contractor Manager
+         and exposes only safe setup/review fields—never stored software passwords. */
+      (function(){
+        const prior=window.loadOnboardingAgentDetail;
+        if(typeof prior!=="function")return;
+        window.loadOnboardingAgentDetail=async function(){
+          await prior.apply(this,arguments);
+          if(!selected||!fx)return;
+          const host=$("onboardingDetail"); if(!host||$("pctP12Admin"))return;
+          const box=document.createElement("section"); box.id="pctP12Admin"; box.className="card"; box.innerHTML='<b>Contractor Compliance & Activation</b><div class="tiny">Loading UID-bound onboarding record…</div>'; host.prepend(box);
+          try{
+            const q=await call("getAdminContractorOnboardingQueue",{}), item=(q.contractors||[]).find(x=>x.agentUid===selected.uid);
+            if(!item){box.innerHTML='<b>Contractor Compliance & Activation</b><div class="tiny">No Phase 12 contractor setup has started for this account.</div>';return;}
+            const c=item.checklist||{}, p=item.ptin||{}, complete=!!c.complete;
+            box.innerHTML='<div class="section-title"><div><b>Contractor Compliance & Activation</b><div class="tiny">'+esc(item.contractorId||"")+' · '+esc(item.status||"ONBOARDING")+'</div></div></div><div class="notice">Information '+(c.contractorInformation?'✓':'Pending')+' · W-9 '+(c.w9?'✓':'Pending')+' · Agreement '+(c.agreement?'✓':'Pending')+' · Disclosures '+(c.disclosures?'✓':'Pending')+' · PTIN '+esc(p.status||'PENDING')+'</div>'+(p.originalFileName?'<button class="btn small" onclick="pctP12OpenPtin('+JSON.stringify(p.calendarYear)+')">OPEN PROTECTED PTIN</button> ':'')+(p.status==='UNDER_REVIEW'?'<button class="btn gold small" onclick="pctP12ReviewPtin(\'VERIFY\')">VERIFY PTIN</button> <button class="btn small" onclick="pctP12ReviewPtin(\'REQUEST_CORRECTION\')">REQUEST CORRECTION</button>':'')+(complete?'<div class="card"><b>Tax-software setup</b><input id="pctP12SoftwareUsername" placeholder="Username"><input id="pctP12SoftwareLogin" placeholder="https:// login URL"><input id="pctP12SoftwareCredential" placeholder="https:// secure credential retrieval URL"><input id="pctP12SoftwareStatus" placeholder="Account status"><div class="actions"><button class="btn gold" onclick="pctP12SaveSoftware()">SAVE TAX-SOFTWARE SETUP</button><button class="btn" onclick="pctP12Activate()">ACTIVATE PRODUCTION ACCESS</button></div></div>':'<div class="tiny">Tax software and production access remain unavailable until every required item is completed and the PTIN is verified.</div>')+(item.status==='OFFBOARDING'?'<div class="card"><b>Offboarding Resolution</b><select id="pctP12Rejoin"><option>STANDARD_REJOIN_ALLOWED</option><option selected>ADMIN_REVIEW_REQUIRED</option><option>NOT_ELIGIBLE</option></select><textarea id="pctP12ExitNotes" placeholder="Internal offboarding notes"></textarea><button class="btn gold" onclick="pctP12ResolveExit()">COMPLETE OFFBOARDING</button></div>':'');
+          }catch(e){box.innerHTML='<div class="notice">Contractor compliance details could not be loaded.</div>';}
+        };
+        window.pctP12OpenPtin=async year=>{try{await openAdminPtinDocument(year)}catch(e){say(e.message||"Could not open PTIN.",true)}};
+        window.pctP12ReviewPtin=async decision=>{const reason=decision==='REQUEST_CORRECTION'?(prompt('Correction reason:','')||''):'';if(decision==='REQUEST_CORRECTION'&&!reason.trim())return;try{await call('reviewContractorPtinVerification',{agentUid:selected.uid,decision,reason,internalNotes:''});say(decision==='VERIFY'?'PTIN verified.':'Correction request sent.');await loadOnboardingAgentDetail();}catch(e){say(e.message||'PTIN review could not be saved.',true)}};
+        window.pctP12SaveSoftware=async()=>{try{await call('saveContractorTaxSoftwareSetup',{agentUid:selected.uid,username:$("pctP12SoftwareUsername").value.trim(),loginUrl:$("pctP12SoftwareLogin").value.trim(),credentialUrl:$("pctP12SoftwareCredential").value.trim(),accountStatus:$("pctP12SoftwareStatus").value.trim()});say('Tax-software setup saved.');await loadOnboardingAgentDetail();}catch(e){say(e.message||'Tax-software setup could not be saved.',true)}};
+        window.pctP12Activate=async()=>{try{await call('activateContractorProductionAccess',{agentUid:selected.uid});say('Production access activated.');await refreshAll();}catch(e){say(e.message||'Contractor is not ready for activation.',true)}};
+        window.pctP12ResolveExit=async()=>{const notes=$("pctP12ExitNotes")?.value||'',rejoinEligibility=$("pctP12Rejoin")?.value||'ADMIN_REVIEW_REQUIRED';try{await call('resolveContractorExit',{agentUid:selected.uid,resolution:'COMPLETED',rejoinEligibility,internalNotes:notes});say('Offboarding completed.');await refreshAll();}catch(e){say(e.message||'Offboarding could not be completed.',true)}};
+      })();
+    </script>
+    <script>
+      /* Phase 14 Master Admin Referral Circle. This view exposes operations and
+         auditable review only; it never exposes taxpayer, earnings, or PTIN files. */
+      (function(){
+        const modal=document.createElement('div'); modal.id='pctP14AdminModal'; modal.className='pct-p14a-modal hidden';
+        modal.innerHTML='<section class="pct-p14a-card" role="dialog" aria-modal="true"><button class="btn small pct-p14a-close" type="button">Close</button><div id="pctP14AdminContent">Loading Referral Circle…</div></section>'; document.body.appendChild(modal);
+        const close=()=>modal.classList.add('hidden'), escValue=value=>esc(value);
+        async function overview(){modal.classList.remove('hidden');const host=$("pctP14AdminContent");host.textContent='Loading Referral Circle…';try{const data=await call('getAdminReferralCircleOverview',{}),dist=data.levelDistribution||{},agents=data.agents||[];host.innerHTML='<div class="panel-title">REFERRAL CIRCLE · CURRENT SEASON '+escValue(data.season?.seasonId||'')+'</div><div class="pct-p14a-stats"><div><span>Agents Participating</span><b>'+Number(data.agentsParticipating||0)+'</b></div><div><span>Qualified Producers</span><b>'+Number(data.qualifiedProducingReferrals||0)+'</b></div></div><div class="notice">80%: '+Number(dist['80']||0)+' · 85%: '+Number(dist['85']||0)+' · 90%: '+Number(dist['90']||0)+' · 95%: '+Number(dist['95']||0)+' · 100%: '+Number(dist['100']||0)+'</div><div class="table-wrap"><table><thead><tr><th>Agent</th><th>Qualified</th><th>Current Split</th><th>Internal Level</th><th></th></tr></thead><tbody>'+agents.map(row=>'<tr><td>'+escValue(row.agentName)+'</td><td>'+Number(row.qualifiedCount||0)+'</td><td>'+Number(row.agentSplitPercent||80)+'%</td><td>'+escValue(row.internalLevel)+'</td><td><button class="btn small" onclick="pctP14OpenAgent('+JSON.stringify(row.agentId)+')">DETAIL</button></td></tr>').join('')+'</tbody></table></div>';}catch(error){host.innerHTML='<div class="notice error">'+escValue(error.message||'Referral Circle could not be loaded.')+'</div>';}}
+        window.pctP14OpenAgent=async agentId=>{const host=$("pctP14AdminContent");host.textContent='Loading agent referral detail…';try{const data=await call('getAdminReferralCircleAgentDetail',{agentId}),rows=data.referrals||[];host.innerHTML='<button class="btn small" onclick="pctP14Overview()">← ALL AGENTS</button><div class="panel-title" style="margin-top:14px">REFERRAL CIRCLE — AGENT DETAIL</div><div class="notice"><strong>'+escValue(data.agentName)+'</strong> · '+escValue(data.internalLevel)+' · Agent '+Number(data.agentSplitPercent)+'% / PCT '+Number(data.pctSplitPercent)+'% · Qualified Producers: '+Number(data.qualifiedCount||0)+(data.nextGoal?' · Next: '+Number(data.nextGoal)+' → '+(Number(data.agentSplitPercent||0)+5)+'%':'')+'</div><div class="table-wrap"><table><thead><tr><th>Referral</th><th>Enrollment</th><th>Training</th><th>PTIN</th><th>Active</th><th>Funded Returns</th><th>Qualified</th><th></th></tr></thead><tbody>'+rows.map(row=>'<tr><td>'+escValue(row.name)+'</td><td>'+((row.enrollmentPaid)?'Paid':'Pending')+'</td><td>'+((row.trainingComplete)?'Complete':'Pending')+'</td><td>'+escValue(row.ptinStatus)+'</td><td>'+((row.active)?'Yes':'No')+'</td><td>'+Number(row.fundedReturns||0)+'</td><td>'+((row.qualified)?'Yes':'No')+'</td><td><button class="btn small" onclick="pctP14Adjust('+JSON.stringify(row.relationshipId)+')">REVIEW</button></td></tr>').join('')+'</tbody></table></div><p class="tiny">Review actions require a reason and are retained in the Referral Circle audit history. They do not directly change an agent percentage or rewrite payroll snapshots.</p>';}catch(error){host.innerHTML='<div class="notice error">'+escValue(error.message||'Agent detail could not be loaded.')+'</div>';}};
+        window.pctP14Overview=overview;
+        window.pctP14Adjust=async relationshipId=>{const action=prompt('Enter APPROVE_ELIGIBILITY or DISQUALIFY:','');if(!action)return;const reason=prompt('Required review reason:','');if(!reason)return;try{await call('overrideReferralCircleRelationship',{relationshipId,action,reason});say('Referral Circle review saved.');overview();}catch(error){say(error.message||'Referral Circle review could not be saved.',true);}};
+        modal.querySelector('.pct-p14a-close').onclick=close;modal.addEventListener('click',event=>{if(event.target===modal)close();});
+        function install(){const actions=document.querySelector('.head .actions');if(!actions||$('pctP14AdminBtn'))return;const button=document.createElement('button');button.id='pctP14AdminBtn';button.className='btn';button.type='button';button.textContent='REFERRAL CIRCLE';button.onclick=overview;actions.insertBefore(button,actions.firstChild);}
+        const style=document.createElement('style');style.textContent='.pct-p14a-modal{position:fixed;inset:0;z-index:1500;overflow:auto;padding:24px;background:#120e0ab8}.pct-p14a-modal.hidden{display:none}.pct-p14a-card{max-width:1000px;margin:20px auto;padding:24px;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}.pct-p14a-close{float:right}.pct-p14a-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}.pct-p14a-stats div{padding:14px;border:1px solid var(--line);border-radius:8px}.pct-p14a-stats span{display:block;color:var(--muted)}.pct-p14a-stats b{font-size:26px}@media(max-width:650px){.pct-p14a-modal{padding:8px}.pct-p14a-card{padding:16px}.pct-p14a-stats{grid-template-columns:1fr}}';document.head.appendChild(style);
+        const timer=setInterval(()=>{install();if($('pctP14AdminBtn'))clearInterval(timer);},180);
+      })();
+    </script>
+  <script>
+/* Complete source inlined from hosting/pct-auth-experience.js. */
+(function () {
+  "use strict";
+
+  function authObject() {
+    if (window.fb && window.fb.auth) return window.fb.auth;
+    if (window.auth) return window.auth;
+    if (window.firebase && firebase.auth) return firebase.auth();
+    return null;
+  }
+
+  function emailField() {
+    return (
+      document.getElementById("loginEmail") ||
+      document.getElementById("email")
+    );
+  }
+
+  function passwordField() {
+    return (
+      document.getElementById("loginPassword") ||
+      document.getElementById("password")
+    );
+  }
+
+  function message(text, error) {
+    var output =
+      document.getElementById("loginError") ||
+      document.getElementById("loginMsg");
+    if (!output) return;
+    output.textContent = text;
+    output.classList.remove("hidden");
+    if (error) output.classList.add("warnbox");
+  }
+
+  function decorateLogin() {
+    var password = passwordField();
+    if (!password) return;
+    var card = password.closest(".card-pad, .login") || password.parentElement;
+    if (!card || card.querySelector("#rememberDevice")) return;
+    var actions = card.querySelector(".actions") || password.parentElement.nextElementSibling;
+    var signInButton =
+      card.querySelector("#signIn") ||
+      card.querySelector('button[onclick*="emailSignIn"]') ||
+      card.querySelector('button[onclick*="login"]');
+    var remember = document.createElement("label");
+    remember.className = "checkline";
+    remember.innerHTML =
+      '<input id="rememberDevice" type="checkbox" checked> Remember this device for easier sign-in';
+    if (actions && card.contains(actions)) card.insertBefore(remember, actions);
+    else if (signInButton) card.insertBefore(remember, signInButton);
+    else card.appendChild(remember);
+
+    var forgot = document.createElement("button");
+    forgot.type = "button";
+    forgot.className = "btn btn-ghost";
+    forgot.textContent = "Forgot password?";
+    forgot.onclick = window.pctForgotPassword;
+    if (actions && card.contains(actions)) actions.appendChild(forgot);
+    else if (signInButton) signInButton.insertAdjacentElement("afterend", forgot);
+    else card.appendChild(forgot);
+
+    password.addEventListener("keydown", function (event) {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      if (typeof window.emailSignIn === "function") window.emailSignIn();
+      else if (typeof window.login === "function") window.login();
+    });
+  }
+
+  window.pctForgotPassword = async function () {
+    var auth = authObject(), email = (emailField()?.value || "").trim();
+    if (!email) {
+      message("Enter your email address first.", true);
+      return;
+    }
+    try {
+      if (auth) await auth.sendPasswordResetEmail(email);
+    } catch (_) {}
+    message(
+      "If an account exists for that email, a password-reset link has been sent.",
+      false,
+    );
+  };
+
+  async function signIn() {
+    var auth = authObject(), email = (emailField()?.value || "").trim();
+    var password = passwordField()?.value || "";
+    if (!auth) return message("PCT sign-in is temporarily unavailable.", true);
+    if (!email || !password) return message("Enter your email and password.", true);
+    try {
+      var remember = document.getElementById("rememberDevice")?.checked !== false;
+      if (auth.setPersistence && window.firebase?.auth?.Auth?.Persistence) {
+        await auth.setPersistence(
+          remember
+            ? firebase.auth.Auth.Persistence.LOCAL
+            : firebase.auth.Auth.Persistence.SESSION,
+        );
+      }
+      await auth.signInWithEmailAndPassword(email, password);
+    } catch (_) {
+      message("Sign-in was unsuccessful. Check your information or reset your password.", true);
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", function () {
+    window.setTimeout(function () {
+      decorateLogin();
+      if (typeof window.emailSignIn === "function") window.emailSignIn = signIn;
+      if (typeof window.login === "function") window.login = signIn;
+      var signInButton = document.getElementById("signIn");
+      if (signInButton) signInButton.onclick = signIn;
+    }, 0);
+  });
+})();
+
+</script>
+<script>
+/* Complete source inlined from hosting/pct-launch-ui.js. */
+(function () {
+  "use strict";
+
+  var replacements = [
+    [/HoneyBook Smart Files?/gi, "PCT Smart Files"],
+    [/Firebase Auth password/gi, "Password"],
+    [/Firebase connected/gi, "PCT system ready"],
+    [/Firebase not connected/gi, "PCT system connecting"],
+    [/Firebase error/gi, "PCT system unavailable"],
+    [/Firestore records/gi, "PCT client records"],
+    [/Firestore/gi, "PCT records"],
+    [/Firebase/gi, "PCT system"],
+    [/Backend status/gi, "PCT system status"],
+    [/backend/gi, "PCT system"],
+  ];
+
+  function cleanText(value) {
+    return replacements.reduce(function (text, pair) {
+      return text.replace(pair[0], pair[1]);
+    }, String(value || ""));
+  }
+
+  function apply() {
+    var contractorAgent = new URLSearchParams(location.search).get("contractorAgent");
+    if (contractorAgent && location.pathname === "/admin" && !document.getElementById("contractorSupportContext")) {
+      var wrap = document.querySelector(".wrap");
+      if (wrap) {
+        var context = document.createElement("div");
+        context.id = "contractorSupportContext";
+        context.className = "lock-banner";
+        context.innerHTML =
+          '<strong>Contractor support view</strong> — You are reviewing returns assigned to the selected contractor. <a href="/contractors">Return to Contractor Manager</a>';
+        wrap.insertBefore(context, wrap.firstChild);
+      }
+    }
+    document
+      .querySelectorAll("button, a")
+      .forEach(function (control) {
+        var label = (control.textContent || "").trim().replace(/\s+/g, " ");
+        if (
+          /^(Copy Tax Software Summary|Download Lead JSON)$/i.test(label)
+        ) {
+          control.remove();
+          return;
+        }
+        if (/^Setup help$/i.test(label)) control.remove();
+      });
+
+    document.querySelectorAll(".lock-banner, .security-note").forEach(function (box) {
+      if (/Security standard:|PCT records itself should still use secure rules/i.test(box.textContent || "")) {
+        box.remove();
+      }
+    });
+
+    var setup = document.getElementById("setupHelp");
+    if (setup) setup.remove();
+
+    var walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+    );
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (node) {
+      if (!node.parentElement || /SCRIPT|STYLE|NOSCRIPT/.test(node.parentElement.tagName))
+        return;
+      var next = cleanText(node.nodeValue);
+      if (next !== node.nodeValue) node.nodeValue = next;
+    });
+
+    document.querySelectorAll("input[placeholder], textarea[placeholder]").forEach(
+      function (field) {
+        field.placeholder = cleanText(field.placeholder);
+      },
+    );
+  }
+
+  document.addEventListener(
+    "click",
+    function (event) {
+      var button = event.target.closest("[data-agent-profile]");
+      if (button) button.dataset.sandboxHandled = "1";
+    },
+    true,
+  );
+
+  window.addEventListener("DOMContentLoaded", apply);
+  new MutationObserver(apply).observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
+})();
+
+</script>
+</body>
+</html>
