@@ -138,7 +138,7 @@ const PCT_DASHBOARD_CONFIG = {
   appCheckSiteKey: ''
 };
 
-let fb = {app:null,auth:null,db:null,storage:null,functions:null,ready:false,user:null,claims:{},isMasterAdmin:false};
+let fb = {app:null,auth:null,db:null,storage:null,functions:null,ready:false,user:null,claims:{},isMasterAdmin:false,authStateVersion:0};
 let leads = [];
 let filteredLeads = [];
 let selectedLeadId = null;
@@ -250,7 +250,7 @@ function initFirebase(){
 }
 async function signOut(){
   if(!fb.auth)return;
-  try{await fb.auth.signOut();await handleAuthState(null);}
+  try{await fb.auth.signOut();}
   catch(_){$('loginError').textContent='We could not sign you out. Please refresh and try again.';$('loginError').classList.remove('hidden');}
 }
 function masterAdminEmail(email){return String(email||'').trim().toLowerCase()}
@@ -268,16 +268,21 @@ function resetMasterAdminView(){
   $('signOutBtn').classList.add('hidden'); $('refreshBtn').classList.add('hidden');
   $('contractorManagerBtn').classList.add('hidden'); $('launchReadinessBtn').classList.add('hidden'); $('statusAuditBtn').classList.add('hidden');
   $('loginScreen').classList.remove('hidden'); $('appScreen').classList.add('hidden');
+  document.getElementById('pctPhase12Onboarding')?.classList.add('hidden');
   document.body.classList.remove('pct-master-admin-home-active');
   document.getElementById('pctMasterAdminHome')?.classList.add('hidden');
   document.getElementById('pctAdminWorkspaceHero')?.classList.remove('hidden');
   document.getElementById('pctAdminOverviewBtn')?.classList.add('hidden');
 }
 async function handleAuthState(user){
+  const priorUser=fb.user;
+  if(!user&&fb.auth?.currentUser?.uid&&fb.isMasterAdmin&&fb.auth.currentUser.uid===priorUser?.uid)return;
+  const authStateVersion=++fb.authStateVersion;
   fb.user=user;
   if(!user){resetMasterAdminView();return;}
   try{
     const token=await user.getIdTokenResult(true);
+    if(authStateVersion!==fb.authStateVersion)return;
     fb.claims=token.claims||{};
     fb.isMasterAdmin=isMasterAdminAccount(user,fb.claims);
     if(!fb.isMasterAdmin){
@@ -288,14 +293,17 @@ async function handleAuthState(user){
     }
     document.querySelectorAll('[data-agent-menu]').forEach(element=>element.classList.add('hidden'));
     document.querySelectorAll('[data-onboarding-center]').forEach(element=>element.remove());
+    document.getElementById('pctPhase12Onboarding')?.classList.add('hidden');
     document.querySelectorAll('[data-admin-menu]').forEach(element=>element.classList.remove('hidden'));
     $('userStatus').textContent='Master Admin · '+user.email;
     $('signOutBtn').classList.remove('hidden'); $('refreshBtn').classList.remove('hidden');
     $('contractorManagerBtn').classList.remove('hidden'); $('launchReadinessBtn').classList.remove('hidden'); $('statusAuditBtn').classList.remove('hidden');
     $('loginError').classList.add('hidden'); $('loginScreen').classList.add('hidden'); $('appScreen').classList.remove('hidden');
     await loadLeads();
+    if(authStateVersion!==fb.authStateVersion||!fb.isMasterAdmin)return;
     window.pctShowMasterAdminHome?.();
   }catch(_){
+    if(authStateVersion!==fb.authStateVersion)return;
     fb.isMasterAdmin=false;
     $('loginError').textContent='We could not verify Master Admin access. Please try again.';
     $('loginError').classList.remove('hidden');
@@ -1169,6 +1177,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
    admin, tax-software password, or other-agent data is exposed in this view. */
 (function(){
  const modal=document.getElementById('pctPhase12Onboarding'), host=document.getElementById('pctP12Content'), esc=x=>escapeHtml(String(x||'')); let state=null;
+ if(location.pathname.replace(/\/+$/,'')==='/admin'){modal.classList.add('hidden');return;}
  const call=name=>fb&&fb.functions&&fb.functions.httpsCallable(name); const status=t=>{const e=document.getElementById('pctP12Status');if(e)e.textContent=t;};
  const fileData=file=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||''));r.onerror=reject;r.readAsDataURL(file);});
  const ptinFileType=file=>{const reported=String(file?.type||'').toLowerCase(),name=String(file?.name||'').toLowerCase();if(['application/pdf','image/png','image/jpeg'].includes(reported))return reported;if(name.endsWith('.pdf'))return 'application/pdf';if(name.endsWith('.png'))return 'image/png';if(name.endsWith('.jpg')||name.endsWith('.jpeg'))return 'image/jpeg';return '';};
