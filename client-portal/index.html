@@ -145,11 +145,21 @@
     <main>
       <section id="login" class="card">
         <h1>Check your return status</h1>
-        <p>Enter the Case ID and review code sent by your tax professional.</p>
-        <label>Case ID<input id="lead" /></label
+        <p>Enter the Return ID or Case ID and review code sent by your tax professional.</p>
+        <label>Return ID or Case ID<input id="lead" /></label
         ><label>Review access code<input id="code" /></label
         ><button id="open">Open My Return Workspace</button>
         <div id="loginmsg" class="msg"></div>
+        <div class="card" style="margin:20px 0 0;background:#fffaf0">
+          <h2 style="font-size:16px">DON'T HAVE YOUR RETURN ID OR ACCESS CODE?</h2>
+          <button id="showRecovery" class="plain" type="button">SEND MY PORTAL ACCESS</button>
+          <div id="recoveryForm" class="hidden" style="margin-top:14px">
+            <label>Email<input id="recoveryEmail" type="email" autocomplete="email" /></label>
+            <label>Tax year<select id="recoveryYear"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option></select></label>
+            <button id="sendRecovery" type="button">SEND ACCESS EMAIL</button>
+            <div id="recoverymsg" class="msg" aria-live="polite"></div>
+          </div>
+        </div>
       </section>
       <section id="home" class="hidden">
         <h1 id="welcome">Your returns</h1>
@@ -272,6 +282,7 @@
       savePartnerProducts: httpsCallable(f, "saveClientPartnerProducts"),
       returnCopies: httpsCallable(f, "loadClientReturnCopyRequests"),
       requestReturnCopy: httpsCallable(f, "requestClientReturnCopy"),
+      recover: httpsCallable(f, "sendClientPortalAccess"),
         },
         s = {
           q: null,
@@ -872,6 +883,14 @@
           accessCode: $("code").value.trim(),
         };
         await load();
+      });
+      $("showRecovery").onclick = () => $("recoveryForm").classList.toggle("hidden");
+      $("sendRecovery").onclick = () => once("send-portal-access",$("sendRecovery"),async()=>{
+        const message="If we found a matching return, we've sent your secure portal access to the email on file.";
+        $("recoverymsg").textContent="";
+        try { await c.recover({email:$("recoveryEmail").value.trim(),taxYear:$("recoveryYear").value}); }
+        catch (_) { /* The response must remain generic. */ }
+        $("recoverymsg").textContent=message;
       });
       $("clear").onclick = () => {
         s.q = null;
