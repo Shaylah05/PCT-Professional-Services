@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PCT Tax Prep Agent Portal</title>
+<title>PCT Master Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -15,23 +15,23 @@
 .document-table-wrap{overflow:auto}.document-table{width:100%;border-collapse:separate;border-spacing:0 8px}.document-table th{text-align:left;font-size:11px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}.document-table td{background:var(--cream2);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:11px;font-size:13px;vertical-align:middle}.document-table td:first-child{border-left:1px solid var(--line);border-radius:12px 0 0 12px;font-weight:800}.document-table td:last-child{border-right:1px solid var(--line);border-radius:0 12px 12px 0}.document-viewer{position:fixed;inset:0;background:rgba(22,17,12,.78);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}.document-viewer-card{width:min(100%,980px);height:min(92vh,820px);background:var(--paper);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column}.document-viewer-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}.document-viewer-body{flex:1;background:#2a2018;display:grid;place-items:center;padding:14px}.document-viewer-body img,.document-viewer-body iframe{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;border:0;background:#fff}.workbench-progress{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin:0 0 18px}.workbench-stat{border:1px solid var(--line);background:var(--cream2);border-radius:var(--rs);padding:10px}.workbench-stat .n{font-family:var(--display);font-size:22px;font-weight:700}.workbench-stat .l{font-size:10px;line-height:1.2;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:900}.workbench{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:16px}.workbench-viewer{min-height:560px;background:#2a2018;border-radius:var(--rs);padding:14px;display:grid;place-items:center}.workbench-viewer img,.workbench-viewer iframe{width:100%;height:560px;object-fit:contain;border:0;background:#fff}.workbench-viewer .file-placeholder{max-width:520px;background:var(--paper);border-radius:var(--rs);padding:24px;text-align:center}.workbench-side{border:1px solid var(--line);border-radius:var(--rs);background:var(--cream2);padding:16px}.workbench-side h4{font-family:var(--body);font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--gold-deep);margin:0 0 8px}.workbench-nav{display:flex;justify-content:space-between;gap:8px;margin-bottom:12px}.workbench-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.workbench-actions .btn{flex:1 1 130px}.status-row{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}.status-row .tag{cursor:pointer;border:0}.activity-list{border-top:1px solid var(--line);margin-top:14px;padding-top:10px;max-height:180px;overflow:auto}.activity-item{font-size:12px;padding:7px 0;border-bottom:1px solid rgba(120,90,50,.15)}.guidance-card{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.guidance-card h4{margin-top:16px}.guidance-path{display:flex;flex-wrap:wrap;align-items:center;gap:7px;background:#fff8e8;border:1px solid var(--gold-soft);border-radius:var(--rs);padding:12px;font-size:12px;font-weight:800}.guidance-path span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 8px}.guidance-path b{color:var(--gold-deep)}.guidance-fields{display:grid;gap:7px}.guidance-field{display:grid;grid-template-columns:1fr 120px auto;gap:7px;align-items:center;font-size:12px;font-weight:800}.guidance-field.has-value{grid-template-columns:minmax(130px,1fr) minmax(110px,1fr) auto auto}.guidance-field-actions{display:flex;gap:5px;flex-wrap:wrap}.extracted-value{font-family:ui-monospace,Menlo,Consolas,monospace;background:#fff;border:1px solid var(--line);border-radius:var(--rs);padding:8px;word-break:break-word}.guidance-field input{padding:8px;font-size:11px;color:var(--muted)}.guidance-list{margin:8px 0;padding-left:19px;font-size:12px}.guidance-list li{margin:5px 0}.analysis-card{border:1px solid var(--gold-soft);background:#fffaf0;border-radius:var(--rs);padding:14px;margin:14px 0}.analysis-result{margin-top:12px;border-top:1px solid var(--gold-soft);padding-top:11px}.analysis-card .actions{margin-bottom:0}@media(max-width:760px){.workbench{grid-template-columns:1fr}.workbench-viewer{min-height:360px}.workbench-viewer img,.workbench-viewer iframe{height:360px}.workbench-progress{grid-template-columns:repeat(2,1fr)}.workbench-side{padding:13px}.guidance-field,.guidance-field.has-value{grid-template-columns:1fr}.guidance-field input{width:100%}.guidance-field-actions{width:100%}}
 </style>
 <style id="pctMasterAdminHomeStyles">
-  .pct-master-admin-home{margin:26px 0}.pct-master-admin-home-active #agentSetupStatus{display:none!important}.pct-master-admin-shell{padding:clamp(22px,4vw,42px);border:1px solid rgba(201,164,92,.42);border-radius:28px;background:linear-gradient(135deg,#17110c 0%,#2e2117 54%,#6d4e1d 170%);box-shadow:0 30px 70px -42px rgba(22,17,12,.88);color:#fff}.pct-master-admin-kicker{margin:0 0 10px;color:var(--gold-soft);font-size:11px;font-weight:900;letter-spacing:.18em;text-transform:uppercase}.pct-master-admin-heading{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:28px}.pct-master-admin-heading h2{max-width:600px;color:#fff;font-size:clamp(34px,5vw,56px)}.pct-master-admin-heading p{max-width:470px;margin:0;color:#eadfc9;font-size:16px}.pct-master-admin-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.pct-master-admin-card{appearance:none;width:100%;min-height:150px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:18px;padding:20px;border:1px solid rgba(255,255,255,.17);border-radius:18px;background:rgba(255,253,249,.97);color:var(--ink);box-shadow:0 15px 30px -25px rgba(0,0,0,.8);font:inherit;text-align:left;text-decoration:none;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.pct-master-admin-card:hover,.pct-master-admin-card:focus-visible{transform:translateY(-3px);border-color:var(--gold);box-shadow:0 20px 38px -24px rgba(0,0,0,.78);outline:none}.pct-master-admin-card:focus-visible{box-shadow:0 0 0 4px rgba(230,205,151,.5),0 20px 38px -24px rgba(0,0,0,.78)}.pct-master-admin-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--cream);font-size:23px}.pct-master-admin-card strong{display:block;font-family:var(--display);font-size:20px;line-height:1.1;color:var(--black)}.pct-master-admin-card small{display:block;margin-top:5px;color:var(--muted);font-size:13px;font-weight:700}.pct-master-admin-arrow{align-self:flex-end;color:var(--gold-deep);font-size:19px;font-weight:900}.pct-master-admin-card.accent{background:linear-gradient(160deg,#fff8e8,#f6e3bb)}.pct-master-admin-card.dark{background:linear-gradient(155deg,#33251a,#17110c);border-color:rgba(230,205,151,.38);color:#fff}.pct-master-admin-card.dark strong{color:#fff}.pct-master-admin-card.dark small{color:#eadfc9}.pct-master-admin-card.dark .pct-master-admin-icon{background:rgba(230,205,151,.15)}@media(max-width:940px){.pct-master-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pct-master-admin-heading{align-items:flex-start;flex-direction:column}}@media(max-width:580px){.pct-master-admin-shell{padding:20px 16px;border-radius:20px}.pct-master-admin-grid{grid-template-columns:1fr}.pct-master-admin-card{min-height:126px}.pct-master-admin-heading{margin-bottom:20px}}
+  .pct-master-admin-home{margin:26px 0}.pct-master-admin-shell{padding:clamp(22px,4vw,42px);border:1px solid rgba(201,164,92,.42);border-radius:28px;background:linear-gradient(135deg,#17110c 0%,#2e2117 54%,#6d4e1d 170%);box-shadow:0 30px 70px -42px rgba(22,17,12,.88);color:#fff}.pct-master-admin-kicker{margin:0 0 10px;color:var(--gold-soft);font-size:11px;font-weight:900;letter-spacing:.18em;text-transform:uppercase}.pct-master-admin-heading{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:28px}.pct-master-admin-heading h2{max-width:600px;color:#fff;font-size:clamp(34px,5vw,56px)}.pct-master-admin-heading p{max-width:470px;margin:0;color:#eadfc9;font-size:16px}.pct-master-admin-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.pct-master-admin-card{appearance:none;width:100%;min-height:150px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:18px;padding:20px;border:1px solid rgba(255,255,255,.17);border-radius:18px;background:rgba(255,253,249,.97);color:var(--ink);box-shadow:0 15px 30px -25px rgba(0,0,0,.8);font:inherit;text-align:left;text-decoration:none;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.pct-master-admin-card:hover,.pct-master-admin-card:focus-visible{transform:translateY(-3px);border-color:var(--gold);box-shadow:0 20px 38px -24px rgba(0,0,0,.78);outline:none}.pct-master-admin-card:focus-visible{box-shadow:0 0 0 4px rgba(230,205,151,.5),0 20px 38px -24px rgba(0,0,0,.78)}.pct-master-admin-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--cream);font-size:23px}.pct-master-admin-card strong{display:block;font-family:var(--display);font-size:20px;line-height:1.1;color:var(--black)}.pct-master-admin-card small{display:block;margin-top:5px;color:var(--muted);font-size:13px;font-weight:700}.pct-master-admin-arrow{align-self:flex-end;color:var(--gold-deep);font-size:19px;font-weight:900}.pct-master-admin-card.accent{background:linear-gradient(160deg,#fff8e8,#f6e3bb)}.pct-master-admin-card.dark{background:linear-gradient(155deg,#33251a,#17110c);border-color:rgba(230,205,151,.38);color:#fff}.pct-master-admin-card.dark strong{color:#fff}.pct-master-admin-card.dark small{color:#eadfc9}.pct-master-admin-card.dark .pct-master-admin-icon{background:rgba(230,205,151,.15)}@media(max-width:940px){.pct-master-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pct-master-admin-heading{align-items:flex-start;flex-direction:column}}@media(max-width:580px){.pct-master-admin-shell{padding:20px 16px;border-radius:20px}.pct-master-admin-grid{grid-template-columns:1fr}.pct-master-admin-card{min-height:126px}.pct-master-admin-heading{margin-bottom:20px}}
 </style>
 </head>
 <body>
 <div class="topbar">
   <div class="top-inner">
-    <div class="brand"><div class="mark">PCT</div><div><h1>PCT Tax Prep Agent Portal</h1><p>Contractor agent access</p></div></div>
+    <div class="brand"><div class="mark">PCT</div><div><h1>PCT Master Admin</h1><p>Owner &amp; Operations Command Center</p></div></div>
     <div class="top-actions">
-      <span id="backendStatus" class="pill warn hidden" data-agent-menu>System ready</span>
-      <span id="userStatus" class="pill hidden" data-agent-menu>Not signed in</span>
+      <span id="backendStatus" class="pill warn hidden" data-admin-menu>System ready</span>
+      <span id="userStatus" class="pill hidden" data-admin-menu>Not signed in</span>
       <a id="launchReadinessBtn" class="btn btn-soft btn-sm hidden" href="/launch-readiness">Launch Readiness</a>
       <a id="statusAuditBtn" class="btn btn-soft btn-sm hidden" href="/status-audit">Status Audit</a>
       <a id="contractorManagerBtn" class="btn btn-gold btn-sm hidden" href="/contractors">Contractor Manager</a>
       <button type="button" class="btn btn-soft btn-sm hidden" data-agent-menu onclick="window.openAgentProfilePage&&window.openAgentProfilePage()">My Profile Setup</button>
       <button type="button" class="btn btn-soft btn-sm hidden" data-agent-menu data-agent-center="share">Share My Client Link</button>
       <button type="button" class="btn btn-soft btn-sm hidden" data-agent-menu id="pctPhase11MyReviews">My Reviews</button>
-      <button type="button" class="btn btn-soft btn-sm hidden" data-agent-menu id="pctPhase11AdminReviews">Client Reviews</button>
+      <button type="button" class="btn btn-soft btn-sm hidden" data-admin-menu id="pctPhase11AdminReviews">Client Reviews</button>
       <button id="refreshBtn" class="btn btn-gold btn-sm hidden" onclick="loadLeads()">Refresh</button>
       <button id="pctAdminOverviewBtn" type="button" class="btn btn-soft btn-sm hidden">Master Admin Home</button>
       <button id="signOutBtn" class="btn btn-ghost btn-sm hidden" onclick="signOut()">Sign out</button>
@@ -42,15 +42,13 @@
 <div class="wrap">
   <section id="pctAdminWorkspaceHero" class="hero">
     <div>
-      <div class="eyebrow">PCT Pro Services LLC · Contractor Agent Access</div>
-      <h2>Your PCT Agent Portal</h2>
-      <p>Sign in to access your assigned client workspace, agent tools, resources, earnings, and support.</p>
+      <div class="eyebrow">PCT Pro Services LLC · Owner &amp; Operations Command Center</div>
+      <h2>Master Admin Return Management</h2>
+      <p>Review and manage PCT returns and operational records from the existing administrative workspace.</p>
     </div>
     <div class="actions">
     </div>
   </section>
-
-  <section id="agentSetupStatus" class="card card-pad hidden" aria-live="polite"></section>
 
   <section id="pctMasterAdminHome" class="pct-master-admin-home hidden" aria-labelledby="pctMasterAdminHomeTitle">
     <div class="pct-master-admin-shell">
@@ -78,14 +76,14 @@
 
   <section id="loginScreen" class="card login">
     <div class="card-pad">
-      <div class="eyebrow">Welcome back</div>
-      <h2>Sign in to your Agent Portal</h2>
-      <p>Use the same email and password you created when you originally signed up for PCT.</p>
+      <div class="eyebrow">PCT Master Admin</div>
+      <h2>Sign in to Master Admin</h2>
+      <p>Manage PCT returns, contractors, payments, training, and company operations.</p>
       <div class="field"><label>Email</label><input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="username"></div>
       <div class="field"><label>Password</label><input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password"></div>
-      <div class="actions"><button class="btn btn-gold" onclick="emailSignIn()">Sign in</button><button class="btn btn-ghost" onclick="resetAgentPassword()">Forgot password?</button></div>
+      <div class="actions"><button class="btn btn-gold" onclick="emailSignIn()">Sign in</button><button class="btn btn-ghost" onclick="resetMasterAdminPassword()">Forgot password?</button></div>
       <div id="loginError" class="warnbox hidden"></div>
-      <div class="setup">Access is available to approved and certified PCT agents. Need help? Contact PCT Agent Support.</div>
+      <div class="setup">Access is restricted to authorized PCT Master Admin accounts.</div>
     </div>
   </section>
 
@@ -125,8 +123,7 @@
    ============================================================= */
 const PCT_DASHBOARD_CONFIG = {
   enableFirebase: true,
-  requireAdminOrStaffClaim: true,
-  authorizedEmails: [],
+  masterAdminEmails: ['shaylah455@gmail.com'],
   collectionName: 'pctTaxIntakeLeads',
   clientStatusCollectionName: 'taxReturnStatus',
   firebaseConfig: {
@@ -141,7 +138,7 @@ const PCT_DASHBOARD_CONFIG = {
   appCheckSiteKey: ''
 };
 
-let fb = {app:null,auth:null,db:null,storage:null,functions:null,ready:false,user:null,claims:{}};
+let fb = {app:null,auth:null,db:null,storage:null,functions:null,ready:false,user:null,claims:{},isMasterAdmin:false};
 let leads = [];
 let filteredLeads = [];
 let selectedLeadId = null;
@@ -227,7 +224,7 @@ window.addEventListener('load',()=>{
   renderFilters();
   if(!isConfigured()){
     $('backendStatus').textContent='System unavailable'; $('backendStatus').className='pill warn hidden';
-    $('loginError').textContent='Agent sign-in is temporarily unavailable. Please try again or contact PCT Agent Support.'; $('loginError').classList.remove('hidden');
+    $('loginError').textContent='Master Admin sign-in is temporarily unavailable. Please try again.'; $('loginError').classList.remove('hidden');
     return;
   }
   initFirebase();
@@ -248,80 +245,89 @@ function initFirebase(){
     fb.auth.onAuthStateChanged(handleAuthState);
   }catch(e){
     $('backendStatus').textContent='System unavailable'; $('backendStatus').className='pill warn hidden';
-    $('loginError').textContent='Agent sign-in is temporarily unavailable. Please try again or contact PCT Agent Support.'; $('loginError').classList.remove('hidden');
+    $('loginError').textContent='Master Admin sign-in is temporarily unavailable. Please try again.'; $('loginError').classList.remove('hidden');
   }
 }
-async function handleAuthState(user){
-  fb.user=user;
-  if(!user){
-    fb.claims={}; $('userStatus').textContent='Not signed in'; document.querySelectorAll('[data-agent-menu]').forEach(el=>el.classList.add('hidden')); $('signOutBtn').classList.add('hidden'); $('refreshBtn').classList.add('hidden'); $('contractorManagerBtn').classList.add('hidden'); $('launchReadinessBtn').classList.add('hidden'); $('statusAuditBtn').classList.add('hidden');
-    $('agentSetupStatus').classList.add('hidden'); $('loginScreen').classList.remove('hidden'); $('appScreen').classList.add('hidden'); document.body.classList.remove('pct-master-admin-home-active'); document.getElementById('pctMasterAdminHome')?.classList.add('hidden'); document.getElementById('pctAdminWorkspaceHero')?.classList.remove('hidden'); document.getElementById('pctAdminOverviewBtn')?.classList.add('hidden'); return;
-  }
-  try{
-    const token = await user.getIdTokenResult(true);
-    fb.claims = token.claims || {};
-    let recoveredPortalAccess=false;
-    if(!(fb.claims.role==='preparer_agent' && fb.claims.accessStatus==='active' && fb.claims.trainingStatus==='complete')){
-      try{
-        const setup=(await fb.functions.httpsCallable('getContractorOnboardingStatus')({})).data;
-        recoveredPortalAccess=setup?.productionAccess===true&&String(setup?.lifecycle?.ptin?.status||'').toUpperCase()==='UNDER_REVIEW';
-        if(recoveredPortalAccess) fb.claims={...fb.claims,role:'preparer_agent',staff:true,taxTrainingComplete:true,trainingStatus:'complete',accessStatus:'active',ptinStatus:'under_review'};
-      }catch(_){}
-    }
-    const allowed=recoveredPortalAccess||(fb.claims.role==='preparer_agent' && fb.claims.accessStatus==='active' && fb.claims.trainingStatus==='complete');
-    const onboarding=!recoveredPortalAccess&&fb.claims.role==='preparer_agent' && fb.claims.accessStatus==='onboarding' && fb.claims.trainingStatus==='complete';
-    if(!allowed && !onboarding){
-      $('agentSetupStatus').classList.add('hidden'); $('loginError').textContent='Your Agent Portal access is not active yet. Complete certification and activation before signing in.';
-      $('loginError').classList.remove('hidden'); await fb.auth.signOut(); return;
-    }
-    if(onboarding){
-      $('userStatus').textContent='Agent Setup · '+user.email;
-      $('agentSetupStatus').classList.add('hidden'); $('loginScreen').classList.add('hidden'); $('appScreen').classList.add('hidden'); document.body.classList.remove('pct-master-admin-home-active'); document.getElementById('pctMasterAdminHome')?.classList.add('hidden'); document.getElementById('pctAdminOverviewBtn')?.classList.add('hidden');
-      document.dispatchEvent(new CustomEvent('pct-contractor-onboarding-auth',{detail:{user}})); return;
-    }
-    $('userStatus').textContent='Agent · '+user.email;
-    document.querySelectorAll('[data-agent-menu]').forEach(el=>el.classList.remove('hidden')); $('signOutBtn').classList.remove('hidden'); $('refreshBtn').classList.remove('hidden'); $('loginScreen').classList.add('hidden'); $('appScreen').classList.remove('hidden');
-    await loadLeads(); void loadAgentSetupStatus(); window.pctShowMasterAdminHome?.();
-  }catch(e){$('loginError').textContent='We could not verify your Agent Portal access. Please try again.'; $('loginError').classList.remove('hidden');}
-}
-function onboardingStatusLabel(value,fallback){return String(value||fallback||'Pending').replaceAll('_',' ').toLowerCase().replace(/\b\w/g,char=>char.toUpperCase())}
-async function loadAgentSetupStatus(){
-  const target=$('agentSetupStatus'),fn=fb?.functions?.httpsCallable('getMyOnboardingStatus'); if(!target||!fn||fb?.claims?.accessStatus!=='active')return;
-  try{
-    const onboarding=(await fn({})).data?.onboarding,setupStage=String(onboarding?.stage||'').toUpperCase(); if(!onboarding||!['PTIN_UNDER_REVIEW','READY_FOR_TAX_SOFTWARE_SETUP','ADMIN_SETUP_IN_PROGRESS'].includes(setupStage)){target.classList.add('hidden');return;}
-    const ptin=onboarding.ptin||{},deposit=onboarding.directDeposit||{},software=onboarding.taxSoftware||{},ptinStatus=String(ptin.status||'MISSING').toUpperCase(),taxReady=!!(software.username&&software.loginUrl),ptinClass=ptinStatus==='VERIFIED'?'green':ptinStatus==='NEEDS_CORRECTION'?'red':'gold',taxAction=taxReady&&/^https:\/\//i.test(String(software.loginUrl||''))?'<p><a class="btn btn-soft btn-sm" href="'+escapeHtml(software.loginUrl)+'" target="_blank" rel="noopener noreferrer">Open Tax Software ↗</a></p>':'';
-    target.innerHTML='<div class="section-title"><div><div class="eyebrow">WELCOME TO PCT PRO SERVICES 🎉</div><h3>Your Agent Portal is ready</h3></div><span class="tag '+ptinClass+'">PTIN '+escapeHtml(onboardingStatusLabel(ptinStatus))+'</span></div><p>Your PTIN has been submitted for verification. Most reviews are completed within 24–48 hours. You can set up your profile, use your personalized client link, explore resources, and begin preparing your Agent business while PCT completes the remaining setup.</p><div class="info-grid"><div class="info"><div class="k">PTIN Verification</div><div class="v">'+escapeHtml(onboardingStatusLabel(ptinStatus))+'</div></div><div class="info"><div class="k">Direct Deposit</div><div class="v">'+escapeHtml(onboardingStatusLabel(deposit.status||deposit.invitationStatus,'Invitation Pending'))+'</div></div><div class="info"><div class="k">Tax Software</div><div class="v">'+escapeHtml(taxReady?'Ready ✓':'Setup In Progress')+(taxReady?'<br><span class="small">Username: '+escapeHtml(software.username)+'</span>':'')+'</div></div></div>'+taxAction;
-    target.classList.remove('hidden');
-  }catch(_){target.classList.add('hidden');}
-}
-async function emailSignIn(){
-  if(!fb.auth){$('loginError').textContent='Agent sign-in is not ready yet. Please try again.'; $('loginError').classList.remove('hidden'); return;}
-  const email=$('loginEmail').value.trim(), pass=$('loginPassword').value;
-  if(!email||!pass){$('loginError').textContent='Enter email and password.'; $('loginError').classList.remove('hidden'); return;}
-  try{$('loginError').classList.add('hidden'); await fb.auth.signInWithEmailAndPassword(email,pass);}
-  catch(e){$('loginError').textContent='Sign-in failed: '+pctFriendlyError(e); $('loginError').classList.remove('hidden');}
-}
-async function resetAgentPassword(){const email=$('loginEmail').value.trim();if(!email){$('loginError').textContent='Enter your signup email first.';$('loginError').classList.remove('hidden');return}try{await fb.auth.sendPasswordResetEmail(email);$('loginError').textContent='Password reset instructions sent. Check your email.';$('loginError').classList.remove('hidden')}catch(e){$('loginError').textContent='We could not send reset instructions. Verify your email and try again.';$('loginError').classList.remove('hidden')}}
 async function signOut(){
   if(!fb.auth)return;
   try{await fb.auth.signOut();await handleAuthState(null);}
   catch(_){$('loginError').textContent='We could not sign you out. Please refresh and try again.';$('loginError').classList.remove('hidden');}
 }
-function showSetupHelp(){$('setupHelp').classList.toggle('hidden')}
-
-async function loadLeads(){
-  if(!fb.db) return;
-  $('leadList').innerHTML='<div class="loading">Loading leads...</div>';
+function masterAdminEmail(email){return String(email||'').trim().toLowerCase()}
+function isMasterAdminAccount(user,claims){
+  const email=masterAdminEmail(user?.email);
+  const configured=Array.isArray(PCT_DASHBOARD_CONFIG.masterAdminEmails)
+    && PCT_DASHBOARD_CONFIG.masterAdminEmails.map(masterAdminEmail).includes(email);
+  return claims?.admin===true || claims?.role==='master_admin' || configured;
+}
+function resetMasterAdminView(){
+  fb.isMasterAdmin=false; fb.claims={};
+  $('userStatus').textContent='Not signed in';
+  document.querySelectorAll('[data-admin-menu],[data-agent-menu]').forEach(element=>element.classList.add('hidden'));
+  document.querySelectorAll('[data-onboarding-center]').forEach(element=>element.remove());
+  $('signOutBtn').classList.add('hidden'); $('refreshBtn').classList.add('hidden');
+  $('contractorManagerBtn').classList.add('hidden'); $('launchReadinessBtn').classList.add('hidden'); $('statusAuditBtn').classList.add('hidden');
+  $('loginScreen').classList.remove('hidden'); $('appScreen').classList.add('hidden');
+  document.body.classList.remove('pct-master-admin-home-active');
+  document.getElementById('pctMasterAdminHome')?.classList.add('hidden');
+  document.getElementById('pctAdminWorkspaceHero')?.classList.remove('hidden');
+  document.getElementById('pctAdminOverviewBtn')?.classList.add('hidden');
+}
+async function handleAuthState(user){
+  fb.user=user;
+  if(!user){resetMasterAdminView();return;}
   try{
-    const signedInUid=String(fb.user?.uid||'');
-    let leadQuery=fb.db.collection(PCT_DASHBOARD_CONFIG.collectionName).where('agentId','==',signedInUid);
-    const snap = await leadQuery.orderBy('createdAt','desc').limit(250).get();
-    leads = snap.docs.map(d=>({id:d.id,...d.data()}));
-    leads=leads.filter(lead=>String(lead.agentId||lead.preparerAssignment?.assignedPreparerId||lead.assignedPreparerId||'')===signedInUid);
-    renderStats(); renderLeadList();
-    toast('My client returns refreshed');
-  }catch(e){
-    $('leadList').innerHTML='<div class="warnbox">Could not load leads: '+escapeHtml(pctFriendlyError(e,'Your client returns could not be loaded. Please refresh and try again.'))+'</div>';
+    const token=await user.getIdTokenResult(true);
+    fb.claims=token.claims||{};
+    fb.isMasterAdmin=isMasterAdminAccount(user,fb.claims);
+    if(!fb.isMasterAdmin){
+      $('loginError').textContent='This account is not authorized for Master Admin. Contractors must use /agent-portal/.';
+      $('loginError').classList.remove('hidden');
+      await fb.auth.signOut();
+      return;
+    }
+    document.querySelectorAll('[data-agent-menu]').forEach(element=>element.classList.add('hidden'));
+    document.querySelectorAll('[data-onboarding-center]').forEach(element=>element.remove());
+    document.querySelectorAll('[data-admin-menu]').forEach(element=>element.classList.remove('hidden'));
+    $('userStatus').textContent='Master Admin · '+user.email;
+    $('signOutBtn').classList.remove('hidden'); $('refreshBtn').classList.remove('hidden');
+    $('contractorManagerBtn').classList.remove('hidden'); $('launchReadinessBtn').classList.remove('hidden'); $('statusAuditBtn').classList.remove('hidden');
+    $('loginError').classList.add('hidden'); $('loginScreen').classList.add('hidden'); $('appScreen').classList.remove('hidden');
+    await loadLeads();
+    window.pctShowMasterAdminHome?.();
+  }catch(_){
+    fb.isMasterAdmin=false;
+    $('loginError').textContent='We could not verify Master Admin access. Please try again.';
+    $('loginError').classList.remove('hidden');
+  }
+}
+async function emailSignIn(){
+  if(!fb.auth){$('loginError').textContent='Master Admin sign-in is not ready yet. Please try again.'; $('loginError').classList.remove('hidden'); return;}
+  const email=$('loginEmail').value.trim(),pass=$('loginPassword').value;
+  if(!email||!pass){$('loginError').textContent='Enter email and password.'; $('loginError').classList.remove('hidden'); return;}
+  try{$('loginError').classList.add('hidden'); await fb.auth.signInWithEmailAndPassword(email,pass);}
+  catch(error){$('loginError').textContent='Sign-in failed: '+pctFriendlyError(error); $('loginError').classList.remove('hidden');}
+}
+async function resetMasterAdminPassword(){
+  const email=$('loginEmail').value.trim();
+  if(!email){$('loginError').textContent='Enter your Master Admin email first.'; $('loginError').classList.remove('hidden'); return;}
+  try{await fb.auth.sendPasswordResetEmail(email);$('loginError').textContent='Password reset instructions sent. Check your email.';$('loginError').classList.remove('hidden');}
+  catch(_){$('loginError').textContent='We could not send reset instructions. Verify your email and try again.';$('loginError').classList.remove('hidden');}
+}
+async function loadLeads(){
+  if(!fb.db||!fb.isMasterAdmin)return;
+  $('leadList').innerHTML='<div class="loading">Loading PCT returns...</div>';
+  try{
+    const collection=fb.db.collection(PCT_DASHBOARD_CONFIG.collectionName);
+    let snap=await collection.orderBy('createdAt','desc').limit(250).get();
+    leads=snap.docs.map(document=>({id:document.id,...document.data()}));
+    if(!leads.length){
+      snap=await collection.limit(250).get();
+      leads=snap.docs.map(document=>({id:document.id,...document.data()})).sort((left,right)=>String(right.createdAtClient||'').localeCompare(String(left.createdAtClient||'')));
+    }
+    renderStats(); renderLeadList(); toast('PCT returns refreshed');
+  }catch(error){
+    $('leadList').innerHTML='<div class="warnbox">Could not load PCT returns: '+escapeHtml(pctFriendlyError(error,'PCT returns could not be loaded. Please refresh and try again.'))+'</div>';
   }
 }
 
@@ -1440,8 +1446,8 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
 })();
 </script>
 <script>
-/* Phase 13: presentation-only Master Admin Home. Existing authentication,
-   authorization, routes, data loading, and administrative tools stay intact. */
+/* Phase 13 Master Admin Home. The dedicated Master Admin gate controls
+   access before this home or its existing administrative tools can open. */
 (function(){
   const byId=id=>document.getElementById(id);
   const home=()=>byId('pctMasterAdminHome');
@@ -1460,7 +1466,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     workspace()?.scrollIntoView({behavior:'smooth',block:'start'});
   }
   function showHome(){
-    if(!home())return;
+    if(!fb?.isMasterAdmin||!home())return;
     document.body.classList.add('pct-master-admin-home-active');
     home().classList.remove('hidden');
     workspaceHero()?.classList.add('hidden');
@@ -1469,6 +1475,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     home().scrollIntoView({behavior:'smooth',block:'start'});
   }
   function openWorkspace(area='returns'){
+    if(!fb?.isMasterAdmin)return;
     document.body.classList.remove('pct-master-admin-home-active');
     home()?.classList.add('hidden');
     workspaceHero()?.classList.remove('hidden');
