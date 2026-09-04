@@ -691,7 +691,13 @@
       }
       function openOnboardingAgent(uid) {
         const match = agents.find((x) => x.uid === uid);
-        if (match) selectAgent(uid);
+        if (match) {
+          selected = match;
+          currentTab = "onboarding";
+          renderAgents();
+          renderDetail();
+          document.querySelectorAll("[data-tab]").forEach((x) => x.classList.toggle("active", x.dataset.tab === currentTab));
+        }
         else {
           const onboarding = onboardingAgents.find((x) => x.agentUid === uid);
           if (!onboarding) return say("This onboarding record could not be opened.", true);
