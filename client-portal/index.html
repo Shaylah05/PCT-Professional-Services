@@ -221,6 +221,7 @@
           <h2>Return Filing Status</h2>
           <div id="filingStatus"></div>
         </div>
+        <div id="clientMessagesCard" class="card hidden"><h2>Messages with Your Tax Professional</h2><div id="clientMessages"></div></div>
         <div id="returnCopiesCard" class="card hidden"><h2>Return Copy</h2><div id="returnCopies"></div><div id="returnCopiesMsg" class="msg"></div></div>
         <div id="growthCompleteCard" class="card hidden"></div>
         <div id="growthExploreCard" class="card hidden"></div>
@@ -279,6 +280,9 @@
       returnCopies: httpsCallable(f, "loadClientReturnCopyRequests"),
       requestReturnCopy: httpsCallable(f, "requestClientReturnCopy"),
       messagePreparer: httpsCallable(f, "messageClientTaxPreparer"),
+      messages: httpsCallable(f, "getClientPortalMessages"),
+      sendMessage: httpsCallable(f, "sendClientPortalMessage"),
+      messageAttachmentUrl: httpsCallable(f, "getClientMessageAttachmentUrl"),
       recover: httpsCallable(f, "sendClientPortalAccess"),
         },
         s = {
@@ -292,6 +296,7 @@
       documentRequests: null,
       partnerProducts: null,
       returnCopies: null,
+      messages: null,
           doc: null,
         };
       const $ = (x) => document.getElementById(x),
@@ -362,8 +367,8 @@
           : "Return result not available";
         show("work");
         try {
-          const [packet,financial,prepayment,priorInfo,documentRequests,partnerProducts,returnCopies]=await Promise.all([c.packet(args()),c.fin(args()),c.prep(args()),c.prior(args()),c.documentRequests(args()),c.partnerProducts(args()),c.returnCopies(args())]);
-          s.packet=packet.data.packet;s.financial=financial.data.instructions;s.prepayment=prepayment.data.payment;s.priorInfo=priorInfo.data.information;s.documentRequests=documentRequests.data;s.partnerProducts=partnerProducts.data;s.returnCopies=returnCopies.data;
+          const [packet,financial,prepayment,priorInfo,documentRequests,partnerProducts,returnCopies,messages]=await Promise.all([c.packet(args()),c.fin(args()),c.prep(args()),c.prior(args()),c.documentRequests(args()),c.partnerProducts(args()),c.returnCopies(args()),c.messages(args())]);
+          s.packet=packet.data.packet;s.financial=financial.data.instructions;s.prepayment=prepayment.data.payment;s.priorInfo=priorInfo.data.information;s.documentRequests=documentRequests.data;s.partnerProducts=partnerProducts.data;s.returnCopies=returnCopies.data;s.messages=messages.data;
           renderDocs();renderExternalSignature();
           renderIntakeConsentStatus();
           renderFinancial();renderClientNextAction();
@@ -373,6 +378,7 @@
           renderPartnerProducts();renderClientNextAction();
           renderReturnCopies();
           renderFilingStatus();
+          renderClientMessages();
           renderClientNextAction();
         } catch (e) {
           $("docs").textContent = err(e);
@@ -470,6 +476,15 @@
       async function requestReturnCopy(button=null){const actionButton=button||(document.activeElement instanceof HTMLButtonElement?document.activeElement:null);return once("return-copy",actionButton,async()=>{const message=$("returnCopiesMsg");message.textContent="Sending request…";try{await c.requestReturnCopy(args());s.returnCopies=(await c.returnCopies(args())).data;renderReturnCopies();message.textContent="Return Copy Requested ✓ Your tax professional has been notified.";}catch(e){message.textContent=err(e);}})}
       function trackerStep(host,label,tone="",arrow=true){const row=document.createElement("div");row.className="return-tracker-step "+tone;row.textContent=label;host.append(row);if(arrow){const down=document.createElement("div");down.className="return-tracker-arrow";down.textContent="↓";host.append(down);}}
       function messageMyTaxPreparer(button){return once("return-status-message:"+(s.item?.returnId||""),button,async()=>{const message=$("filingStatusMessage");message.textContent="Sending your request…";try{await c.messagePreparer(args());message.textContent="Message sent ✓ Your tax preparer has been notified.";}catch(e){message.textContent=err(e,"Your tax preparer could not be notified. Please try again.");}})}
+      const clientMessageAttempts=new Map();
+      function clientMessageKey(){return String(s.item?.leadId||"")+":"+String(s.item?.returnId||"");}
+      function clientMessageId(){return "client-"+(globalThis.crypto?.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)));}
+      function messageDate(value){try{const date=new Date(value);return Number.isFinite(date.getTime())?date.toLocaleString():"";}catch(_){return "";}}
+      function messageAttachmentData(input){return Promise.all([...(input?.files||[])].slice(0,5).map(file=>new Promise(resolve=>{if(file.size>6*1024*1024||!/^image\/(png|jpeg|webp)$|^application\/pdf$/.test(file.type||"")){resolve(null);return;}const reader=new FileReader();reader.onload=()=>resolve({name:file.name,contentType:file.type,dataBase64:String(reader.result||"").split(",")[1]||""});reader.onerror=()=>resolve(null);reader.readAsDataURL(file)}))).then(items=>items.filter(Boolean));}
+      async function refreshClientMessages(){s.messages=(await c.messages(args())).data;renderClientMessages();}
+      async function openClientMessageAttachment(storagePath){const conversationId=s.messages?.conversation?.id||s.messages?.conversation?.conversationId;if(!conversationId)return;const result=await c.messageAttachmentUrl({...args(),conversationId,storagePath});window.open(result.data.url,"_blank","noopener,noreferrer");}
+      function renderClientMessages(){const card=$("clientMessagesCard"),host=$("clientMessages");if(!card||!host||!s.item)return;card.classList.remove("hidden");host.replaceChildren();const note=document.createElement("p");note.className="small";note.textContent="This secure conversation is for your "+String(s.item.taxYear||"")+" return only. Message text and attachments stay in the portal.";host.append(note);const thread=document.createElement("div");thread.className="client-message-thread";for(const entry of (s.messages?.messages||[])){const bubble=document.createElement("div");bubble.className="client-message-bubble "+(entry.senderRole==="client"?"mine":"theirs");const who=document.createElement("strong");who.textContent=entry.senderRole==="client"?"You":"Your Tax Professional";const text=document.createElement("div");text.textContent=entry.message||"";bubble.append(who,text);const sent=messageDate(entry.createdAtClient);if(sent){const when=document.createElement("small");when.textContent=sent;bubble.append(when);}for(const attachment of (entry.attachments||[])){const button=document.createElement("button");button.type="button";button.className="plain";button.textContent="Open attachment: "+String(attachment.name||"Document");button.onclick=async()=>{try{await openClientMessageAttachment(attachment.storagePath);}catch(e){feedback.textContent=err(e,"That attachment is not available.");}};bubble.append(button);}thread.append(bubble);}if(!(s.messages?.messages||[]).length){const empty=document.createElement("p");empty.className="small";empty.textContent="No messages yet. Send a secure message to your current tax professional.";thread.append(empty);}host.append(thread);const composer=document.createElement("label"),input=document.createElement("textarea"),files=document.createElement("input"),send=document.createElement("button"),feedback=document.createElement("div");composer.textContent="New message";input.id="clientMessageText";input.maxLength=10000;input.placeholder="Type your secure message…";composer.append(input);files.type="file";files.accept="application/pdf,image/png,image/jpeg,image/webp";files.multiple=true;send.type="button";send.textContent="SEND MESSAGE";feedback.className="msg";send.onclick=()=>sendClientMessage(send,input,files,feedback);host.append(composer,files,send,feedback);}
+      async function sendClientMessage(button,input,files,feedback){const key=clientMessageKey(),message=String(input.value||"").trim();if(!message){feedback.textContent="Enter a message before sending.";input.focus();return;}const attemptedId=clientMessageAttempts.get(key)||clientMessageId();clientMessageAttempts.set(key,attemptedId);return once("client-message:"+key,button,async()=>{const original=button.textContent;button.textContent="SENDING…";feedback.textContent="Sending securely…";try{const attachments=await messageAttachmentData(files);await c.sendMessage({...args(),message,messageId:attemptedId,attachments});input.value="";files.value="";clientMessageAttempts.delete(key);await refreshClientMessages();feedback.textContent="Message sent ✓";}catch(e){feedback.textContent=err(e,"Your message was not sent. Your text is still here; please retry.");}finally{if(button.isConnected)button.textContent=original;}})}
       function renderFilingStatus() {
         const card=$("filingStatusCard"),host=$("filingStatus"),tracker=s.item?.statusTracker;
         host.replaceChildren();
@@ -986,7 +1001,7 @@
           const complete=document.createElement('details');complete.id='pctP20Complete';complete.className='pct-p20-client-section pct-p20-complete';complete.innerHTML='<summary><span>COMPLETED & OPTIONAL</span><strong>Completed items and more services</strong><small>Open when you want to review finished steps, leave feedback, or explore optional resources.</small></summary>';
           const summaryCard=byId('year')?.closest('.card');if(summaryCard){summaryCard.id='pctP20ReturnSummary';current.append(summaryCard);}
           move('documentRequestCard',tasks);const financial=byId('financialTitle')?.closest('.card');if(financial){financial.id='pctP20FinancialCard';tasks.append(financial);}const prep=byId('prepPayment')?.closest('.card');if(prep){prep.id='pctP20PrepCard';tasks.append(prep);}move('partnerProductsCard',tasks);
-          move('intakeConsentCard',records);move('priorInfoCard',records);move('filingStatusCard',records);move('returnCopiesCard',records);
+          move('intakeConsentCard',records);move('priorInfoCard',records);move('filingStatusCard',records);move('clientMessagesCard',records);move('returnCopiesCard',records);
           move('growthCompleteCard',complete);move('growthExploreCard',complete);move('acceptedReviewCard',complete);
           work.append(current,tasks,records,complete);
           const visibility=()=>{const visible=[...complete.querySelectorAll('.card')].some(card=>!card.classList.contains('hidden'));complete.classList.toggle('hidden',!visible);};
@@ -1005,7 +1020,7 @@
           .pct-p20-client-nav{position:sticky;top:65px;z-index:22;display:flex;gap:8px;overflow-x:auto;margin:0 0 22px;padding:10px;background:rgba(251,246,234,.95);border:1px solid var(--l);border-radius:14px;backdrop-filter:blur(10px)}.pct-p20-client-nav button{flex:0 0 auto;margin:0;padding:9px 13px;font-size:12px}
           .pct-p20-client-section{scroll-margin-top:132px;margin:0 0 28px;padding:18px;border:1px solid rgba(227,215,189,.9);border-radius:20px;background:rgba(255,255,255,.42)}.pct-p20-section-heading{margin:0 4px 16px}.pct-p20-section-heading span,.pct-p20-complete summary span{display:block;color:#80651f;font-size:10px;font-weight:800;letter-spacing:.16em}.pct-p20-section-heading h2{font-size:26px;margin:4px 0}.pct-p20-section-heading p{margin:0;color:var(--m);max-width:720px}.pct-p20-client-section>.card:last-child{margin-bottom:0}
           #pctP20Current>.card{border-top:4px solid var(--g)}#pctP20Tasks>.card{border-left:4px solid var(--b)}#pctP20Records>.card{border-left:4px solid #6d7f64}.pct-p20-complete{padding:0;background:#fff}.pct-p20-complete summary{cursor:pointer;display:grid;gap:4px;padding:20px 24px;list-style:none}.pct-p20-complete summary::-webkit-details-marker{display:none}.pct-p20-complete summary strong{font:700 22px Georgia,serif}.pct-p20-complete summary small{color:var(--m)}.pct-p20-complete[open]{padding:0 18px 18px}.pct-p20-complete[open] summary{margin:0 -18px 18px;border-bottom:1px solid var(--l)}
-          .card{box-shadow:0 12px 34px rgba(65,48,20,.055)}button:focus-visible,.button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid rgba(162,19,85,.22);outline-offset:2px}.row{align-items:center}
+          .card{box-shadow:0 12px 34px rgba(65,48,20,.055)}button:focus-visible,.button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid rgba(162,19,85,.22);outline-offset:2px}.row{align-items:center}.client-message-thread{display:grid;gap:10px;margin:14px 0}.client-message-bubble{max-width:88%;padding:12px 14px;border:1px solid var(--l);border-radius:14px;background:#fffaf2;white-space:pre-wrap}.client-message-bubble.mine{margin-left:auto;background:#f8e5ef;border-color:#dfb7c9}.client-message-bubble strong,.client-message-bubble small{display:block;margin-bottom:5px}.client-message-bubble small{margin:7px 0 0;color:var(--m)}.client-message-bubble .plain{margin:8px 0 0;padding:0;text-decoration:underline}
           @media(max-width:680px){main{padding:18px 10px 44px}#returns{grid-template-columns:1fr}.pct-p20-client-nav{top:60px;margin-left:-2px;margin-right:-2px}.pct-p20-client-section{padding:11px;border-radius:15px}.pct-p20-section-heading{padding:7px}.card{padding:19px;border-radius:14px}#clientNextAction{padding:22px}.row{display:grid;gap:8px}.row button{justify-self:start;margin-left:0}.pct-p20-complete[open]{padding:0 11px 11px}.pct-p20-complete[open] summary{margin:0 -11px 11px}}
         `;document.head.append(style);
       })();
