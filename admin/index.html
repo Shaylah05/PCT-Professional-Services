@@ -66,6 +66,7 @@
         <button type="button" class="pct-master-admin-card dark" data-pct-admin-workspace="returns"><span class="pct-master-admin-icon">📂</span><span><strong>All Returns</strong><small>Return Oversight</small></span><span class="pct-master-admin-arrow">→</span></button>
         <button type="button" class="pct-master-admin-card accent" data-pct-admin-workspace="payments"><span class="pct-master-admin-icon">💰</span><span><strong>Payments</strong><small>Funding / Ledger</small></span><span class="pct-master-admin-arrow">→</span></button>
         <button type="button" class="pct-master-admin-card" data-pct-admin-workspace="earnings"><span class="pct-master-admin-icon">💵</span><span><strong>Earnings</strong><small>Company Financial Health</small></span><span class="pct-master-admin-arrow">→</span></button>
+        <button type="button" class="pct-master-admin-card" data-pct-admin-workspace="reports"><span class="pct-master-admin-icon">📊</span><span><strong>Reports</strong><small>Search / Export</small></span><span class="pct-master-admin-arrow">→</span></button>
         <button type="button" class="pct-master-admin-card" data-pct-admin-workspace="reviews"><span class="pct-master-admin-icon">⭐</span><span><strong>Reviews</strong><small>Client Reviews</small></span><span class="pct-master-admin-arrow">→</span></button>
         <button type="button" class="pct-master-admin-card" data-pct-admin-workspace="messages"><span class="pct-master-admin-icon">💬</span><span><strong>Messages</strong><small>Agent Support</small></span><span class="pct-master-admin-arrow">→</span></button>
         <a class="pct-master-admin-card dark" href="/launch-readiness"><span class="pct-master-admin-icon">✅</span><span><strong>Launch Ready</strong><small>System Readiness</small></span><span class="pct-master-admin-arrow">↗</span></a>
@@ -1488,6 +1489,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     if(area==='returns'&&typeof window.pctOpenAdminReturns==='function'){window.pctOpenAdminReturns();return;}
     if(area==='payments'&&typeof window.pctOpenAdminPayments==='function'){window.pctOpenAdminPayments();return;}
     if(area==='earnings'&&typeof window.pctOpenCompanyFinancialHealth==='function'){window.pctOpenCompanyFinancialHealth();return;}
+    if(area==='reports'&&typeof window.pctOpenMasterAdminReports==='function'){window.pctOpenMasterAdminReports();return;}
     if(area==='messages'&&typeof window.pctOpenAdminMessages==='function'){window.pctOpenAdminMessages();return;}
     document.body.classList.remove('pct-master-admin-home-active');
     home()?.classList.add('hidden');
@@ -1581,6 +1583,94 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   const priorShowHome=window.pctShowMasterAdminHome;window.pctShowMasterAdminHome=function(){if(root)root.classList.add('hidden');return priorShowHome?.();};window.pctOpenCompanyFinancialHealth=open;
 })();
 </script>
+<style id="pctMasterAdminReportsStyles">
+  .pct-reports-workspace{margin:24px 0}.pct-reports-shell{overflow:hidden;border:1px solid var(--line);border-radius:24px;background:var(--paper);box-shadow:var(--shadow)}
+  .pct-reports-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:clamp(22px,4vw,38px);background:linear-gradient(140deg,#241913,#17110c 62%,#72541f 150%);color:#fff}.pct-reports-head h2{color:#fff;font-size:clamp(32px,5vw,52px)}.pct-reports-head p{max-width:720px;margin:8px 0 0;color:#eadfc9}
+  .pct-reports-tabs{display:flex;gap:8px;overflow-x:auto;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--cream2)}.pct-reports-tab{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;background:#fff;padding:10px 14px;font:800 12px var(--body);cursor:pointer}.pct-reports-tab.active{border-color:var(--black);background:var(--black);color:var(--gold-soft)}
+  .pct-reports-body{padding:clamp(16px,3vw,26px)}.pct-reports-tools{display:grid;grid-template-columns:minmax(220px,2fr) repeat(3,minmax(140px,1fr));gap:10px;align-items:end}.pct-reports-tools label{display:grid;gap:5px;color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}.pct-reports-tools input,.pct-reports-tools select{min-width:0;width:100%;border:1px solid var(--line);border-radius:11px;background:#fff;padding:10px 11px;color:var(--ink);font:700 13px var(--body)}.pct-reports-date-range{display:grid;grid-template-columns:1fr 1fr;gap:10px;grid-column:span 2}.pct-reports-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 12px}.pct-reports-actions-left,.pct-reports-actions-right{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.pct-reports-count{color:var(--muted);font-size:12px;font-weight:800}.pct-reports-readonly{padding:8px 10px;border:1px solid var(--gold-soft);border-radius:999px;background:#fff8e8;color:#72551f;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+  .pct-reports-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px;background:#fff}.pct-reports-table{width:100%;min-width:980px;border-collapse:collapse}.pct-reports-table th{position:sticky;top:0;z-index:1;padding:11px 12px;border-bottom:1px solid var(--line);background:var(--cream2);color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.08em;text-align:left;text-transform:uppercase}.pct-reports-table td{padding:12px;border-bottom:1px solid var(--line);color:var(--ink);font-size:12px;vertical-align:top}.pct-reports-table tbody tr:last-child td{border-bottom:0}.pct-reports-table tbody tr:hover{background:#fffaf0}.pct-reports-table td strong{display:block}.pct-reports-empty{padding:40px 18px!important;color:var(--muted)!important;font-weight:800;text-align:center!important}.pct-reports-note{margin-top:12px;color:var(--muted);font-size:11px;font-weight:700}.pct-reports-error{padding:18px;border:1px solid #efb7ae;border-radius:14px;background:#fff4f1;color:#8b2417;font-weight:800}
+  @media(max-width:980px){.pct-reports-tools{grid-template-columns:repeat(2,minmax(0,1fr))}.pct-reports-date-range{grid-column:span 2}}@media(max-width:580px){.pct-reports-body{padding:13px}.pct-reports-tools{grid-template-columns:1fr}.pct-reports-date-range{grid-column:auto;grid-template-columns:1fr}.pct-reports-actions-left,.pct-reports-actions-right{width:100%}.pct-reports-actions-right .btn{flex:1}.pct-reports-head .btn{width:100%}}
+</style>
+<script>
+/* Master Admin Reports is a read-only view of exact existing return, assignment,
+   Status Audit, compensation-ledger, and payout authorities. */
+(function(){
+  'use strict';
+  const byId=id=>document.getElementById(id), esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const home=()=>byId('pctMasterAdminHome'), workspace=()=>byId('appScreen'), hero=()=>byId('pctAdminWorkspaceHero'), overview=()=>byId('pctAdminOverviewBtn');
+  const money=cents=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents||0)/100);
+  const whole=value=>new Intl.NumberFormat('en-US').format(Number(value||0));
+  const friendly=value=>String(value||'—').replaceAll('_',' ').toLowerCase().replace(/\b\w/g,char=>char.toUpperCase());
+  const date=value=>{if(!value)return '—';const parsed=new Date(value);return Number.isFinite(parsed.getTime())?parsed.toLocaleDateString():'—';};
+  const text=value=>String(value??'');
+  const column=(key,label,format=text)=>({key,label,format});
+  const reports={
+    returns:{label:'RETURN REPORT',key:'returns',file:'pct-return-report',search:['clientName','returnId','leadId','assignedAgentName','assignedAgentEmail'],status:['stage','filingStatus'],date:'date',columns:[column('taxYear','Tax Year'),column('returnId','Return ID'),column('leadId','Lead ID'),column('clientName','Client'),column('preparationType','Prepared By',friendly),column('assignedAgentName','Assigned Agent'),column('stage','Stage',friendly),column('filingStatus','Filing Status',friendly),column('collectionMethod','Collection Method',friendly),column('date','Submitted / Created',date)]},
+    agents:{label:'AGENT PRODUCTION',key:'agentProduction',file:'pct-agent-production',search:['agentName','agentEmail','agentId'],status:['status'],columns:[column('agentName','Agent'),column('agentEmail','Agent Email'),column('status','Status',friendly),column('returnsAssigned','Returns Assigned',whole),column('returnsCompletedOrFiled','Filed / Completed',whole),column('accepted','Accepted',whole),column('rejected','Rejected',whole),column('fundedReturns','Funded / Collection Complete',whole),column('agentEarningsGeneratedCents','Agent Earnings Generated',money),column('payoutsPaidCents','Payouts Paid',money)]},
+    payments:{label:'PAYMENTS & FUNDING',key:'payments',file:'pct-payment-report',search:['clientName','returnId','leadId','assignedAgentName','assignedAgentEmail'],status:['paymentStatus','collectionStatus','settlementStatus','payoutStatus'],date:'date',columns:[column('taxYear','Tax Year'),column('returnId','Return ID'),column('leadId','Lead ID'),column('clientName','Client'),column('preparationType','Prepared By',friendly),column('assignedAgentName','Assigned Agent'),column('collectionMethod','Collection Method',friendly),column('paymentStatus','Payment Status',friendly),column('collectionStatus','Collection Status',friendly),column('settlementStatus','Settlement Status',friendly),column('payoutStatus','Payout Status',friendly),column('preparationFeeCents','Preparation Fee',money),column('pctShareCents','PCT Share',money),column('agentEarningsCents','Agent Earnings',money),column('date','Date',date)]},
+    statuses:{label:'STATUS & REJECTIONS',key:'statuses',file:'pct-status-report',search:['clientName','returnId','leadId','assignedAgentName','assignedAgentEmail'],status:['filingStatus','federalStatus','correctionStatus','actionNeeded'],date:'date',columns:[column('taxYear','Tax Year'),column('returnId','Return ID'),column('leadId','Lead ID'),column('clientName','Client'),column('preparationType','Prepared By',friendly),column('assignedAgentName','Assigned Agent'),column('filingStatus','Filing Status',friendly),column('federalStatus','Federal Status',friendly),column('correctionStatus','Correction Status',friendly),column('actionNeeded','Action Needed',friendly),column('rejectionCode','Rejection Code'),column('rejectionReason','Rejection Reason'),column('clientActionSteps','Client Action Steps'),column('bankProductStatus','Bank Product Status',friendly),column('collectionMethod','Collection Method',friendly),column('date','Updated',date)]}
+  };
+  let root=null,state={tab:'returns',data:null,filtered:[],loading:false,filters:{}};
+  function resetFilters(){state.filters={query:'',taxYear:'',preparationType:'',agentId:'',status:'',collectionMethod:'',from:'',to:''};}
+  resetFilters();
+  function rows(){return Array.isArray(state.data?.[reports[state.tab].key])?state.data[reports[state.tab].key]:[];}
+  function unique(values){return [...new Set(values.map(value=>text(value).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));}
+  function option(value,label,selected){return '<option value="'+esc(value)+'" '+(String(selected)===String(value)?'selected':'')+'>'+esc(label)+'</option>';}
+  function select(id,label,values,current,labels={}){return '<label><span>'+esc(label)+'</span><select id="'+id+'">'+option('','All',current)+values.map(value=>option(value,labels[value]||friendly(value),current)).join('')+'</select></label>';}
+  function ensure(){
+    if(root)return root;
+    root=document.createElement('section');root.id='pctMasterAdminReportsWorkspace';root.className='pct-reports-workspace hidden';home()?.insertAdjacentElement('afterend',root);return root;
+  }
+  function activeValues(all){
+    const config=reports[state.tab],agentValues=unique(all.map(row=>row.agentId||row.assignedAgentId));
+    const agentLabels={};for(const row of all){const id=text(row.agentId||row.assignedAgentId);if(id)agentLabels[id]=text(row.agentName||row.assignedAgentName||id);}
+    return {years:unique(all.map(row=>row.taxYear)),types:unique(all.map(row=>row.preparationType)),agents:agentValues,agentLabels,statuses:unique(all.flatMap(row=>config.status.map(field=>row[field]))),methods:unique(all.map(row=>row.collectionMethod))};
+  }
+  function filterRows(){
+    const config=reports[state.tab],filters=state.filters,query=filters.query.toLowerCase().trim();
+    return rows().filter(row=>{
+      if(query&&!config.search.some(field=>text(row[field]).toLowerCase().includes(query)))return false;
+      if(filters.taxYear&&text(row.taxYear)!==filters.taxYear)return false;
+      if(filters.preparationType&&text(row.preparationType)!==filters.preparationType)return false;
+      if(filters.agentId&&text(row.agentId||row.assignedAgentId)!==filters.agentId)return false;
+      if(filters.status&&!config.status.some(field=>text(row[field])===filters.status))return false;
+      if(filters.collectionMethod&&text(row.collectionMethod)!==filters.collectionMethod)return false;
+      if(config.date&&(filters.from||filters.to)){const day=text(row[config.date]||row.updatedAt).slice(0,10);if(!day||(filters.from&&day<filters.from)||(filters.to&&day>filters.to))return false;}
+      return true;
+    });
+  }
+  function updateResults(){
+    const config=reports[state.tab],body=byId('pctReportsRows');if(!body)return;
+    state.filtered=filterRows();
+    body.innerHTML=state.filtered.length?state.filtered.map(row=>'<tr>'+config.columns.map(item=>'<td>'+esc(item.format(row[item.key]))+'</td>').join('')+'</tr>').join(''):'<tr><td class="pct-reports-empty" colspan="'+config.columns.length+'">No records match these filters.</td></tr>';
+    byId('pctReportsCount').textContent=whole(state.filtered.length)+' result'+(state.filtered.length===1?'':'s');
+    byId('pctReportsExport').disabled=!state.filtered.length;
+  }
+  function bindFilter(id,key,event='change'){const element=byId(id);if(element)element.addEventListener(event,()=>{state.filters[key]=element.value;updateResults();});}
+  function render(){
+    const host=ensure(),config=reports[state.tab],all=rows(),values=activeValues(all),hasDates=Boolean(config.date);
+    host.innerHTML='<div class="pct-reports-shell"><header class="pct-reports-head"><div><div class="eyebrow" style="color:#e6cd97">MASTER ADMIN</div><h2>REPORTS</h2><p>Search, filter, and export safe operational summaries from existing PCT return, status, payment, and Agent records.</p></div><button type="button" class="btn btn-soft" id="pctReportsBack">← BACK TO ADMIN HOME</button></header><nav class="pct-reports-tabs" aria-label="Report types">'+Object.entries(reports).map(([key,item])=>'<button type="button" class="pct-reports-tab '+(state.tab===key?'active':'')+'" data-report-tab="'+key+'">'+esc(item.label)+'</button>').join('')+'</nav><div class="pct-reports-body"><div class="pct-reports-tools"><label><span>Search</span><input id="pctReportsSearch" type="search" autocomplete="off" placeholder="Client, return, lead, or Agent" value="'+esc(state.filters.query)+'"></label>'+select('pctReportsTaxYear','Tax Year',values.years,state.filters.taxYear)+select('pctReportsType','Owner / Agent',values.types,state.filters.preparationType)+select('pctReportsAgent','Assigned Agent',values.agents,state.filters.agentId,values.agentLabels)+select('pctReportsStatus','Status',values.statuses,state.filters.status)+select('pctReportsMethod','Collection Method',values.methods,state.filters.collectionMethod)+(hasDates?'<div class="pct-reports-date-range"><label><span>Date From</span><input id="pctReportsFrom" type="date" value="'+esc(state.filters.from)+'"></label><label><span>Date To</span><input id="pctReportsTo" type="date" value="'+esc(state.filters.to)+'"></label></div>':'')+'</div><div class="pct-reports-actions"><div class="pct-reports-actions-left"><span class="pct-reports-count" id="pctReportsCount"></span><span class="pct-reports-readonly">View / Search / Export only</span></div><div class="pct-reports-actions-right"><button type="button" class="btn btn-soft btn-sm" id="pctReportsClear">CLEAR FILTERS</button><button type="button" class="btn btn-gold btn-sm" id="pctReportsExport">EXPORT CSV</button></div></div><div class="pct-reports-table-wrap"><table class="pct-reports-table"><thead><tr>'+config.columns.map(item=>'<th scope="col">'+esc(item.label)+'</th>').join('')+'</tr></thead><tbody id="pctReportsRows"></tbody></table></div><div class="pct-reports-note">Exact Lead ID, Return ID, tax year, and historical assignment remain separate. Financial totals are supplied by existing server-authoritative records; Reports performs no compensation calculation.</div></div></div>';
+    byId('pctReportsBack').onclick=back;
+    host.querySelectorAll('[data-report-tab]').forEach(button=>button.onclick=()=>{state.tab=button.dataset.reportTab;resetFilters();render();});
+    bindFilter('pctReportsSearch','query','input');bindFilter('pctReportsTaxYear','taxYear');bindFilter('pctReportsType','preparationType');bindFilter('pctReportsAgent','agentId');bindFilter('pctReportsStatus','status');bindFilter('pctReportsMethod','collectionMethod');bindFilter('pctReportsFrom','from');bindFilter('pctReportsTo','to');
+    byId('pctReportsClear').onclick=()=>{resetFilters();render();};byId('pctReportsExport').onclick=exportCsv;updateResults();
+  }
+  function csvCell(value){let result=text(value);if(/^[=+\-@]/.test(result))result="'"+result;return '"'+result.replaceAll('"','""')+'"';}
+  function exportCsv(){
+    const config=reports[state.tab];if(!state.filtered.length)return;
+    const lines=[config.columns.map(item=>csvCell(item.label)).join(','),...state.filtered.map(row=>config.columns.map(item=>csvCell(item.format(row[item.key]))).join(','))],blob=new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.href=url;link.download=config.file+'-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
+  }
+  async function load(){
+    if(state.loading)return;state.loading=true;const host=ensure();host.classList.remove('hidden');host.innerHTML='<div class="pct-reports-shell"><header class="pct-reports-head"><div><div class="eyebrow" style="color:#e6cd97">MASTER ADMIN</div><h2>REPORTS</h2></div><button type="button" class="btn btn-soft" id="pctReportsBack">← BACK TO ADMIN HOME</button></header><div class="pct-reports-body"><div class="loading">Loading current report data…</div></div></div>';byId('pctReportsBack').onclick=back;
+    try{state.data=(await fb.functions.httpsCallable('getMasterAdminReports')({})).data||{};render();}catch(_){host.querySelector('.pct-reports-body').innerHTML='<div class="pct-reports-error">Reports could not be loaded right now. Please try again.</div>';}finally{state.loading=false;}
+  }
+  function hideOtherViews(){byId('pctMoneyIntegrityWorkspace')?.classList.add('hidden');byId('pctAdminMessagesWorkspace')?.classList.add('hidden');byId('pctCompanyFinancialHealthWorkspace')?.classList.add('hidden');byId('pctAdminReturnsNavigation')?.classList.add('hidden');}
+  function open(){if(!fb?.isMasterAdmin)return;ensure();hideOtherViews();document.body.classList.remove('pct-master-admin-home-active');home()?.classList.add('hidden');workspace()?.classList.add('hidden');hero()?.classList.add('hidden');overview()?.classList.add('hidden');load();root.scrollIntoView({behavior:'smooth',block:'start'});}
+  function back(){ensure().classList.add('hidden');window.pctShowMasterAdminHome?.();}
+  const priorShowHome=window.pctShowMasterAdminHome;window.pctShowMasterAdminHome=function(){if(root)root.classList.add('hidden');return priorShowHome?.();};window.pctOpenMasterAdminReports=open;
+})();
+</script>
 <style id="pctMasterAdminFocusedNavigationStyles">
   .pct-admin-returns-nav{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:20px 0 14px;padding:15px 18px;border:1px solid var(--line);border-radius:var(--rs);background:var(--paper);box-shadow:0 14px 30px -27px rgba(22,17,12,.5)}
   .pct-admin-returns-nav strong{font-family:var(--display);font-size:20px;color:var(--black)}
@@ -1602,7 +1692,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     byId('pctAdminReturnsHome').onclick=()=>window.pctShowMasterAdminHome?.();
     return root;
   }
-  function hideOtherFocusedViews(){byId('pctMoneyIntegrityWorkspace')?.classList.add('hidden');byId('pctAdminMessagesWorkspace')?.classList.add('hidden');}
+  function hideOtherFocusedViews(){byId('pctMoneyIntegrityWorkspace')?.classList.add('hidden');byId('pctAdminMessagesWorkspace')?.classList.add('hidden');byId('pctCompanyFinancialHealthWorkspace')?.classList.add('hidden');byId('pctMasterAdminReportsWorkspace')?.classList.add('hidden');}
   function showList(){
     if(!fb?.isMasterAdmin)return;
     ensure();hideOtherFocusedViews();
@@ -1635,7 +1725,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   const priorShowHome=window.pctShowMasterAdminHome;
   window.pctShowMasterAdminHome=function(){if(root)root.classList.add('hidden');return priorShowHome?.();};
   overview()?.addEventListener('click',()=>root?.classList.add('hidden'));
-  for(const name of ['pctOpenAdminPayments','pctOpenAdminMessages','pctOpenCompanyFinancialHealth']){
+  for(const name of ['pctOpenAdminPayments','pctOpenAdminMessages','pctOpenCompanyFinancialHealth','pctOpenMasterAdminReports']){
     const prior=window[name];
     if(typeof prior==='function')window[name]=function(){if(root)root.classList.add('hidden');return prior.apply(this,arguments);};
   }
