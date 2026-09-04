@@ -1193,11 +1193,12 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
       <div class="returning-match">
         <div>
           <div class="field-label">Find your saved PCT profile</div>
-          <p class="small" style="margin:6px 0 12px">Use the same email and phone number from your last return so we can match your record securely.</p>
+          <p class="small" style="margin:6px 0 12px">Use the email and Social Security number from your prior filing. The secure match happens on the server, and your SSN is never saved in this browser.</p>
           <div class="field"><label>Email used last time</label><input type="email" data-bind="profileEmail" placeholder="you@email.com" autocomplete="email"></div>
-          <div class="field"><label>Phone used last time</label><input type="tel" data-bind="profilePhone" placeholder="(470) 555-0000" autocomplete="tel"></div>
+          <div class="field"><label>Social Security number</label><input type="password" inputmode="numeric" data-bind="profileSsn" placeholder="•••-••-••••" autocomplete="off" maxlength="11"></div>
+          <div class="field"><label>Tax year you are filing now</label><select data-bind="taxYear"><option value="2026">2026</option><option value="2025" selected>2025</option><option value="2024">2024</option></select></div>
           <button type="button" class="btn btn-soft btn-sm" onclick="verifyReturningProfile()">Verify my saved profile</button>
-          <div id="matchStatus" class="match-status" role="status">Profile details ready to verify. We&rsquo;ll confirm the match before using saved information.</div>
+          <div id="matchStatus" class="match-status" role="status">Enter both details to securely check your saved PCT profile.</div>
         </div>
         <div class="profile-preview">
           <h3>What you can verify</h3>
@@ -1213,6 +1214,7 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
           <div class="profile-privacy">Sensitive values stay masked. You&rsquo;ll confirm what changed before anything is reused.</div>
         </div>
       </div>
+      <div id="fastTrackConfirmation" style="display:none;margin-top:20px"></div>
       <div class="grid-2" style="margin-top:22px">
         <div class="field"><label>First name</label><input type="text" data-bind="firstName" placeholder="First name"></div>
         <div class="field"><label>Last name</label><input type="text" data-bind="lastName" placeholder="Last name"></div>
@@ -1965,7 +1967,7 @@ const state = {
   numDeps:"0", depAges:[], depsLived:"", childcare:"no", childcarePaid:"",
   seIncome:"", seExpenses:"", otherIncomeAmt:"", itemizedTotal:"",
   refundProduct:"no", flags:{}, contactMethod:"", consentContact:false, consentPromo:false,
-  firstName:"", lastName:"", email:"", phone:"", profileEmail:"", profilePhone:"", profileVerified:false,
+  firstName:"", lastName:"", email:"", phone:"", profileEmail:"", profileSsn:"", profileVerified:false, fastTrackToken:"", fastTrackProfile:null, fastTrackConfirm:{contact:"",photoId:"",ssnRecords:"",bank:"",spouse:"",dependentIds:[]},
   wantEstimate:"", readyUpload:"", hasNewDocs:"",
   changes:{}, estimate:null, uploadStatus:"Pending", documents:[], pendingDocument:null, documentSource:"",
   organizerFlags:{}, organizerStep:1, businessOrganizerOpened:false, expectedChecklistOpened:false, expectedInformationSnapshot:[], activeExpectedItemId:"", organizerEmployerCount:"", organizerEmployerNames:"", organizerNotes:"", taxpayerMiddleName:"", taxpayerSuffix:"", taxpayerIdType:"", taxpayerIdNumber:"", taxpayerDob:"", taxpayerOccupation:"", taxpayerStreet:"", taxpayerCity:"", taxpayerZip:"", spouseFullName:"", spouseIdType:"", spouseIdNumber:"", spouseDob:"", spouseOccupation:"", dependentDetails:[], businessOwner:"", businessName:"", businessEin:"", businessAddress:"", businessDescription:"", businessActivityCode:"", businessGrossReceipts:"", businessCashIncome:"", business1099Income:"", businessOtherIncome:"", businessVehicleMiles:"", businessTotalVehicleMiles:"", businessHomeOfficeDetails:"", businessAssetsDetails:"", businessContractorDetails:"", businessEstimatedTaxPayments:"", businessExpense_advertising:"", businessExpense_commissionsFees:"", businessExpense_contractLabor:"", businessExpense_insurance:"", businessExpense_legalProfessional:"", businessExpense_office:"", businessExpense_rentLease:"", businessExpense_repairs:"", businessExpense_supplies:"", businessExpense_taxesLicenses:"", businessExpense_travel:"", businessExpense_meals:"", businessExpense_utilities:"", businessExpense_software:"", businessExpense_vehicleMileage:"", businessExpense_other:"", checklistResponses:{}, completenessConfirmed:false, completenessConfirmedAt:"", phase17Proceed:false, phase17ClientAttestation:false, phase17General:{}, phase17Credits:{}, phase17ScheduleC:{}, phase17PctAuthorizationAccepted:false, phase17RefundAdvanceInterest:"", phase17RefundTransferInterest:"", phase17BankConsentDecision:"",
@@ -2030,9 +2032,9 @@ function init(){
     if(el.tagName==='SELECT' && el.getAttribute('data-bind')==='state'){
       el.addEventListener('change',()=>{state.state=el.value; syncMirror('state',el.value);});
     } else if(el.tagName==='SELECT'){
-      el.addEventListener('change',()=>{const k=el.getAttribute('data-bind');state[k]=el.value;if(k.indexOf('ext')===0)refreshExtension();});
+      el.addEventListener('change',()=>{const k=el.getAttribute('data-bind');if(k==='taxYear'&&state.profileVerified)invalidateFastTrackMatch();state[k]=el.value;if(k.indexOf('ext')===0)refreshExtension();});
     } else {
-      el.addEventListener('input',()=>{const k=el.getAttribute('data-bind');state[k]=el.value; syncMirror(k,el.value); if(k.indexOf('ext')===0)refreshExtension();});
+      el.addEventListener('input',()=>{const k=el.getAttribute('data-bind');if((k==='profileEmail'||k==='profileSsn')&&state.profileVerified)invalidateFastTrackMatch();state[k]=el.value; syncMirror(k,el.value); if(k.indexOf('ext')===0)refreshExtension();});
     }
   });
   // images
@@ -2556,8 +2558,9 @@ function buildLeadPayload(){
     },
     returningVerification: state.leadType === 'Returning Client Drop-Off' ? {
       profileEmail: safeTrim(state.profileEmail),
-      profilePhoneLast4: phoneLast4(state.profilePhone),
       profileVerified: !!state.profileVerified,
+      fastTrackToken: state.fastTrackToken || '',
+      confirmations: {...state.fastTrackConfirm,filingStatusCurrent:state.filingStatus||''},
       requestedSavedDetails: ['photo ID','SSN records','bank details','prior jobs and forms','address and contact','dependents']
     } : null,
     filing: {
@@ -3016,17 +3019,17 @@ function newClientNext(){
 }
 
 /* =================== RETURNING CLIENT =================== */
-function verifyReturningProfile(){
-  const email=String(state.profileEmail||'').trim();
-  const phone=String(state.profilePhone||'').replace(/\D/g,'');
-  const status=$('#matchStatus');
-  if(!email || !email.includes('@') || phone.length<7){
-    state.profileVerified=false;
-    if(status){status.className='match-status show';status.style.background='var(--red-soft)';status.style.color='var(--red)';status.textContent='Add the email and phone number from your last return so we can securely match your profile.';}
-    return;
-  }
-  state.profileVerified=true;
-  if(status){status.className='match-status show';status.style.background='var(--green-soft)';status.style.color='var(--green)';status.textContent='Profile details received. We’ll use them to match your saved PCT record and show masked details for confirmation.';}
+function invalidateFastTrackMatch(){state.profileVerified=false;state.fastTrackToken='';state.fastTrackProfile=null;state.fastTrackConfirm={contact:'',photoId:'',ssnRecords:'',bank:'',spouse:'',dependentIds:[]};const host=$('#fastTrackConfirmation');if(host){host.style.display='none';host.innerHTML='';}}
+function fastTrackEsc(value){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));}
+function renderFastTrackConfirmation(){const host=$('#fastTrackConfirmation'),p=state.fastTrackProfile;if(!host||!p)return;const choice=(key,label,a,b)=>'<label class="field"><span class="field-label">'+fastTrackEsc(label)+'</span><select data-fast-track-choice="'+key+'"><option value="">Choose one</option><option value="SAME">'+fastTrackEsc(a)+'</option><option value="CHANGED">'+fastTrackEsc(b)+'</option></select></label>',deps=(p.dependents||[]).map(row=>'<label class="consent-row"><input type="checkbox" data-fast-track-dependent="'+fastTrackEsc(row.dependentId)+'"> <span>'+fastTrackEsc(row.name)+' · '+fastTrackEsc(row.relationship||'Dependent')+' — claim this year</span></label>').join('');host.style.display='block';host.innerHTML='<div class="callout gold"><div><strong>Fast Track match confirmed ✓</strong><div class="small">Review the masked information from your '+fastTrackEsc(p.sourceTaxYear)+' PCT profile. Nothing below becomes current-year tax information until you confirm it.</div></div></div><div class="grid-2" style="margin-top:16px">'+choice('contact','Contact and address on file: '+[p.primary?.phone,p.primary?.email].filter(Boolean).join(' · '),'Still correct','Something changed')+(p.photoId?.onFile?choice('photoId','Photo ID on file'+(p.photoId.expirationDate?' · expires '+p.photoId.expirationDate:''),'Still current','I have a new ID'):'')+(p.ssnRecords?.onFile?choice('ssnRecords','Social Security information on file '+(p.ssnRecords.masked||'✓'),'Still current','Replacement document needed'):'')+(p.bank?.onFile?choice('bank','Bank account on file ending in '+fastTrackEsc(p.bank.accountLast4),'Use this account this year','I need to update it'):'')+(p.spouse?.onFile?choice('spouse','Spouse on file: '+fastTrackEsc(p.spouse.name||'Spouse'),'Same filing relationship','Something changed'):'')+'<label class="field"><span class="field-label">Last year you filed as '+fastTrackEsc(p.priorFilingStatus||'not recorded')+'. Confirm this year.</span><select data-fast-track-filing><option value="">Choose current-year filing status</option><option value="single">Single</option><option value="mfj">Married Filing Jointly</option><option value="hoh">Head of Household</option><option value="mfs">Married Filing Separately</option><option value="qss">Qualifying Surviving Spouse</option></select></label></div>'+(deps?'<div class="field"><span class="field-label">Prior dependents — select only those you still expect to claim</span><div class="consent">'+deps+'</div></div>':'')+(p.priorJobsForms?'<div class="profile-privacy"><strong>Prior jobs/forms reference only:</strong> '+fastTrackEsc(p.priorJobsForms)+'<br>This year’s income, forms, amounts, IP PIN, signatures, and filing choices must be provided again.</div>':'');host.querySelectorAll('[data-fast-track-choice]').forEach(el=>el.onchange=()=>state.fastTrackConfirm[el.dataset.fastTrackChoice]=el.value);host.querySelector('[data-fast-track-filing]').onchange=event=>{state.filingStatus=event.target.value;syncSeg('filingStatus',event.target.value)};host.querySelectorAll('[data-fast-track-dependent]').forEach(el=>el.onchange=()=>{state.fastTrackConfirm.dependentIds=[...host.querySelectorAll('[data-fast-track-dependent]:checked')].map(row=>row.dataset.fastTrackDependent)});}
+async function verifyReturningProfile(){
+  const email=String(state.profileEmail||'').trim(),ssn=String(state.profileSsn||'').replace(/\D/g,''),status=$('#matchStatus'),input=document.querySelector('[data-bind="profileSsn"]');
+  invalidateFastTrackMatch();
+  if(!email || !email.includes('@') || ssn.length!==9){if(status){status.className='match-status show';status.style.background='var(--red-soft)';status.style.color='var(--red)';status.textContent='Enter the email and 9-digit Social Security number from your prior filing.';}return false;}
+  state.profileSsn='';if(input)input.value='';
+  if(!initFirebaseIfReady()||!pctFirebase.functions){if(status){status.className='match-status show';status.textContent='Secure Fast Track is temporarily unavailable. Please try again.';}return false;}
+  if(status){status.className='match-status show';status.style.background='var(--cream)';status.style.color='var(--ink)';status.textContent='Checking your saved PCT profile securely…';}
+  try{const result=await pctFirebase.functions.httpsCallable('verifyReturningClientFastTrack')({email,ssn,currentTaxYear:String(state.taxYear||''),agentPublicId:PCT_BACKEND_CONFIG.intakeMode==='agent'?publicAgentIdFromUrl():''}),data=result.data||{};if(!data.matched){const message="We couldn't locate a previous filing using that information.\nNo worries — we'll get you started.";if(status){status.style.background='var(--red-soft)';status.style.color='var(--red)';status.textContent=message;}state.email=email;syncMirror('email',email);state.leadType='New Client Drop-Off';toast(message);showScreen('screen-new');return false;}state.profileVerified=true;state.fastTrackToken=String(data.token||'');state.fastTrackProfile=data.profile||{};const p=state.fastTrackProfile.primary||{};state.firstName=p.firstName||state.firstName;state.lastName=p.lastName||state.lastName;state.email=p.email||email;state.phone=p.phone||state.phone;['firstName','lastName','email','phone'].forEach(key=>syncMirror(key,state[key]));if(status){status.style.background='var(--green-soft)';status.style.color='var(--green)';status.textContent='Fast Track match confirmed. Review the masked saved information below.';}renderFastTrackConfirmation();return true;}catch(_){if(status){status.style.background='var(--red-soft)';status.style.color='var(--red)';status.textContent='Fast Track could not be completed securely. Please try again.';}return false;}
 }
 function renderReturning(){
   const c=state.changes;
@@ -3049,11 +3052,11 @@ function renderReturning(){
   box.innerHTML='<div class="callout gold"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><div><strong>Based on what changed, please prepare:</strong><ul style="margin:8px 0 0 18px;padding:0">'+active.map(k=>'<li style="margin-bottom:4px">'+map[k]+'</li>').join('')+'</ul></div></div>';
   translateNow();
 }
-function returningNext(){
+async function returningNext(){
   state.leadType='Returning Client Drop-Off';
-  if(!state.profileVerified){ verifyReturningProfile(); if(!state.profileVerified) return; }
+  if(!state.profileVerified){if(!await verifyReturningProfile())return;}
+  const p=state.fastTrackProfile||{},c=state.fastTrackConfirm;if(!c.contact||!state.filingStatus||(p.photoId?.onFile&&!c.photoId)||(p.ssnRecords?.onFile&&!c.ssnRecords)||(p.bank?.onFile&&!c.bank)||(p.spouse?.onFile&&!c.spouse)){toast('Review each available saved item and confirm your current-year filing status.');return;}
   if(!state.email) syncMirror('email',state.profileEmail);
-  if(!state.phone) syncMirror('phone',state.profilePhone);
   if(!validateContactForWorkflow('returning_client')) return;
   if(!state.hasNewDocs){toast('Please choose whether you have new tax documents to upload.');return;}
   if(!state.wantEstimate){toast('Please choose whether you want a quick estimate before upload.');return;}
