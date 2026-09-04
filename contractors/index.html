@@ -1345,5 +1345,71 @@
 })();
 
 </script>
+    <style id="pctContractorFocusedNavigationStyles">
+      .pct-contractor-focused .stats,.pct-contractor-focused .main > .panel,.pct-contractor-focused .workspace > .panel{display:none}
+      .pct-contractor-focused .workspace{display:block}
+      .pct-contractor-focused .workspace > .detail{display:block;width:100%;max-width:none}
+      .pct-contractor-focus-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:13px 16px;border-bottom:1px solid var(--line);background:#fbf7ef}
+      .pct-contractor-focus-nav .actions{margin:0}
+      .pct-contractor-focus-nav .tiny{max-width:430px}
+    </style>
+    <script>
+      /* Focused Contractor view: selections continue through the existing record,
+         tabs, and onboarding renderers; this layer only controls presentation. */
+      (function(){
+        const state={focused:false,source:'directory'};
+        const detail=()=>$("agentDetail"), empty=()=>$("emptyDetail");
+        const uidOf=item=>String(item?.uid||item?.agentUid||"");
+        function currentRoster(){
+          if(state.source==='onboarding')return (onboardingAgents||[]).map(uidOf).filter(Boolean);
+          const query=String($("search")?.value||"").trim().toLowerCase(),status=$("statusFilter")?.value||"",training=$("trainingFilter")?.value||"";
+          return (agents||[]).filter(agent=>{
+            const text=[agent.displayName,agent.businessName,agent.email].join(" ").toLowerCase();
+            return (!query||text.includes(query))&&(!status||agent.status===status)&&(!training||agent.trainingStatus===training);
+          }).map(uidOf).filter(Boolean);
+        }
+        function install(){
+          const host=detail();
+          if(!host||!selected)return;
+          let nav=$("pctContractorFocusedNav");
+          if(!nav){
+            nav=document.createElement("div");
+            nav.id="pctContractorFocusedNav";
+            nav.className="pct-contractor-focus-nav";
+            host.insertBefore(nav,host.firstChild);
+          }
+          const roster=currentRoster(),index=roster.indexOf(String(selected.uid||""));
+          nav.innerHTML='<div><strong>Contractor record</strong><div class="tiny">'+(state.source==='onboarding'?'Onboarding queue':'Agent directory')+' · Existing contractor tools remain available below.</div></div><div class="actions"><button type="button" class="btn small" id="pctContractorDirectory">← RETURN TO AGENT DIRECTORY</button><button type="button" class="btn small" id="pctContractorPrevious" '+(index<=0?'disabled':'')+'>← PREVIOUS CONTRACTOR</button><button type="button" class="btn small" id="pctContractorNext" '+(index<0||index>=roster.length-1?'disabled':'')+'>NEXT CONTRACTOR →</button></div>';
+          $("pctContractorDirectory").onclick=returnToDirectory;
+          $("pctContractorPrevious").onclick=()=>openRoster(index-1);
+          $("pctContractorNext").onclick=()=>openRoster(index+1);
+        }
+        function focus(source){
+          if(!selected)return;
+          state.focused=true;state.source=source||state.source;
+          document.body.classList.add("pct-contractor-focused");
+          install();detail()?.scrollIntoView({behavior:"smooth",block:"start"});
+        }
+        function openRoster(index){
+          const uid=currentRoster()[index];if(!uid)return;
+          if(state.source==='onboarding')window.openOnboardingAgent?.(uid);else window.selectAgent?.(uid);
+        }
+        function returnToDirectory(){
+          state.focused=false;state.source='directory';
+          document.body.classList.remove("pct-contractor-focused");
+          selected=null;currentTab="profile";
+          detail()?.classList.add("hidden");empty()?.classList.remove("hidden");
+          window.renderAgents?.();
+          document.querySelector(".workspace")?.scrollIntoView({behavior:"smooth",block:"start"});
+        }
+        const priorOnboarding=window.openOnboardingAgent;
+        if(typeof priorOnboarding==='function')window.openOnboardingAgent=function(){const result=priorOnboarding.apply(this,arguments);focus('onboarding');return result;};
+        const priorSelect=window.selectAgent;
+        if(typeof priorSelect==='function')window.selectAgent=function(){const result=priorSelect.apply(this,arguments);focus('directory');return result;};
+        const priorRender=window.renderDetail;
+        if(typeof priorRender==='function')window.renderDetail=function(){const result=priorRender.apply(this,arguments);if(state.focused&&selected)window.requestAnimationFrame(install);return result;};
+        window.pctReturnToAgentDirectory=returnToDirectory;
+      })();
+    </script>
 </body>
 </html>

@@ -1485,6 +1485,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   }
   function openWorkspace(area='returns'){
     if(!fb?.isMasterAdmin)return;
+    if(area==='returns'&&typeof window.pctOpenAdminReturns==='function'){window.pctOpenAdminReturns();return;}
     if(area==='payments'&&typeof window.pctOpenAdminPayments==='function'){window.pctOpenAdminPayments();return;}
     if(area==='messages'&&typeof window.pctOpenAdminMessages==='function'){window.pctOpenAdminMessages();return;}
     document.body.classList.remove('pct-master-admin-home-active');
@@ -1545,6 +1546,68 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   function open(){if(!fb?.isMasterAdmin)return;ensure();document.body.classList.remove('pct-master-admin-home-active');home()?.classList.add('hidden');workspace()?.classList.add('hidden');hero()?.classList.add('hidden');overview()?.classList.add('hidden');load();root.scrollIntoView({behavior:'smooth',block:'start'});}
   function back(){ensure().classList.add('hidden');window.pctShowMasterAdminHome?.();}
   const priorShowHome=window.pctShowMasterAdminHome;window.pctShowMasterAdminHome=function(){if(root)root.classList.add('hidden');return priorShowHome?.();};window.pctOpenAdminPayments=open;
+})();
+</script>
+<style id="pctMasterAdminFocusedNavigationStyles">
+  .pct-admin-returns-nav{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:20px 0 14px;padding:15px 18px;border:1px solid var(--line);border-radius:var(--rs);background:var(--paper);box-shadow:0 14px 30px -27px rgba(22,17,12,.5)}
+  .pct-admin-returns-nav strong{font-family:var(--display);font-size:20px;color:var(--black)}
+  .pct-admin-returns-nav span{display:block;margin-top:3px;color:var(--muted);font-size:12px;font-weight:700}
+</style>
+<script>
+/* Focused Master Admin navigation reuses the existing All Returns workspace and
+   only changes which existing frontend surface is visible. */
+(function(){
+  const byId=id=>document.getElementById(id), home=()=>byId('pctMasterAdminHome'), workspace=()=>byId('appScreen'), hero=()=>byId('pctAdminWorkspaceHero'), overview=()=>byId('pctAdminOverviewBtn');
+  let root=null;
+  function ensure(){
+    if(root)return root;
+    root=document.createElement('section');
+    root.id='pctAdminReturnsNavigation';
+    root.className='pct-admin-returns-nav hidden';
+    root.innerHTML='<div><strong>All Returns</strong><span>Search, filter, and open the existing PCT return workspace.</span></div><button type="button" class="btn btn-soft" id="pctAdminReturnsHome">← BACK TO ADMIN HOME</button>';
+    hero()?.insertAdjacentElement('afterend',root);
+    byId('pctAdminReturnsHome').onclick=()=>window.pctShowMasterAdminHome?.();
+    return root;
+  }
+  function hideOtherFocusedViews(){byId('pctMoneyIntegrityWorkspace')?.classList.add('hidden');byId('pctAdminMessagesWorkspace')?.classList.add('hidden');}
+  function showList(){
+    if(!fb?.isMasterAdmin)return;
+    ensure();hideOtherFocusedViews();
+    document.body.classList.remove('pct-master-admin-home-active');
+    home()?.classList.add('hidden');
+    hero()?.classList.remove('hidden');
+    workspace()?.classList.remove('hidden');
+    overview()?.classList.remove('hidden');
+    root.classList.remove('hidden');
+    if(workspace()?.classList.contains('workspace-mode'))window.backToClientDashboard?.();
+    window.setFilter?.('all');
+    window.setTimeout(()=>{sync();byId('searchInput')?.focus({preventScroll:true});workspace()?.scrollIntoView({behavior:'smooth',block:'start'});},0);
+  }
+  function sync(){
+    if(!root)return;
+    const selected=workspace()?.classList.contains('workspace-mode');
+    root.classList.toggle('hidden',!workspace()||workspace().classList.contains('hidden')||selected);
+    const back=workspace()?.querySelector('.return-workspace-head button[onclick*="backToClientDashboard"]');
+    if(back)back.textContent='← BACK TO ALL RETURNS';
+  }
+  const priorOpen=window.openReturnWorkspace;
+  if(typeof priorOpen==='function')window.openReturnWorkspace=function(){
+    if(fb?.isMasterAdmin){ensure();hideOtherFocusedViews();document.body.classList.remove('pct-master-admin-home-active');home()?.classList.add('hidden');hero()?.classList.remove('hidden');workspace()?.classList.remove('hidden');overview()?.classList.remove('hidden');}
+    const result=priorOpen.apply(this,arguments);
+    window.requestAnimationFrame(sync);window.setTimeout(sync,120);
+    return result;
+  };
+  const priorBack=window.backToClientDashboard;
+  if(typeof priorBack==='function')window.backToClientDashboard=function(){const result=priorBack.apply(this,arguments);window.requestAnimationFrame(sync);return result;};
+  const priorShowHome=window.pctShowMasterAdminHome;
+  window.pctShowMasterAdminHome=function(){if(root)root.classList.add('hidden');return priorShowHome?.();};
+  overview()?.addEventListener('click',()=>root?.classList.add('hidden'));
+  for(const name of ['pctOpenAdminPayments','pctOpenAdminMessages']){
+    const prior=window[name];
+    if(typeof prior==='function')window[name]=function(){if(root)root.classList.add('hidden');return prior.apply(this,arguments);};
+  }
+  window.pctOpenAdminReturns=showList;
+  new MutationObserver(sync).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
 })();
 </script>
 </body>
