@@ -644,7 +644,7 @@
             link.target = "_blank";
             link.rel = "noopener noreferrer";
             link.className = "button";
-            link.textContent = "PAY SECURELY NOW";
+            link.textContent = payment.directPaymentRequired ? "PAY MY PREPARATION FEE" : "PAY SECURELY NOW";
             host.append(link);
           } else if (payment.paymentLinkStatus === "STALE") {
             const message = document.createElement("p");
