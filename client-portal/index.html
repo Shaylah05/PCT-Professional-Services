@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Secure Client Portal</title>
+    <style>
+      :root {
+        --i: #100d08;
+        --c: #fbf6ea;
+        --p: #fffdfa;
+        --g: #c99f47;
+        --b: #a21355;
+        --t: #282118;
+        --m: #756c5e;
+        --l: #e3d7bd;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--c);
+        color: var(--t);
+        font:
+          16px Arial,
+          sans-serif;
+      }
+      header {
+        padding: 14px 6%;
+        background: var(--i);
+        color: #fff;
+        font:
+          700 20px Georgia,
+          serif;
+      }
+      main {
+        max-width: 840px;
+        margin: auto;
+        padding: 38px 18px;
+      }
+      .card {
+        background: var(--p);
+        border: 1px solid var(--l);
+        border-radius: 18px;
+        padding: 25px;
+        margin-bottom: 18px;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: Georgia, serif;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 11px;
+        margin: 5px 0 14px;
+        border: 1px solid var(--l);
+        border-radius: 8px;
+      }
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 11px 17px;
+        background: var(--b);
+        color: #fff;
+        font-weight: bold;
+        cursor: pointer;
+        margin: 4px;
+      }
+      .button {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 11px 17px;
+        margin: 4px;
+        background: var(--b);
+        color: #fff;
+        font-weight: bold;
+        text-decoration: none;
+      }
+      .plain {
+        background: #fff;
+        color: var(--t);
+        border: 1px solid var(--g);
+      }
+      .hidden {
+        display: none !important;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--l);
+      }
+      .tag {
+        padding: 4px 8px;
+        background: #fff0f4;
+        color: #7b1832;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .ok {
+        background: #e4f2e8;
+        color: #365c43;
+      }
+      .msg {
+        color: #7b1832;
+        margin-top: 10px;
+      }
+      .small {
+        color: var(--m);
+        font-size: 13px;
+      }
+      .choice {
+        display: block;
+        width: 100%;
+        text-align: left;
+        margin: 8px 0;
+      }
+      .next-action { border-color: var(--g); background: #fffaf0; }
+      .next-action .who { display:inline-block; margin-bottom:8px; padding:4px 9px; border-radius:999px; background:#f1e4be; color:#5c4718; font-size:12px; font-weight:700; }
+      button:disabled { cursor:not-allowed; opacity:.58; }
+      .selected {
+        outline: 2px solid var(--b);
+      }
+      label {
+        display: block;
+        font-weight: bold;
+      }
+      .check {
+        width: auto;
+      }
+      @media (max-width: 600px) {
+        .row {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>Secure Client Portal</header>
+    <main>
+      <section id="login" class="card">
+        <h1>Check your return status</h1>
+        <p>Enter the Case ID and review code sent by your tax professional.</p>
+        <label>Case ID<input id="lead" /></label
+        ><label>Review access code<input id="code" /></label
+        ><button id="open">Open My Return Workspace</button>
+        <div id="loginmsg" class="msg"></div>
+      </section>
+      <section id="home" class="hidden">
+        <h1 id="welcome">Your returns</h1>
+        <div id="returns"></div>
+        <button id="clear" class="plain">Clear Secure Access</button>
+      </section>
+      <section id="work" class="hidden">
+        <button id="back" class="plain">← All returns</button>
+        <div id="clientNextAction" class="card next-action" aria-live="polite"></div>
+        <div class="card">
+          <h2 id="year"></h2>
+          <div id="result"></div>
+          <div id="docs"></div>
+        </div>
+        <div id="intakeConsentCard" class="card hidden">
+          <h2>Committed Filing Intake</h2>
+          <p class="small">These consent statuses are shown for reference. They were completed during your filing intake and are not signed again during return review.</p>
+          <div id="intakeConsentStatus"></div>
+        </div>
+        <div class="card">
+          <h2 id="financialTitle">Financial instructions</h2>
+          <div id="financial"></div>
+          <div id="financeForm" class="hidden"></div>
+          <div id="finmsg" class="msg"></div>
+        </div>
+        <div class="card">
+          <h2>Preparation Fees</h2>
+          <div id="prepPayment"></div>
+          <div id="prepPaymentForm" class="hidden"></div>
+          <div id="prepPaymentMsg" class="msg"></div>
+        </div>
+        <div id="partnerProductsCard" class="card hidden">
+          <h2>Optional Partner Products</h2>
+          <div id="partnerProducts"></div>
+          <div id="partnerProductsForm" class="hidden"></div>
+          <div id="partnerProductsMsg" class="msg"></div>
+        </div>
+        <div id="priorInfoCard" class="card hidden">
+          <h2>Client Information</h2>
+          <div id="priorInfo"></div>
+          <div id="priorInfoForm" class="hidden"></div>
+          <div id="priorInfoMsg" class="msg"></div>
+        </div>
+        <div id="documentRequestCard" class="card hidden">
+          <h2>Document Requests</h2>
+          <div id="documentRequests"></div>
+          <div id="documentRequestForm" class="hidden"></div>
+          <div id="documentRequestMsg" class="msg"></div>
+        </div>
+        <div id="filingStatusCard" class="card hidden">
+          <h2>Return Filing Status</h2>
+          <div id="filingStatus"></div>
+        </div>
+        <div id="returnCopiesCard" class="card hidden"><h2>Return Copy</h2><div id="returnCopies"></div><div id="returnCopiesMsg" class="msg"></div></div>
+        <div id="growthCompleteCard" class="card hidden"></div>
+        <div id="growthExploreCard" class="card hidden"></div>
+        <div id="acceptedReviewCard" class="card hidden"></div>
+      </section>
+      <section id="docview" class="hidden">
+        <button id="docback" class="plain">← Back to return</button>
+        <div class="card">
+          <h1 id="doctitle"></h1>
+          <div id="docbody"></div>
+          <div id="ptf" class="hidden">
+            <h3>Return information</h3>
+            <div id="ptfinfo"></div>
+            <h3>
+              Have you completed the electronic signature invitation for your
+              tax return?
+            </h3>
+            <button id="yes" class="choice plain">Yes, I completed it</button
+            ><button id="no" class="choice plain">
+              No, I have not completed it / I don’t see the email
+            </button>
+            <p id="help" class="small hidden">
+              Check your inbox, spam/junk, Promotions, and other folders. Your
+              PCT tax professional has been notified to check the external
+              invitation if needed.
+            </p>
+            <label
+              ><input id="ack" type="checkbox" class="check" /> I understand
+              changes must be requested before my return is transmitted.</label
+            >
+          </div>
+          <p>Signing as: <strong id="signer"></strong></p>
+          <button id="sign">Sign &amp; Continue</button>
+          <div id="docmsg" class="msg"></div>
+        </div>
+      </section>
+    </main>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import {
+        getFunctions,
+        httpsCallable,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+      const app = initializeApp({
+          apiKey: "AIzaSyAypfnHTCIMUD1oKPHrFElWA7jzs7aaRC4",
+          authDomain: "pct-tax-return-review.firebaseapp.com",
+          projectId: "pct-tax-return-review",
+          storageBucket: "pct-tax-return-review.firebasestorage.app",
+          messagingSenderId: "494334478239",
+          appId: "1:494334478239:web:1849b621d4dca4e0c95faa",
+        }),
+        f = getFunctions(app, "us-central1"),
+        c = {
+          home: httpsCallable(f, "loadClientPortalHome"),
+          packet: httpsCallable(f, "loadClientPCTDocumentPacket"),
+          sign: httpsCallable(f, "signClientPCTDocument"),
+          ext: httpsCallable(f, "saveClientExternalTaxSignatureResponse"),
+          fin: httpsCallable(f, "loadClientFinancialInstructions"),
+      savefin: httpsCallable(f, "saveClientFinancialInstructions"),
+      prep: httpsCallable(f, "loadClientPreparationFeePayment"),
+      saveprep: httpsCallable(f, "saveClientPreparationFeePayment"),
+      prior: httpsCallable(f, "loadClientPreviousInformation"),
+      saveprior: httpsCallable(f, "saveClientPreviousInformation"),
+      documentRequests: httpsCallable(f, "loadClientDocumentRequests"),
+      submitDocumentRequest: httpsCallable(f, "submitClientDocumentRequest"),
+      partnerProducts: httpsCallable(f, "loadClientPartnerProducts"),
+      savePartnerProducts: httpsCallable(f, "saveClientPartnerProducts"),
+      returnCopies: httpsCallable(f, "loadClientReturnCopyRequests"),
+      requestReturnCopy: httpsCallable(f, "requestClientReturnCopy"),
+        },
+        s = {
+          q: null,
+          data: null,
+          item: null,
+          packet: null,
+      financial: null,
+      prepayment: null,
+      priorInfo: null,
+      documentRequests: null,
+      partnerProducts: null,
+      returnCopies: null,
+          doc: null,
+        };
+      const $ = (x) => document.getElementById(x),
+        panels = ["login", "home", "work", "docview"];
+      function show(x) {
+        panels.forEach((y) => $(y).classList.toggle("hidden", x !== y));
+        scrollTo(0, 0);
+      }
+      function money(n) {
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        }).format((n || 0) / 100);
+      }
+      function err(e, fallback = "That action could not be completed. Please try again.") {
+        const raw=String(e?.message||e||"").replace(/^FirebaseError:\s*/i,"").replace(/functions\/[a-z-]+/gi,"").trim();
+        if(!raw||/internal|stack|undefined|null|https?:\/\//i.test(raw)) return fallback;
+        return raw.length>220?raw.slice(0,217)+"…":raw;
+      }
+      const actionLocks=new Set();
+      async function once(key,button,task){if(actionLocks.has(key))return;actionLocks.add(key);if(button)button.disabled=true;try{return await task();}finally{actionLocks.delete(key);if(button)button.disabled=false;}}
+      function args() {
+        return {
+          ...s.q,
+          targetLeadId: s.item.leadId,
+          returnId: s.item.returnId,
+        };
+      }
+      async function load() {
+        try {
+          s.data = (await c.home(s.q)).data;
+          $("welcome").textContent =
+            "Welcome, " + (s.data.client.firstName || "");
+          $("returns").replaceChildren(
+            ...(s.data.returns.length?s.data.returns.map((r) => {
+              let x = document.createElement("div");
+              x.className = "card";
+              x.innerHTML =
+                "<h2>" +
+                r.taxYear +
+                " Return</h2><p>" +
+                r.status.label +
+                " · " +
+                (r.result
+                  ? (r.result.type === "REFUND" ? "Refund " : "Amount Due ") +
+                    money(r.result.amountCents)
+                  : "Result pending") +
+                "</p>";
+              let b = document.createElement("button");
+              b.textContent = "Open " + r.taxYear + " Return";
+              b.onclick = () => open(r);
+              x.append(b);
+              return x;
+            }):[Object.assign(document.createElement("div"),{className:"card",innerHTML:"<h2>No returns are available yet</h2><p>Your tax professional will let you know when a tax-year return is ready here.</p>"})]),
+          );
+          show("home");
+        } catch (e) {
+          $("loginmsg").textContent = err(e);
+        }
+      }
+      async function open(r) {
+        s.item = r;
+        window.pctClientPortalCurrent = {access:{...s.q},leadId:r.leadId,returnId:r.returnId};
+        $("year").textContent = r.taxYear + " Return Workspace";
+        $("result").textContent = r.result
+          ? (r.result.type === "REFUND" ? "Expected Refund " : "Amount Due ") +
+            money(r.result.amountCents)
+          : "Return result not available";
+        show("work");
+        try {
+          const [packet,financial,prepayment,priorInfo,documentRequests,partnerProducts,returnCopies]=await Promise.all([c.packet(args()),c.fin(args()),c.prep(args()),c.prior(args()),c.documentRequests(args()),c.partnerProducts(args()),c.returnCopies(args())]);
+          s.packet=packet.data.packet;s.financial=financial.data.instructions;s.prepayment=prepayment.data.payment;s.priorInfo=priorInfo.data.information;s.documentRequests=documentRequests.data;s.partnerProducts=partnerProducts.data;s.returnCopies=returnCopies.data;
+          renderDocs();
+          renderIntakeConsentStatus();
+          renderFinancial();renderClientNextAction();
+          renderPreparationFees();
+          renderPriorInformation();
+          renderDocumentRequests();
+          renderPartnerProducts();renderClientNextAction();
+          renderReturnCopies();
+          renderFilingStatus();
+          renderClientNextAction();
+        } catch (e) {
+          $("docs").textContent = err(e);
+        }
+      }
+      function renderDocs() {
+        let d = $("docs");
+        d.innerHTML = "<h2>PCT Documents</h2>";
+        s.packet.documents.forEach((x) => {
+          let r = document.createElement("div");
+          r.className = "row";
+          r.innerHTML =
+            "<span>" +
+            x.title +
+            '</span><span class="tag ' +
+            (x.signatureStatus === "SIGNED" ? "ok" : "") +
+            '">' +
+            (x.signatureStatus === "SIGNED" ? "Signed ✓" : "Review & Sign") +
+            "</span>";
+          if (x.signatureStatus !== "SIGNED") {
+            let b = document.createElement("button");
+            b.textContent = "Review & Sign";
+            b.onclick = () => doc(x);
+            r.append(b);
+          }
+          d.append(r);
+        });
+      }
+      function friendlyConsentStatus(value) {
+        const key=String(value||"").toUpperCase(),labels={SIGNED:"Signed ✓",NOT_APPLICABLE:"Not Applicable",DECLINED:"Declined",YES:"Yes",NO:"No",NOT_ANSWERED:"Not Answered",NOT_REQUIRED_YET:"Not Required Yet"};
+        return labels[key]||String(value||"Not answered").replaceAll("_"," ").toLowerCase().replace(/\b\w/g,x=>x.toUpperCase());
+      }
+      function renderClientNextAction(){const host=$("clientNextAction");if(!host||!s.item)return;const requests=s.documentRequests?.requests||[],unsigned=s.packet?.documents?.filter(x=>x.signatureStatus!=="SIGNED")||[],payment=s.prepayment?.payment||{},filing=s.item.filingStatus?.key||"";let title="Your tax professional is reviewing your return",detail="No action is needed from you right now. We’ll keep this workspace updated.",who="WAITING ON YOUR TAX PROFESSIONAL";if(requests.some(x=>x.canSubmit)){title="Provide the requested document or information";detail="Open Document Requests below and submit the item your tax professional requested.";who="YOUR ACTION";}else if(unsigned.length){title="Review and sign your PCT documents";detail="Complete the unsigned document shown in PCT Documents below.";who="YOUR ACTION";}else if(s.financial&&!s.financial.transmitted&&((s.financial.branch==="REFUND"&&!s.financial.refundDelivery?.method)||(s.financial.branch==="AMOUNT_DUE"&&!s.financial.taxBalance?.election))){title="Choose your refund or tax-balance instructions";detail="Review Financial Instructions below and save your choice.";who="YOUR ACTION";}else if(payment.paymentStatus!=="PAID"&&!payment.method){title="Choose how to pay your preparation fee";detail="Review Preparation Fees below and select the available method that works for you.";who="YOUR ACTION";}else if(payment.method==="PAY_INVOICE"&&payment.paymentStatus!=="PAID"&&payment.canPay){title="Pay your confirmed preparation-fee invoice";detail="Use Pay Securely Now below. Stripe opens in a new tab.";who="YOUR ACTION";}else if(filing==="REJECTED"){title="Your tax professional is handling a filing update";detail="The return needs a correction before it can be accepted. Your tax professional will update this workspace.";who="WAITING ON YOUR TAX PROFESSIONAL";}else if(["FILED","ACCEPTED"].includes(filing)){title=filing==="ACCEPTED"?"Your return was accepted":"Your return was filed";detail="No action is needed unless your tax professional contacts you.";who="WAITING ON IRS / STATE";}else if(filing==="IRS_FUNDED"){title="Your refund was funded";detail="PCT is confirming final preparation-fee receipt and return completion.";who="WAITING ON BANK / PAYMENT";}host.innerHTML='<span class="who">'+who+'</span><h2>'+title+'</h2><p>'+detail+'</p><p class="small">Tax professional: '+(s.item.assignedAgent?.displayName||"Your assigned tax professional")+(s.item.assignedAgent?.firmName?" · "+s.item.assignedAgent.firmName:"")+'</p>';}
+      function renderIntakeConsentStatus() {
+        const card = $("intakeConsentCard"), host = $("intakeConsentStatus"), consent = s.item?.intakeConsentStatus;
+        host.replaceChildren();
+        if (!consent || consent.pctTaxPreparationAuthorization === "NOT_REQUIRED_YET") {
+          card.classList.add("hidden");
+          return;
+        }
+        card.classList.remove("hidden");
+        [
+          ["PCT Tax Preparation Authorization", consent.pctTaxPreparationAuthorization],
+          ["Refund Advance Interest", consent.refundAdvanceInterest],
+          ["Pay Fees From Refund", consent.refundTransferInterest],
+          ["7216 Bank Product Consent", consent.bankProduct7216Consent],
+        ].forEach(([label, value]) => {
+          const row = document.createElement("div"), left = document.createElement("span"), right = document.createElement("strong");
+          row.className = "row";
+          left.textContent = label;
+          right.textContent = friendlyConsentStatus(value);
+          row.append(left, right);
+          host.append(row);
+        });
+      }
+      function renderReturnCopies() {
+        const view=s.returnCopies,card=$("returnCopiesCard"),host=$("returnCopies");
+        host.replaceChildren();
+        if(!view){card.classList.add("hidden");return;}
+        card.classList.remove("hidden");
+        const intro=document.createElement("p");intro.textContent="Need another copy of your "+view.taxYear+" tax return? Your tax professional will send a secure copy from tax software.";host.append(intro);
+        (view.requests||[]).forEach((request)=>{const row=document.createElement("div");row.className="row";const text=document.createElement("span");text.textContent=request.statusLabel+(request.sentAt?" · "+request.sentAt:"");row.append(text);if(request.sentConfirmed&&request.accessCode){const code=document.createElement("strong");code.textContent="PCT Return Access Code: "+request.accessCode;row.append(code);const copy=document.createElement("button");copy.className="plain";copy.textContent="Copy Return Access Code";copy.onclick=async()=>{try{await navigator.clipboard.writeText(request.accessCode);$("returnCopiesMsg").textContent="Code copied ✓"}catch(_){}};row.append(copy);}host.append(row);});
+        const button=document.createElement("button");button.textContent=(view.requests||[]).length?"Request Another Copy":"Request Return Copy";button.onclick=requestReturnCopy;host.append(button);
+      }
+      async function requestReturnCopy(){const button=document.activeElement instanceof HTMLButtonElement?document.activeElement:null;return once("return-copy",button,async()=>{const message=$("returnCopiesMsg");message.textContent="Sending request…";try{await c.requestReturnCopy(args());s.returnCopies=(await c.returnCopies(args())).data;renderReturnCopies();message.textContent="Return Copy Requested ✓ Your tax professional has been notified.";}catch(e){message.textContent=err(e);}})}
+      function renderFilingStatus() {
+        const card = $("filingStatusCard"), host = $("filingStatus"), filing = s.item?.filingStatus;
+        if (!filing || !["FILED", "ACCEPTED", "REJECTED", "IRS_FUNDED"].includes(filing.key)) {
+          card.classList.add("hidden");
+          return;
+        }
+        card.classList.remove("hidden");
+        host.textContent = filing.label || "Your return has been filed.";
+      }
+      function renderFinancial() {
+        let x = s.financial,
+          $f = $("financial"),
+          form = $("financeForm");
+        form.classList.add("hidden");
+        if (x.transmitted) {
+          $f.innerHTML =
+            "This return has already been transmitted. Contact your tax professional if something needs attention.";
+          return;
+        }
+        if (x.branch === "REFUND") {
+          $("financialTitle").textContent = "Refund Delivery";
+          let r = x.refundDelivery;
+          $f.innerHTML = r.method
+            ? "Confirmed: " +
+              (r.method === "DIRECT_DEPOSIT"
+                ? r.bank?.label || "Direct Deposit"
+                : "Check Mailed From Our Office") +
+              " ✓"
+            : "Choose how you would like to receive your refund.";
+          let b = document.createElement("button");
+          b.textContent = r.method
+            ? "Change Refund Delivery"
+            : "Review Refund Delivery";
+          b.onclick = () => refundForm(r);
+          $f.append(document.createElement("br"), b);
+        } else if (x.branch === "AMOUNT_DUE") {
+          $("financialTitle").textContent = "Tax Balance";
+          let t = x.taxBalance;
+          const taxChoiceLabels={DIRECT_DRAFT:"IRS / Taxing Authority Direct Draft",IRS_DIRECT_DRAFT:"IRS / Taxing Authority Direct Draft",PAYMENT_PLAN:"Payment Plan",PAY_SELF_LATER:"I Will Pay the Taxing Authority Myself",PAY_LATER_SELF:"I Will Pay the Taxing Authority Myself"};
+          $f.innerHTML = t.election
+            ? "Confirmed: " + (taxChoiceLabels[t.election]||friendlyConsentStatus(t.election)) + " ✓"
+            : "Tell your tax professional how you plan to handle the tax balance. This does not pay PCT preparation fees.";
+          let b = document.createElement("button");
+          b.textContent = t.election
+            ? "Change Tax Balance Choice"
+            : "Review Tax Payment Choice";
+          b.onclick = () => balanceForm(t);
+          $f.append(document.createElement("br"), b);
+        } else
+          $f.textContent =
+            "Financial instructions are available after the return result is confirmed.";
+      }
+      function bankFields(existing) {
+        return (
+          '<label>Account holder<input id="holder"></label><label>Account type<select id="atype"><option value="checking">Checking</option><option value="savings">Savings</option></select></label><label>Routing number<input id="routing" inputmode="numeric"></label><label>Account number<input id="account" inputmode="numeric"></label>' +
+          (existing
+            ? '<button id="usebank" class="plain">Use ' +
+              existing.label +
+              "</button>"
+            : "")
+        );
+      }
+      function refundForm(r) {
+        let f = $("financeForm");
+        f.classList.remove("hidden");
+        f.innerHTML =
+          '<h3>How would you like to receive your refund?</h3><button id="dd" class="choice plain">Direct Deposit</button><button id="office" class="choice plain">Check Mailed From Our Office</button><div id="bankform"></div>';
+        $("office").onclick = () => saveFin("OFFICE_CHECK");
+        $("dd").onclick = () => {
+          let b = $("bankform");
+          b.innerHTML =
+            bankFields(r.existingBank) +
+            '<button id="savebank">Save Direct Deposit</button>';
+          if (r.existingBank)
+            $("usebank").onclick = () => saveFin("DIRECT_DEPOSIT", true);
+          $("savebank").onclick = () => saveFin("DIRECT_DEPOSIT", false);
+        };
+      }
+      function balanceForm(t) {
+        let f = $("financeForm");
+        f.classList.remove("hidden");
+        f.innerHTML =
+          '<h3>How would you like to handle your tax balance?</h3><button id="draft" class="choice plain">Have the IRS/taxing authority draft my payment</button><button id="plan" class="choice plain">Set up a payment plan</button><button id="later" class="choice plain">I will pay the taxing authority myself later</button><div id="bankform"></div>';
+        $("plan").onclick = () => saveFin("PAYMENT_PLAN");
+        $("later").onclick = () => {
+          let b = $("bankform");
+          b.innerHTML =
+            '<label><input id="laterack" type="checkbox" class="check"> I understand I am responsible for making the applicable tax payment by the required deadline.</label><button id="savelater">Save choice</button>';
+          $("savelater").onclick = () => saveFin("PAY_SELF_LATER");
+        };
+        $("draft").onclick = () => {
+          let b = $("bankform");
+          b.innerHTML =
+            bankFields() + '<button id="savebank">Save Direct Draft</button>';
+          $("savebank").onclick = () => saveFin("DIRECT_DRAFT");
+        };
+      }
+      async function saveFin(choice, useExisting = false) {
+        const button=document.activeElement instanceof HTMLButtonElement?document.activeElement:null;return once("financial-instructions",button,async()=>{try {
+          let bank = {
+            accountHolderName: $("holder")?.value,
+            accountType: $("atype")?.value,
+            routingNumber: $("routing")?.value,
+            accountNumber: $("account")?.value,
+          };
+          s.financial = (
+            await c.savefin({
+              ...args(),
+              choice,
+              useExistingBank: useExisting,
+              bank,
+              acknowledged: $("laterack")?.checked === true,
+            })
+          ).data.instructions;
+          renderFinancial();renderClientNextAction();
+          $("finmsg").textContent = "Saved ✓";
+        } catch (e) {
+          $("finmsg").textContent = err(e);
+        }});
+      }
+      function renderPreparationFees() {
+        const view = s.prepayment,
+          payment = view?.payment || {},
+          host = $("prepPayment"),
+          form = $("prepPaymentForm");
+        form.classList.add("hidden");
+        host.replaceChildren();
+        if (!view) {
+          host.textContent = "Preparation-fee payment options are not available yet.";
+          return;
+        }
+        if (view.agent?.name) {
+          const professional = document.createElement("p");
+          professional.className = "small";
+          professional.textContent = "Your tax professional: " + view.agent.name + (view.agent.businessName ? " · " + view.agent.businessName : "");
+          host.append(professional);
+        }
+        if (payment.paymentStatus === "PAID") {
+          host.append(document.createTextNode("PAYMENT RECEIVED ✓ No additional payment is needed for this return."));
+          if (payment.invoice) {
+            const detail = document.createElement("p");
+            detail.textContent = money(payment.invoice.amountCents);
+            host.append(detail);
+          }
+          return;
+        }
+        if (payment.method === "PAY_INVOICE" && payment.invoice) {
+          const total = document.createElement("p");
+          total.textContent = "Official Preparation Fee " + money(payment.invoice.grossAmountCents) + (payment.invoice.discountAmountCents ? " · Pay Now Savings −" + money(payment.invoice.discountAmountCents) : "") + " · Total Due Today " + money(payment.invoice.amountCents);
+          host.append(total);
+          if (payment.canPay && payment.paymentLink) {
+            const link = document.createElement("a");
+            link.href = payment.paymentLink;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.className = "button";
+            link.textContent = "PAY SECURELY NOW";
+            host.append(link);
+          } else if (payment.paymentLinkStatus === "STALE") {
+            const message = document.createElement("p");
+            message.className = "small";
+            message.textContent = "PAYMENT UPDATE IN PROGRESS — Your tax professional updated your return pricing. We’ll provide your current payment option shortly.";
+            host.append(message);
+          }
+          const change = document.createElement("button");
+          change.textContent = "Change Payment Method";
+          change.className = "plain";
+          change.onclick = paymentForm;
+          host.append(document.createElement("br"), change);
+          return;
+        }
+        if (payment.method === "PAY_BY_REFUND") {
+          host.append(document.createTextNode("Pay By Refund ✓ Your preparation fees will be handled through your selected refund-payment process. Funding is pending."));
+        } else if (payment.method === "REFUND_ADVANCE") {
+          host.append(document.createTextNode("Refund Advance ✓ Your preparation fees will be handled through the applicable refund-product process. Funding is pending."));
+        } else {
+          host.append(document.createTextNode("Choose how you would like to pay your tax preparation fees."));
+        }
+        const button = document.createElement("button");
+        button.textContent = payment.method ? "Change Payment Method" : "Review Payment Options";
+        button.onclick = paymentForm;
+        host.append(document.createElement("br"), button);
+      }
+      function paymentForm() {
+        const view = s.prepayment,
+          options = view.options || {},
+          form = $("prepPaymentForm");
+        form.classList.remove("hidden");
+        form.replaceChildren();
+        const heading = document.createElement("h3");
+        heading.textContent = "How would you like to pay your preparation fees?";
+        form.append(heading);
+        const add = (method, title, description, enabled) => {
+          if (!enabled) return;
+          const button = document.createElement("button");
+          button.className = "choice plain";
+          button.textContent = title;
+          button.onclick = () => savePreparationPayment(method);
+          const note = document.createElement("p");
+          note.className = "small";
+          note.textContent = description;
+          form.append(button, note);
+        };
+        add("REFUND_ADVANCE", "Refund Advance", "Available only with an eligible bank account selected for refund delivery. No online card payment is required.", options.refundAdvance?.available);
+        add("PAY_BY_REFUND", "Pay By Refund", "Your preparation fees are handled through the eligible refund-payment process. No online card payment is required.", options.payByRefund?.available);
+        add("PAY_INVOICE", "Pay Invoice / Pay Upfront", "Pay your exact confirmed preparation-fee invoice securely by card.", options.payInvoice?.available);
+        if (!form.querySelector("button")) form.textContent = "Payment options will be available after your tax professional confirms the current return details.";
+      }
+      function renderPartnerProducts() {
+        const view = s.partnerProducts,
+          card = $("partnerProductsCard"),
+          host = $("partnerProducts"),
+          form = $("partnerProductsForm");
+        form.classList.add("hidden");
+        host.replaceChildren();
+        if (!view?.applicable) {
+          card.classList.add("hidden");
+          return;
+        }
+        card.classList.remove("hidden");
+        const selected = view.selected || [];
+        const text = document.createElement("p");
+        text.textContent = selected.length
+          ? "Selected: " + selected.map((x) => x.label).join(", ") + "."
+          : "No optional partner products selected.";
+        host.append(text);
+        const note = document.createElement("p");
+        note.className = "small";
+        note.textContent = view.notice || "Optional partner products are not required and may be subject to additional partner fees.";
+        host.append(note);
+        const button = document.createElement("button");
+        button.textContent = selected.length ? "Review Optional Products" : "Choose Optional Products";
+        button.onclick = partnerProductsForm;
+        host.append(button);
+      }
+      function partnerProductsForm() {
+        const view = s.partnerProducts,
+          form = $("partnerProductsForm");
+        if (!view?.applicable) return;
+        form.classList.remove("hidden");
+        form.replaceChildren();
+        const heading = document.createElement("h3");
+        heading.textContent = "Optional Partner Products";
+        form.append(heading);
+        const explanation = document.createElement("p");
+        explanation.className = "small";
+        explanation.textContent = "Optional partner products are not required and may be subject to additional partner fees. They are separate from PCT preparation fees.";
+        form.append(explanation);
+        (view.products || []).forEach((product) => {
+          const label = document.createElement("label"), check = document.createElement("input");
+          check.type = "checkbox";
+          check.value = product.id;
+          check.checked = product.selected === true;
+          label.append(check, document.createTextNode(" " + product.label));
+          form.append(label);
+        });
+        const save = document.createElement("button");
+        save.textContent = "Save Optional Products";
+        save.onclick = savePartnerProducts;
+        form.append(save);
+      }
+      async function savePartnerProducts() {
+        const message = $("partnerProductsMsg");
+        message.textContent = "Saving…";
+        try {
+          const selectedIds = [...$("partnerProductsForm").querySelectorAll("input:checked")].map((x) => x.value);
+          s.partnerProducts = (await c.savePartnerProducts({ ...args(), selectedIds })).data;
+          renderPartnerProducts();
+          message.textContent = "Saved ✓";
+        } catch (e) {
+          message.textContent = err(e);
+        }
+      }
+      async function savePreparationPayment(method) {
+        const button=document.activeElement instanceof HTMLButtonElement?document.activeElement:null;return once("preparation-payment",button,async()=>{const message = $("prepPaymentMsg");
+        message.textContent = "Saving…";
+        try {
+          s.prepayment = (await c.saveprep({ ...args(), method })).data.payment;
+          s.partnerProducts = (await c.partnerProducts(args())).data;
+          renderPreparationFees();
+          renderPartnerProducts();renderClientNextAction();
+          message.textContent = "Saved ✓";
+        } catch (e) {
+          message.textContent = err(e);
+        }});
+      }
+      function renderPriorInformation() {
+        const info = s.priorInfo,
+          card = $("priorInfoCard"),
+          host = $("priorInfo"),
+          form = $("priorInfoForm");
+        form.classList.add("hidden");
+        if (!info?.available) {
+          card.classList.add("hidden");
+          return;
+        }
+        card.classList.remove("hidden");
+        if (info.transmitted) {
+          host.textContent = "This return has already been transmitted. Contact your tax professional if something needs to be corrected.";
+          return;
+        }
+        host.replaceChildren();
+        const source = document.createElement("p");
+        source.className = "small";
+        source.textContent = info.source?.sourceTaxYear ? "Information available from your " + info.source.sourceTaxYear + " record. Please review before continuing." : "Please review the information we have on file.";
+        host.append(source);
+        const row = (title, value, confirmed, onConfirm, onUpdate) => {
+          const box = document.createElement("div");
+          box.className = "row";
+          const left = document.createElement("span");
+          left.textContent = title + ": " + value;
+          const right = document.createElement("span");
+          right.textContent = confirmed ? "Confirmed ✓" : "Needs Review";
+          box.append(left, right);
+          host.append(box);
+          if (!confirmed) { const b = document.createElement("button"); b.textContent = "This Is Correct"; b.onclick = onConfirm; host.append(b); }
+          if (onUpdate) { const b = document.createElement("button"); b.className = "plain"; b.textContent = "Update"; b.onclick = onUpdate; host.append(b); }
+        };
+        const c = info.contact || {};
+        row("Contact Information", [c.address,c.phone,c.email].filter(Boolean).join(" · ") || "Not available", c.confirmed, () => savePrior("CONTACT", "CONFIRM"), contactForm);
+        const names = (info.dependents?.items || []).map(x => x.name).join(", ");
+        if (names) { row("Prior Dependents", names, info.dependents?.confirmed, dependentForm, dependentForm); }
+        if (info.bank?.masked) row("Bank Information", info.bank.masked.label || "Saved account", info.bank.confirmed, () => savePrior("BANK", "CONFIRM"), () => { $("priorInfoMsg").textContent = "To change your bank account, use the Refund Delivery section above. Your saved account is never shown here in full."; });
+      }
+      function contactForm() {
+        const f = $("priorInfoForm"), c = s.priorInfo.contact || {};
+        f.classList.remove("hidden");
+        f.innerHTML = '<h3>Update contact information</h3><label>Mailing address<input id="priorAddress"></label><label>Phone<input id="priorPhone"></label><label>Email<input id="priorEmail" type="email"></label><button id="priorSaveContact">Save Update</button>';
+        $("priorAddress").value = c.address || ""; $("priorPhone").value = c.phone || ""; $("priorEmail").value = c.email || "";
+        $("priorSaveContact").onclick = () => savePrior("CONTACT", "UPDATE", {address:$("priorAddress").value,phone:$("priorPhone").value,email:$("priorEmail").value});
+      }
+      function dependentForm() {
+        const f = $("priorInfoForm"), values = s.priorInfo.dependents || {};
+        f.classList.remove("hidden"); f.replaceChildren();
+        const h = document.createElement("h3"); h.textContent = "Review dependents from your prior return"; f.append(h);
+        values.items.forEach(x => { const label=document.createElement("label"), check=document.createElement("input"); check.type="checkbox"; check.value=x.dependentId; check.checked=(values.selectedIds||[]).includes(x.dependentId); label.append(check,document.createTextNode(" Include / Review " + x.name)); f.append(label); });
+        const save=document.createElement("button"); save.textContent="Save Dependent Review"; save.onclick=()=>savePrior("DEPENDENTS","CONFIRM",null,[...f.querySelectorAll("input:checked")].map(x=>x.value)); f.append(save);
+      }
+      async function savePrior(section, action, contact = null, selectedIds = null) {
+        const message = $("priorInfoMsg"); message.textContent = "Saving…";
+        try { s.priorInfo = (await c.saveprior({...args(),section,action,contact,selectedIds})).data.information; renderPriorInformation();renderClientNextAction(); message.textContent = "Saved ✓"; }
+        catch (e) { message.textContent = err(e); }
+      }
+      function renderDocumentRequests() {
+        const view=s.documentRequests,card=$("documentRequestCard"),host=$("documentRequests"),form=$("documentRequestForm");
+        form.classList.add("hidden"); host.replaceChildren();
+        if (!view) { card.classList.add("hidden"); return; }
+        card.classList.remove("hidden");
+        const pro=document.createElement("p"); pro.className="small"; pro.textContent="Your tax professional: "+(view.agent?.name||"Your Tax Professional")+(view.agent?.businessName?" · "+view.agent.businessName:""); host.append(pro);
+        if (!view.requests?.length) { const empty=document.createElement("p"); empty.textContent="No document requests are waiting for this tax-year return."; host.append(empty); return; }
+        view.requests.forEach(request=>{
+          const row=document.createElement("div"); row.className="row";
+          const left=document.createElement("span"),right=document.createElement("span");
+          left.textContent=request.requestTitle+(request.attemptNumber>1?" · Attempt "+request.attemptNumber:"");
+          right.className="tag "+(["ACCEPTED","CLOSED"].includes(request.status)?"ok":""); right.textContent=request.statusLabel;
+          row.append(left,right); host.append(row);
+          if(request.canSubmit){const b=document.createElement("button");b.textContent=request.status==="NEEDS_RESUBMISSION"?"Provide Again":request.requestType==="IP_PIN"?"Provide IP PIN":"Provide Requested Item";b.onclick=()=>documentRequestForm(request);host.append(b);}
+        });
+        if(view.complete){const done=document.createElement("p");done.className="small";done.textContent="Document requests for this return are complete ✓";host.append(done);}
+      }
+      function documentRequestForm(request) {
+        const form=$("documentRequestForm"),message=$("documentRequestMsg"); message.textContent=""; form.classList.remove("hidden"); form.replaceChildren();
+        const heading=document.createElement("h3"); heading.textContent=request.requestTitle; const explanation=document.createElement("p"); explanation.textContent=request.explanation; form.append(heading,explanation);
+        if(request.status==="NEEDS_RESUBMISSION"){const note=document.createElement("p");note.className="small";note.textContent="Action needed again"+(request.resubmissionNote?": "+request.resubmissionNote:"")+".";form.append(note);}
+        let info=null;
+        if(["ENTER","UPLOAD_OR_ENTER","ENTER_OPTIONAL_UPLOAD"].includes(request.submissionMode)){
+          const label=document.createElement("label"); label.textContent=request.requestType==="IP_PIN"?"Enter your 6-digit IP PIN":"Enter the requested information"; info=document.createElement("input"); info.id="requestEnteredInformation"; info.autocomplete="off";
+          if(request.requestType==="IP_PIN"){info.inputMode="numeric";info.maxLength=6;info.placeholder="6-digit IP PIN"; const helper=document.createElement("details");helper.innerHTML="<summary>How do I find it?</summary><p>An IRS Identity Protection PIN is a 6-digit number issued by the IRS to help protect your tax return from identity theft. Check your IRS notice or IRS account.</p>";form.append(helper);}else{info.placeholder="Enter information here";}
+          label.append(info);form.append(label);
+        }
+        let files=null;
+        if(["UPLOAD","UPLOAD_OR_ENTER","ENTER_OPTIONAL_UPLOAD"].includes(request.submissionMode)){
+          const label=document.createElement("label"); label.textContent=request.requestType==="IP_PIN"?"Upload a copy (optional)":"Upload document"; files=document.createElement("input"); files.type="file";files.multiple=true;files.accept="application/pdf,image/png,image/jpeg,image/webp";label.append(files);form.append(label);
+          const hint=document.createElement("p");hint.className="small";hint.textContent="PDF, JPG, PNG, or WEBP. Up to 3 files; 3 MB each; 6 MB total.";form.append(hint);
+        }
+        const submit=document.createElement("button");submit.textContent="Submit Securely";submit.onclick=()=>submitDocumentRequest(request,info,files,submit);form.append(submit);
+      }
+      async function encodeDocumentFiles(input){const files=[...(input?.files||[])].slice(0,3),out=[];for(const file of files){if(!["application/pdf","image/png","image/jpeg","image/webp"].includes(file.type)||file.size>3*1024*1024)throw new Error("Use a PDF, JPG, PNG, or WEBP file no larger than 3 MB.");const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||"").split(",").pop());r.onerror=()=>reject(new Error("That file could not be read."));r.readAsDataURL(file)});out.push({name:file.name,contentType:file.type,dataBase64:data});}return out;}
+      async function submitDocumentRequest(request,info,files,button){return once("document-request:"+request.requestId,button,async()=>{const message=$("documentRequestMsg");message.textContent="Submitting securely…";try{const attachments=await encodeDocumentFiles(files);await c.submitDocumentRequest({...args(),requestId:request.requestId,enteredInformation:info?.value||"",attachments});message.textContent="Submitted ✓ Your tax professional has been notified.";s.documentRequests=(await c.documentRequests(args())).data;renderDocumentRequests();renderClientNextAction();}catch(e){message.textContent=err(e,"We couldn’t submit that item. Your information is still here; check it and try again.");}})}
+      function doc(x) {
+        s.doc = x;
+        $("doctitle").textContent = x.title;
+        $("docbody").replaceChildren(
+          ...x.body.map((p) => {
+            let e = document.createElement("p");
+            e.textContent = p;
+            return e;
+          }),
+        );
+        let p = x.documentId === "permission_to_file";
+        $("ptf").classList.toggle("hidden", !p);
+        $("signer").textContent = s.packet.primaryFilerName;
+        if (p) {
+          $("ptfinfo").textContent =
+            s.packet.permissionToFile.taxYear +
+            " · " +
+            (s.packet.permissionToFile.result?.type === "REFUND"
+              ? "Refund "
+              : "Amount Due ") +
+            money(s.packet.permissionToFile.result?.amountCents);
+          $("help").classList.toggle(
+            "hidden",
+            !["NEEDS_AGENT_REVIEW", "INVITATION_RESENT"].includes(
+              s.packet.externalTaxSignature.status,
+            ),
+          );
+        }
+        show("docview");
+      }
+      async function external(response) {
+        const button=document.activeElement instanceof HTMLButtonElement?document.activeElement:null;return once("external-signature-response",button,async()=>{try {
+          s.packet.externalTaxSignature = (
+            await c.ext({ ...args(), response })
+          ).data.externalTaxSignature;
+          $("help").classList.toggle("hidden", response !== "NO");
+          $("docmsg").textContent = "Saved ✓";
+        } catch (e) {
+          $("docmsg").textContent = err(e);
+        }});
+      }
+      async function sign() {
+        return once("sign-pct-document",$("sign"),async()=>{try {
+          let r = (
+            await c.sign({
+              ...args(),
+              documentId: s.doc.documentId,
+              acknowledgesPreTransmission: $("ack")?.checked === true,
+            })
+          ).data;
+          s.packet = r.packet;
+          show("work");
+          renderDocs();renderClientNextAction();
+        } catch (e) {
+          $("docmsg").textContent = err(e);
+        }});
+      }
+      $("open").onclick = () => once("open-workspace",$("open"),async()=>{
+        s.q = {
+          leadId: $("lead").value.trim(),
+          accessCode: $("code").value.trim(),
+        };
+        await load();
+      });
+      $("clear").onclick = () => {
+        s.q = null;
+        show("login");
+      };
+      $("back").onclick = () => show("home");
+      $("docback").onclick = () => show("work");
+      $("yes").onclick = () => external("YES");
+      $("no").onclick = () => external("NO");
+      $("sign").onclick = sign;
+    </script>
+    <script type="module">
+      /* Phase 11: agent-owned resources and accepted-return reviews. The
+         browser supplies only the existing secure session; the server resolves
+         the exact client, return, and assigned agent. */
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+      const p11App = initializeApp({apiKey:"AIzaSyAypfnHTCIMUD1oKPHrFElWA7jzs7aaRC4",authDomain:"pct-tax-return-review.firebaseapp.com",projectId:"pct-tax-return-review",storageBucket:"pct-tax-return-review.firebasestorage.app",messagingSenderId:"494334478239",appId:"1:494334478239:web:1849b621d4dca4e0c95faa"}, "pct-phase11-client");
+      const p11Functions = getFunctions(p11App,"us-central1"), p11Load = httpsCallable(p11Functions,"loadClientGrowthExperience"), p11Submit = httpsCallable(p11Functions,"submitClientReturnReview");
+      const p11 = id => document.getElementById(id), esc = value => String(value ?? "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[c]));
+      let p11Data = null, p11Loading = false;
+      function p11Args(){const state=window.pctClientPortalCurrent; return state ? {...state.access,targetLeadId:state.leadId,returnId:state.returnId} : null;}
+      function p11Hide(){["growthCompleteCard","growthExploreCard","acceptedReviewCard"].forEach(id=>p11(id)?.classList.add("hidden"));}
+      function p11Render(data){
+        p11Data=data; p11Hide();
+        const complete=p11("growthCompleteCard"), explore=p11("growthExploreCard"), review=p11("acceptedReviewCard"), agent=data.agent||{};
+        if(data.eligibleAfterRequiredActions){
+          complete.classList.remove("hidden");
+          complete.innerHTML='<h2>You\'re All Set ✓</h2><p>Your information has been sent to '+esc(agent.name||"your tax professional")+'.</p>'+(data.services?.length?'<button id="p11Explore">Explore More From Your Tax Pro</button>':'')+'<div class="p11-ethos"><strong>Optional</strong><h3>Explore Life Insurance Options</h3><p>Interested in learning what life insurance options may be available to you? You can explore available coverage and pricing online with no obligation.</p><p class="small">When the page opens, click the orange “Get My Rates” button. Life insurance is optional and separate from your tax preparation services.</p><a class="button" href="'+esc(data.ethos?.url||'https://agents.ethoslife.com/invite/f0583')+'" target="_blank" rel="noopener noreferrer">Explore Life Insurance Options ↗</a></div><button id="p11Tracker" class="plain">Return to My Tax Tracker</button>';
+          p11("p11Explore")?.addEventListener("click",()=>{explore.classList.remove("hidden"); explore.scrollIntoView({behavior:"smooth",block:"start"});});
+          p11("p11Tracker")?.addEventListener("click",()=>complete.classList.add("hidden"));
+          if(data.services?.length){explore.innerHTML='<h2>Explore More From Your Tax Pro</h2><p><strong>'+esc(agent.name||"Your Tax Professional")+'</strong>'+(agent.businessName?'<br><span class="small">'+esc(agent.businessName)+'</span>':'')+'</p>'+data.services.map(service=>'<div class="p11-service"><h3>'+esc(service.name)+'</h3><p>'+esc(service.description)+'</p><a class="button" href="'+esc(service.url)+'" target="_blank" rel="noopener noreferrer">Learn More ↗</a></div>').join('')+'<button id="p11CloseExplore" class="plain">Back to My Tax Tracker</button>';
+            p11("p11CloseExplore")?.addEventListener("click",()=>{explore.classList.add("hidden");complete.classList.remove("hidden");});
+          }
+        }
+        if(data.review?.eligible){review.classList.remove("hidden"); if(data.review.submitted){const saved=data.review.review||{};review.innerHTML='<h2>Thank You for Your Review ✓</h2><p>Your '+esc(saved.taxYear||'')+' return feedback was saved.</p>';}
+          else {review.innerHTML='<h2>How Did We Do?</h2><p>Share your experience with '+esc(agent.name||"your tax professional")+'.</p><div id="p11Stars" class="p11-stars" role="group" aria-label="Select a rating">'+[1,2,3,4,5].map(n=>'<button type="button" class="plain" data-rating="'+n+'" aria-label="'+n+' stars">★</button>').join('')+'</div><label>Tell us about your experience:<textarea id="p11Text" maxlength="2000"></textarea></label><button id="p11Submit" disabled>Submit Review</button><div id="p11ReviewMsg" class="msg"></div>';let rating=0;document.querySelectorAll('#p11Stars button').forEach(button=>button.onclick=()=>{rating=Number(button.dataset.rating);document.querySelectorAll('#p11Stars button').forEach(star=>star.classList.toggle('selected',Number(star.dataset.rating)<=rating));p11('p11Submit').disabled=false;});p11('p11Submit').onclick=async()=>{const msg=p11('p11ReviewMsg');msg.textContent='Submitting…';try{await p11Submit({...p11Args(),rating,reviewText:p11('p11Text').value});await p11Refresh();}catch(error){msg.textContent='Your review could not be submitted. Your text is still here; please try again.';}};}
+        }
+      }
+      async function p11Refresh(){const args=p11Args();if(!args||p11Loading)return;p11Loading=true;try{p11Render((await p11Load(args)).data);}catch(_){p11Hide();}finally{p11Loading=false;}}
+      window.pctPhase11ClientRefresh=p11Refresh;
+      const p11Observer=new MutationObserver(()=>{if(!p11("work")?.classList.contains("hidden")) setTimeout(p11Refresh,80);});
+      p11Observer.observe(p11("docs"),{childList:true,subtree:true});
+      setInterval(()=>{if(!p11("work")?.classList.contains("hidden")&&window.pctClientPortalCurrent&&!p11Data)setTimeout(p11Refresh,0);},500);
+      const style=document.createElement("style"); style.textContent='.p11-ethos,.p11-service{margin-top:16px;padding:14px;border:1px solid var(--l);border-radius:12px;background:#fffaf2}.p11-stars button{font-size:28px;padding:4px 7px;color:#b78c2e}.p11-stars button.selected{background:#b78c2e;color:#fff}.p11-service h3{margin-bottom:4px}'; document.head.append(style);
+    </script>
+    <script>
+      /* Phase 20: task-oriented presentation over the existing secure Client Portal.
+         Case ID + review code security, exact return context, and all callables are unchanged. */
+      (function(){
+        const byId=id=>document.getElementById(id);
+        function section(id,eyebrow,title,description){const host=document.createElement('section');host.id=id;host.className='pct-p20-client-section';host.innerHTML='<div class="pct-p20-section-heading"><span>'+eyebrow+'</span><h2>'+title+'</h2><p>'+description+'</p></div>';return host;}
+        function move(id,host){const node=byId(id);if(node)host.append(node);}
+        function organize(){
+          const work=byId('work');if(!work||byId('pctP20ClientNav'))return;
+          document.querySelector('header').innerHTML='<span class="pct-p20-brand">PCT</span><span><strong>Secure Client Portal</strong><small>One tax year at a time</small></span>';
+          const nav=document.createElement('nav');nav.id='pctP20ClientNav';nav.className='pct-p20-client-nav';nav.setAttribute('aria-label','Return workspace sections');
+          const sections=[
+            ['Current Return','pctP20Current'],['Your Tasks','pctP20Tasks'],['Status & Records','pctP20Records'],['Completed & More','pctP20Complete']
+          ];
+          sections.forEach(([label,id])=>{const button=document.createElement('button');button.type='button';button.className='plain';button.textContent=label;button.onclick=()=>byId(id)?.scrollIntoView({behavior:'smooth',block:'start'});nav.append(button);});
+          byId('clientNextAction').insertAdjacentElement('afterend',nav);
+          const current=section('pctP20Current','CURRENT TAX YEAR','Your return at a glance','Review the result and any PCT documents for this exact tax-year return.');
+          const tasks=section('pctP20Tasks','WHAT YOU CAN DO NOW','Your tasks','Complete only the items that apply. Your Next Action above tells you where to begin.');
+          const records=section('pctP20Records','STATUS & HISTORY','Return records','View saved consent, client information, filing status, and secure return-copy activity.');
+          const complete=document.createElement('details');complete.id='pctP20Complete';complete.className='pct-p20-client-section pct-p20-complete';complete.innerHTML='<summary><span>COMPLETED & OPTIONAL</span><strong>Completed items and more services</strong><small>Open when you want to review finished steps, leave feedback, or explore optional resources.</small></summary>';
+          const summaryCard=byId('year')?.closest('.card');if(summaryCard){summaryCard.id='pctP20ReturnSummary';current.append(summaryCard);}
+          move('documentRequestCard',tasks);const financial=byId('financialTitle')?.closest('.card');if(financial){financial.id='pctP20FinancialCard';tasks.append(financial);}const prep=byId('prepPayment')?.closest('.card');if(prep){prep.id='pctP20PrepCard';tasks.append(prep);}move('partnerProductsCard',tasks);
+          move('intakeConsentCard',records);move('priorInfoCard',records);move('filingStatusCard',records);move('returnCopiesCard',records);
+          move('growthCompleteCard',complete);move('growthExploreCard',complete);move('acceptedReviewCard',complete);
+          work.append(current,tasks,records,complete);
+          const visibility=()=>{const visible=[...complete.querySelectorAll('.card')].some(card=>!card.classList.contains('hidden'));complete.classList.toggle('hidden',!visible);};
+          new MutationObserver(visibility).observe(complete,{attributes:true,subtree:true,attributeFilter:['class']});visibility();
+        }
+        organize();
+        const observer=new MutationObserver(()=>{
+          const active=!byId('work')?.classList.contains('hidden');document.body.classList.toggle('pct-p20-client-work-open',active);
+          if(active){const current=byId('pctP20ReturnSummary');if(current)current.setAttribute('aria-label',(byId('year')?.textContent||'Current')+' return details');}
+        });
+        observer.observe(document.body,{attributes:true,subtree:true,attributeFilter:['class']});
+        const style=document.createElement('style');style.id='pctPhase20ClientStyles';style.textContent=`
+          body{background:radial-gradient(900px 520px at 100% 0,rgba(201,159,71,.14),transparent 56%),var(--c);line-height:1.5}header{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:11px;box-shadow:0 8px 30px rgba(16,13,8,.16)}header>span:last-child{display:grid;gap:1px}header small{font:600 10px Arial,sans-serif;color:#e6d4a9;letter-spacing:.12em;text-transform:uppercase}.pct-p20-brand{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(145deg,#ead294,var(--g));color:var(--i);font:700 15px Georgia,serif}
+          main{max-width:960px;padding-top:28px}.pct-p20-client-work-open main{max-width:1040px}#login{max-width:560px;margin:28px auto}#home>h1{margin-bottom:18px}#returns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}#returns>.card{margin:0;display:flex;flex-direction:column;align-items:flex-start}#returns>.card button{margin-top:auto}
+          #work>#back{margin:0 0 12px;background:#fff}#clientNextAction{position:relative;border-width:2px;padding:28px;background:linear-gradient(145deg,#fffdf8,#fff4d8);box-shadow:0 16px 42px rgba(93,63,10,.10)}#clientNextAction h2{font-size:clamp(25px,4vw,36px);margin:4px 0 10px}#clientNextAction p{max-width:720px}.next-action .who{letter-spacing:.08em}
+          .pct-p20-client-nav{position:sticky;top:65px;z-index:22;display:flex;gap:8px;overflow-x:auto;margin:0 0 22px;padding:10px;background:rgba(251,246,234,.95);border:1px solid var(--l);border-radius:14px;backdrop-filter:blur(10px)}.pct-p20-client-nav button{flex:0 0 auto;margin:0;padding:9px 13px;font-size:12px}
+          .pct-p20-client-section{scroll-margin-top:132px;margin:0 0 28px;padding:18px;border:1px solid rgba(227,215,189,.9);border-radius:20px;background:rgba(255,255,255,.42)}.pct-p20-section-heading{margin:0 4px 16px}.pct-p20-section-heading span,.pct-p20-complete summary span{display:block;color:#80651f;font-size:10px;font-weight:800;letter-spacing:.16em}.pct-p20-section-heading h2{font-size:26px;margin:4px 0}.pct-p20-section-heading p{margin:0;color:var(--m);max-width:720px}.pct-p20-client-section>.card:last-child{margin-bottom:0}
+          #pctP20Current>.card{border-top:4px solid var(--g)}#pctP20Tasks>.card{border-left:4px solid var(--b)}#pctP20Records>.card{border-left:4px solid #6d7f64}.pct-p20-complete{padding:0;background:#fff}.pct-p20-complete summary{cursor:pointer;display:grid;gap:4px;padding:20px 24px;list-style:none}.pct-p20-complete summary::-webkit-details-marker{display:none}.pct-p20-complete summary strong{font:700 22px Georgia,serif}.pct-p20-complete summary small{color:var(--m)}.pct-p20-complete[open]{padding:0 18px 18px}.pct-p20-complete[open] summary{margin:0 -18px 18px;border-bottom:1px solid var(--l)}
+          .card{box-shadow:0 12px 34px rgba(65,48,20,.055)}button:focus-visible,.button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid rgba(162,19,85,.22);outline-offset:2px}.row{align-items:center}
+          @media(max-width:680px){main{padding:18px 10px 44px}#returns{grid-template-columns:1fr}.pct-p20-client-nav{top:60px;margin-left:-2px;margin-right:-2px}.pct-p20-client-section{padding:11px;border-radius:15px}.pct-p20-section-heading{padding:7px}.card{padding:19px;border-radius:14px}#clientNextAction{padding:22px}.row{display:grid;gap:8px}.row button{justify-self:start;margin-left:0}.pct-p20-complete[open]{padding:0 11px 11px}.pct-p20-complete[open] summary{margin:0 -11px 11px}}
+        `;document.head.append(style);
+      })();
+    </script>
+  </body>
+</html>
