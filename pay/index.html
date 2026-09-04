@@ -1,0 +1,43 @@
+<!--
+PCT PHASE 16
+OFFICIAL SHARED CLIENT PAYMENT PAGE
+PROPOSED HOSTINGER PAGE: https://www.pctquickfile.com/pay
+ONE SHARED PAGE ONLY. This page expects ?p={opaquePaymentToken}.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Secure Payment | PCT Pro Services</title>
+  <style>
+    :root{--ink:#15110d;--cream:#fbf6eb;--paper:#fffdfa;--gold:#c99c45;--berry:#a31558;--muted:#70695f;--line:#e1d4bc}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 50% 0,#fffdf7,transparent 48%),var(--cream);color:var(--ink);font:16px/1.55 Arial,sans-serif;padding:24px}.card{width:min(100%,540px);background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:34px 30px;box-shadow:0 18px 50px #4b33121a;text-align:center}.brand{font:700 13px/1.2 Arial,sans-serif;color:#8a651e;letter-spacing:.14em;text-transform:uppercase;margin-bottom:22px}.mark{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;margin:0 auto 18px;background:var(--gold);color:#fff;font:700 27px Georgia,serif}h1{font:700 30px/1.15 Georgia,serif;margin:0 0 10px}p{margin:0 0 16px;color:var(--muted)}.summary{margin:24px 0;padding:18px;border:1px solid var(--line);border-radius:16px;text-align:left}.row{display:flex;justify-content:space-between;gap:20px;padding:8px 0}.row.total{border-top:1px solid var(--line);margin-top:8px;padding-top:15px;font-size:18px;font-weight:700;color:var(--ink)}.btn{display:inline-block;width:100%;border:0;border-radius:999px;background:var(--berry);color:#fff;text-decoration:none;padding:14px 20px;font-weight:700;cursor:pointer}.btn[aria-disabled="true"]{opacity:.65;pointer-events:none}.note{font-size:13px;margin:18px 0 0}.state{min-height:22px;font-size:14px}.success .mark{background:#46805c}.warn .mark{background:#8f7130}.hidden{display:none}
+  </style>
+</head>
+<body>
+  <main class="card" aria-live="polite">
+    <div class="brand">PCT Pro Services</div>
+    <div id="mark" class="mark" aria-hidden="true">$</div>
+    <h1 id="title">Loading secure payment…</h1>
+    <p id="intro">Please wait while we confirm this payment is current.</p>
+    <section id="summary" class="summary hidden" aria-label="Preparation fee summary">
+      <div class="row"><span>Official Preparation Fee</span><strong id="official"></strong></div>
+      <div id="discountRow" class="row hidden"><span>Pay Now Savings</span><strong id="discount"></strong></div>
+      <div class="row total"><span>Total Due Today</span><strong id="total"></strong></div>
+    </section>
+    <a id="pay" class="btn hidden" target="_blank" rel="noopener noreferrer">PAY SECURELY NOW</a>
+    <p id="state" class="state"></p>
+    <p class="note">This secure payment link is specific to your current PCT return. Your Client Portal remains available for your return, documents, and status.</p>
+  </main>
+  <script type="module">
+    import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import {getFunctions,httpsCallable} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+    const app=initializeApp({apiKey:'AIzaSyAypfnHTCIMUD1oKPHrFElWA7jzs7aaRC4',authDomain:'pct-tax-return-review.firebaseapp.com',projectId:'pct-tax-return-review',storageBucket:'pct-tax-return-review.firebasestorage.app',messagingSenderId:'494334478239',appId:'1:494334478239:web:1849b621d4dca4e0c95faa'});
+    const resolve= httpsCallable(getFunctions(app,'us-central1'),'resolveClientPaymentLink');
+    const $=id=>document.getElementById(id), money=cents=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents||0)/100);
+    function message(kind,title,intro){$('title').textContent=title;$('intro').textContent=intro;$('summary').classList.add('hidden');$('pay').classList.add('hidden');$('mark').textContent=kind==='paid'?'✓':kind==='stale'?'!':'$';$('mark').parentElement.classList.toggle('success',kind==='paid');$('mark').parentElement.classList.toggle('warn',kind==='stale');}
+    async function load(){const token=new URLSearchParams(location.search).get('p')||'';if(!token){message('stale','Payment link unavailable','This payment link is incomplete. Please return to your Client Portal or contact your tax professional.');return}try{const result=(await resolve({token})).data||{};if(result.state==='PAID'){message('paid','Payment Received ✓','Thank you. No additional payment is due for this return.');return}if(result.state!=='READY'){message('stale','Payment Update In Progress','Your tax professional updated your return pricing. We’ll provide your current payment option shortly.');return}$('title').textContent='Your Preparation Fee Is Ready';$('intro').textContent=(result.agent?.name?'Your tax professional, '+result.agent.name+', ':'')+'completed your current preparation-fee review.';$('official').textContent=money(result.invoice?.grossAmountCents);if(Number(result.invoice?.discountAmountCents||0)>0){$('discountRow').classList.remove('hidden');$('discount').textContent='−'+money(result.invoice.discountAmountCents)}$('total').textContent=money(result.invoice?.amountCents);$('summary').classList.remove('hidden');$('pay').href=String(result.checkoutUrl||'');$('pay').classList.remove('hidden');$('state').textContent='Stripe opens in a new tab when you choose Pay Securely Now.'}catch(_){message('stale','Payment link unavailable','This link is no longer available. Please return to your Client Portal or contact your tax professional.')}}
+    load();
+  </script>
+</body>
+</html>
