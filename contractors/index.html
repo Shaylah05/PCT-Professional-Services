@@ -819,7 +819,7 @@
         }
         else if (currentTab === "access")
           $("tabContent").innerHTML =
-            `<div class="notice">REMOVE FROM PORTAL deletes only the current live contractor profile, onboarding, setup, and sharing records. Firebase Authentication and immutable client, return, payout, payment, and audit records are not touched. Delete the Firebase Auth user manually afterward.</div><div class="actions"><button class="btn gold" onclick="setAccess('active')">Activate Access</button><button class="btn danger" onclick="setAccess('suspended')">Temporarily Disable</button><button class="btn danger" onclick="removeFromPortal()">Remove From Portal</button></div>`;
+            `<div class="notice">REMOVE FROM PORTAL deletes only the current live contractor profile, onboarding, setup, and sharing records. Firebase Authentication and immutable client, return, payout, payment, and audit records are not touched. Delete the Firebase Auth user manually afterward.</div><div class="notice">RESET TEST AGENT is for deliberate test-account reuse only. It also clears the old test PTIN/onboarding artifacts so the same test email and PTIN can start a clean new enrollment. It never deletes Firebase Authentication; delete that user manually after the reset.</div><div class="actions"><button class="btn gold" onclick="setAccess('active')">Activate Access</button><button class="btn danger" onclick="setAccess('suspended')">Temporarily Disable</button><button class="btn danger" onclick="removeFromPortal()">Remove From Portal</button><button class="btn danger" onclick="resetTestAgent()">Reset Test Agent</button></div>`;
         else if (currentTab === "returns") {
           $("tabContent").innerHTML =
             '<div class="notice">Loading this contractor’s assigned returns…</div>';
@@ -957,6 +957,16 @@
         if (!confirm("Remove this Agent's current live portal records? Firebase Auth is not deleted by this action.")) return;
         try { await call("removeAgentFromPortal", {agentUid:selected.uid}); selected=null; say("Live Agent portal records removed. Delete the Firebase Auth user manually when ready."); await refreshAll(); }
         catch (e) { say(e.message || "Agent portal records could not be removed.", true); }
+      }
+      async function resetTestAgent() {
+        const email = String(selected?.email || "").trim().toLowerCase();
+        if (!email) return say("The selected Agent email is required for a test reset.", true);
+        const confirmation = prompt("TEST ACCOUNTS ONLY. Type RESET TEST AGENT to remove this Agent's old onboarding and PTIN test records.");
+        if (confirmation !== "RESET TEST AGENT") return;
+        const confirmEmail = prompt("Re-enter the selected test Agent email to confirm:");
+        if (String(confirmEmail || "").trim().toLowerCase() !== email) return say("Test reset cancelled: the email did not match the selected Agent.", true);
+        try { await call("resetTestAgentEnrollment", {agentUid:selected.uid, confirmation, confirmEmail}); selected=null; say("Test enrollment reset. Now delete the Firebase Auth user manually, then create the Agent again with the same test email."); await refreshAll(); }
+        catch (e) { say(e.message || "Test enrollment could not be reset.", true); }
       }
       async function activateAgentPrompt() {
         const uid = prompt("Enter the Firebase UID to activate:");
