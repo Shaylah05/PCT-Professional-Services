@@ -2360,7 +2360,7 @@ function firebaseLooksConfigured(){
   const c=PCT_BACKEND_CONFIG.firebaseConfig||{};
   return !!(c.apiKey && c.projectId && !String(c.apiKey).includes('PASTE_') && !String(c.projectId).includes('PASTE_'));
 }
-function publicAgentIdFromUrl(){const params=new URLSearchParams(location.search||'');return String(params.get('pro')||'').trim();}
+function publicAgentIdFromUrl(){const params=new URLSearchParams(location.search||''),manual=window.PCT_MANUAL_AGENT?.publicAgentId;const requested=String(params.get('pro')||manual||'').trim();return /^agent-[a-f0-9]{12}$/i.test(requested)?requested:'';}
 function agentIntakeResumeFromUrl(){const params=new URLSearchParams(location.search||'');return {leadId:String(params.get('resumeLeadId')||'').trim(),resumeCode:String(params.get('resumeCode')||'').trim()};}
 async function loadAgentIntakeResume(){
   const resume=agentIntakeResumeFromUrl(), publicAgentId=publicAgentIdFromUrl();

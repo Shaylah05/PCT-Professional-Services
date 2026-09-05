@@ -812,14 +812,14 @@
         );
         if (currentTab === "profile")
           $("tabContent").innerHTML =
-            `<div class="kv"><b>Display Name</b><span>${esc(selected.displayName)}</span></div><div class="kv"><b>Business</b><span>${esc(selected.businessName || "—")}</span></div><div class="kv"><b>Email</b><span>${esc(selected.email || "—")}</span></div><div class="kv"><b>Phone</b><span>${esc(selected.phone || "—")}</span></div><div class="kv"><b>Public Agent ID</b><span>${esc(selected.publicAgentId || "Not active")}</span></div><div class="actions">${selected.publicAgentId ? `<a class="btn" target="_blank" rel="noopener noreferrer" href="/start/${encodeURIComponent(selected.publicAgentId)}">View Personalized Link ↗</a>` : ""}<a class="btn" href="/admin">View All Returns</a></div>`;
+            `<div class="kv"><b>Display Name</b><span>${esc(selected.displayName)}</span></div><div class="kv"><b>Business</b><span>${esc(selected.businessName || "—")}</span></div><div class="kv"><b>Email</b><span>${esc(selected.email || "—")}</span></div><div class="kv"><b>Phone</b><span>${esc(selected.phone || "—")}</span></div><div class="card"><b>PERSONALIZED CLIENT INTAKE URL</b><div class="tiny" style="margin:6px 0">Paste the finished static intake-page URL exactly as provided. This display URL never changes Agent ownership.</div><input id="manualIntakeUrl" type="url" placeholder="https://pctquickfile.com/preparer/jane-smith/" value="${esc(selected.manualIntakeUrl || "")}"><div class="actions"><button class="btn gold" onclick="saveManualIntakeUrl()">SAVE MANUAL URL</button></div></div><div class="card"><b>AGENT PUBLIC ID</b><div class="tiny" style="margin:6px 0">Read-only ownership identifier for the static intake page.</div><input id="agentPublicId" readonly value="${esc(selected.publicAgentId || "")}"><div class="actions"><button class="btn" onclick="copyAgentPublicId()" ${selected.publicAgentId ? "" : "disabled"}>COPY ID</button></div></div><div class="actions"><a class="btn" href="/admin">View All Returns</a></div>`;
         else if (currentTab === "onboarding") {
           $("tabContent").innerHTML = '<div class="notice">Loading onboarding setup…</div>';
           loadOnboardingAgentDetail();
         }
         else if (currentTab === "access")
           $("tabContent").innerHTML =
-            `<div class="notice">Only Master Admin can activate, temporarily disable, or remove a contractor account. Each change is retained in the PCT activity history.</div><div class="actions"><button class="btn gold" onclick="setAccess('active')">Activate Access</button><button class="btn danger" onclick="setAccess('suspended')">Temporarily Disable</button><button class="btn danger" onclick="setAccess('terminated')">Remove From Portal</button></div>`;
+            `<div class="notice">REMOVE FROM PORTAL deletes only the current live contractor profile, onboarding, setup, and sharing records. Firebase Authentication and immutable client, return, payout, payment, and audit records are not touched. Delete the Firebase Auth user manually afterward.</div><div class="actions"><button class="btn gold" onclick="setAccess('active')">Activate Access</button><button class="btn danger" onclick="setAccess('suspended')">Temporarily Disable</button><button class="btn danger" onclick="removeFromPortal()">Remove From Portal</button></div>`;
         else if (currentTab === "returns") {
           $("tabContent").innerHTML =
             '<div class="notice">Loading this contractor’s assigned returns…</div>';
@@ -936,6 +936,27 @@
         } catch (e) {
           say(e.message, true);
         }
+      }
+      async function copyAgentPublicId() {
+        const value = $("agentPublicId")?.value || "";
+        if (!value) return;
+        try { await navigator.clipboard.writeText(value); say("Agent Public ID copied."); }
+        catch (_) { $("agentPublicId").focus(); $("agentPublicId").select(); document.execCommand("copy"); say("Agent Public ID copied."); }
+      }
+      async function saveManualIntakeUrl() {
+        const manualIntakeUrl = $("manualIntakeUrl")?.value.trim() || "";
+        if (!/^https:\/\/[^\s]+$/i.test(manualIntakeUrl)) return say("Enter an exact HTTPS personalized client intake URL.", true);
+        try {
+          const result = await call("setAdminManualAgentIntakeUrl", {agentUid:selected.uid, manualIntakeUrl});
+          selected.manualIntakeUrl = result.manualIntakeUrl;
+          say(result.readyEmailQueued ? "Manual intake URL saved. Ready email queued." : "Manual intake URL saved.");
+          renderTab();
+        } catch (e) { say(e.message || "Manual intake URL could not be saved.", true); }
+      }
+      async function removeFromPortal() {
+        if (!confirm("Remove this Agent's current live portal records? Firebase Auth is not deleted by this action.")) return;
+        try { await call("removeAgentFromPortal", {agentUid:selected.uid}); selected=null; say("Live Agent portal records removed. Delete the Firebase Auth user manually when ready."); await refreshAll(); }
+        catch (e) { say(e.message || "Agent portal records could not be removed.", true); }
       }
       async function activateAgentPrompt() {
         const uid = prompt("Enter the Firebase UID to activate:");
