@@ -125,6 +125,16 @@
         padding: 7px 10px;
         font-size: 12px;
       }
+      .btn.task-idle {
+        background: var(--ink);
+        color: #fff;
+        border-color: var(--ink);
+      }
+      .btn.task-complete {
+        background: #2f7d57;
+        color: #fff;
+        border-color: #246343;
+      }
       .stats {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -866,11 +876,22 @@
           const result = await call("getAdminOnboardingAgent", {agentUid:selected.uid}), o=result.onboarding||{}, tasks=result.tasks||[], software=o.taxSoftware||{}, deposit=o.directDeposit||{};
           const attempts=result.redemptionAttempts||[], successCount=attempts.filter(x=>x.success).length, failedCount=attempts.length-successCount;
           host.innerHTML = `<div class="notice"><strong>${esc(String(o.stage||"No onboarding record").replaceAll("_"," "))}</strong> · Payment ${esc(o.paymentStatus||"Not recorded")} · Training deadline ${o.trainingDeadline?esc(new Date(o.trainingDeadline.seconds*1000).toLocaleDateString()):"Not set"} · Code attempts: ${successCount} successful / ${failedCount} unsuccessful</div><div id="manualDirectDepositCard" class="card"><b>Direct deposit provider setup</b></div><div id="taxSoftwareAccessSetup" class="card"><b>Tax-software setup</b></div><div class="card"><b>Required onboarding tasks</b>${tasks.sort((a,b)=>(a.order||0)-(b.order||0)).map(t=>`<div class="ledger-row"><strong>${esc(t.title)}</strong><div class="tiny">Agent sees: ${esc(t.agentVisibleStatus||t.status)}</div><select id="task_${esc(t.key)}"><option ${t.status==="PENDING"?"selected":""}>PENDING</option><option ${t.status==="IN_PROGRESS"?"selected":""}>IN_PROGRESS</option><option ${t.status==="BLOCKED"?"selected":""}>BLOCKED</option><option ${t.status==="COMPLETE"?"selected":""}>COMPLETE</option></select><button class="btn small" onclick="saveOnboardingTask('${esc(t.key)}')">SAVE TASK</button></div>`).join("")||'<div class="tiny">Tasks are created automatically after certification.</div>'}</div><div class="notice">When the first seven required tasks are complete, the account-ready email is prepared automatically. Production access turns on only after delivery is recorded.</div><div class="actions"><button class="btn gold" onclick="activateOnboardingAgent()">RETRY WELCOME / ACTIVATION</button><button class="btn" onclick="extendOnboardingDeadline()">EXTEND TRAINING DEADLINE</button></div>`;
+          const productionReady=o.stage==='ACTIVE_AGENT'||o.productionAccess===true||String(o.accessStatus||'').toLowerCase()==='active';
+          const headline=host.querySelector('.notice strong');if(headline&&productionReady)headline.textContent='ACTIVE / PRODUCTION READY';
+          renderOnboardingTaskControls(host,tasks);
           renderManualDirectDepositSetup(host,o,deposit);
           renderTaxSoftwareAccessSetup(host,software);
           host.querySelector('#task_send_direct_deposit_invitation')?.closest('.ledger-row')?.remove();
           renderAdminPtinPanel(result,host);
         } catch (error) { host.innerHTML='<div class="notice error">No onboarding record is available for this contractor yet.</div>'; }
+      }
+      function renderOnboardingTaskControls(host,tasks){
+        tasks.forEach(task=>{
+          const select=host.querySelector('#task_'+task.key),row=select?.closest('.ledger-row');if(!select||!row)return;
+          const confirmed=task.status==='COMPLETE'?'COMPLETE':'PENDING',controls=document.createElement('div');controls.className='actions';
+          ['PENDING','COMPLETE'].forEach(status=>{const button=document.createElement('button');button.type='button';button.className='btn small '+(confirmed===status?(status==='COMPLETE'?'task-complete':'gold'):'task-idle');button.textContent=status;button.dataset.onboardingTaskAction='1';button.onclick=()=>saveOnboardingTask(task.key,status,row);controls.appendChild(button);});
+          select.remove();row.querySelector("button[onclick^='saveOnboardingTask']")?.remove();row.appendChild(controls);
+        });
       }
       function renderAdminPtinPanel(result,host){
         const records=result.ptinRecords||[],record=records[0]||{},verified=record.status==="VERIFIED",panel=document.createElement("div");panel.className="card";panel.id="adminPtinPanel";
@@ -890,7 +911,7 @@
       async function recordManualDepositInvitation(){const check=$("manualBankInvitationSent"),button=$("manualBankInvitationSave");if(!check?.checked)return say("Check BANK INVITATION SENT after the bank has sent its invitation.",true);if(button?.disabled)return;const label=button?.textContent||"";if(button){button.disabled=true;button.textContent="SAVING…";}try{await call("recordManualDirectDepositInvitation",{agentUid:selected.uid});say("Bank invitation sent recorded.");await loadOnboardingAgentDetail();}catch(e){say(e.message||"Bank invitation status could not be recorded.",true);if(button?.isConnected){button.disabled=false;button.textContent=label;}}}
       function renderTaxSoftwareAccessSetup(host,software){const card=host.querySelector('#taxSoftwareAccessSetup')||[...host.querySelectorAll('.card')].find(item=>item.querySelector('b')?.textContent.trim()==='Tax-software setup');if(!card)return;const sent=String(software.credentialDeliveryStatus||'').toUpperCase()==='SENT',when=software.credentialsSentAt?.seconds?new Date(software.credentialsSentAt.seconds*1000).toLocaleString():'';card.id='taxSoftwareAccessSetup';card.innerHTML='<b>TAX SOFTWARE ACCESS</b><label>USERNAME<input id="softwareUsername" autocomplete="off" value="'+esc(software.username||'')+'"></label><label>INITIAL PASSWORD<input id="softwareInitialPassword" type="password" autocomplete="new-password"></label><div class="actions"><button id="sendTaxSoftwareAccess" type="button" class="btn gold" onclick="sendTaxSoftwareAccess()">SEND TAX SOFTWARE ACCESS</button></div><div class="tiny">The permanent Tax Software login page is applied automatically. PCT does not store the initial password after this email is sent.</div>'+(sent?'<div class="tiny"><strong>TAX SOFTWARE ACCESS SENT ✓</strong>'+(when?' · '+esc(when):'')+'</div>':'');}
       async function sendTaxSoftwareAccess(){const username=$("softwareUsername")?.value.trim()||'',password=$("softwareInitialPassword")?.value||'',button=$("sendTaxSoftwareAccess");if(!username||!password)return say("Enter the Agent username and temporary initial password.",true);if(button?.disabled)return;const label=button.textContent;button.disabled=true;button.textContent="SENDING…";try{await call("sendTaxSoftwareAccess",{agentUid:selected.uid,username,temporaryPassword:password});const passwordInput=$("softwareInitialPassword");if(passwordInput)passwordInput.value="";say("Tax software access sent.");await loadOnboardingAgentDetail();}catch(e){say(e.message||"Tax software access could not be sent.",true);if(button?.isConnected){button.disabled=false;button.textContent=label;}}}
-      async function saveOnboardingTask(key){try{await call("completeExternalOnboardingTask",{agentUid:selected.uid,taskKey:key,status:$("task_"+key).value,agentVisibleStatus:$("task_"+key).value.replaceAll("_"," ")});say("Onboarding task updated.");loadOnboardingAgentDetail()}catch(e){say(e.message||"Task could not be updated.",true)}}
+      async function saveOnboardingTask(key,status,row){const buttons=[...(row?.querySelectorAll('[data-onboarding-task-action]')||[])];buttons.forEach(button=>button.disabled=true);try{await call("completeExternalOnboardingTask",{agentUid:selected.uid,taskKey:key,status,agentVisibleStatus:status.replaceAll("_"," ")});say("Onboarding task updated.");await loadOnboardingAgentDetail()}catch(e){say(e.message||"Task could not be updated.",true);buttons.forEach(button=>button.disabled=false)}}
       async function activateOnboardingAgent(){try{await call("activatePreparedAgent",{agentUid:selected.uid});say("Welcome email queued. Production access activates only after delivery is recorded.");loadOnboardingAgentDetail()}catch(e){say(e.message||"The agent is not ready for activation.",true)}}
       async function extendOnboardingDeadline(){const value=prompt("New training deadline:",""),reason=prompt("Reason for extension:","");if(!value||!reason)return;try{await call("extendTrainingDeadline",{agentUid:selected.uid,trainingDeadline:new Date(value).toISOString(),reason});say("Training deadline extended.");loadOnboardingAgentDetail()}catch(e){say(e.message||"Deadline could not be extended.",true)}}
       function renderFineAdmin() {
