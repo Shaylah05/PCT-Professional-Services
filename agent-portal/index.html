@@ -1611,6 +1611,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     app,
     oldHtml,
     oldClass,
+    oldSetupHidden,
     current;
   var SANDBOX_PROFILE_KEY = "pctTrainingPublishedProfile";
   function sandboxProfile() {
@@ -1739,13 +1740,19 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
       app.innerHTML = oldHtml;
       app.className = oldClass || "grid";
     }
+    var setupStatus = document.getElementById("agentSetupStatus");
+    if (setupStatus && oldSetupHidden !== undefined) setupStatus.classList.toggle("hidden", oldSetupHidden);
     oldHtml = undefined;
     oldClass = undefined;
+    oldSetupHidden = undefined;
     current = null;
   }
   function shell(title, subtitle, body) {
     app = document.getElementById("appScreen");
     if (!app) return;
+    var setupStatus = document.getElementById("agentSetupStatus");
+    if (oldSetupHidden === undefined) oldSetupHidden = setupStatus ? setupStatus.classList.contains("hidden") : undefined;
+    if (setupStatus) setupStatus.classList.add("hidden");
     oldHtml = app.innerHTML;
     oldClass = app.className;
     app.innerHTML =
