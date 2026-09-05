@@ -1404,12 +1404,14 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     const shell=ensureAgentShell(),show=activeAgent()&&!byId('appScreen')?.classList.contains('hidden');
     shell?.classList.toggle('hidden',!show);
     if(!show)return;
-    const title=document.querySelector('#appScreen .section-title h3');if(title)title.textContent='Client Returns';
+    const title=document.querySelector('#appScreen .section-title h3');if(title&&title.textContent!=='Client Returns')title.textContent='Client Returns';
     const review=leadRows().filter(item=>typeof matchFilterOverride==='function'&&matchFilterOverride(item,'review')).length;
     const follow=leadRows().filter(item=>typeof matchFilterOverride==='function'&&matchFilterOverride(item,'follow')).length;
-    shell.querySelector('.pct-p20-shell-copy p').textContent=leadRows().length
+    const summaryEl=shell.querySelector('.pct-p20-shell-copy p');
+    const summaryText=leadRows().length
       ? review+' need review · '+follow+' need follow-up · '+leadRows().length+' total client returns'
       : 'Start by sharing your personalized Client Intake Link or adding a client while they are with you.';
+    if(summaryEl&&summaryEl.textContent!==summaryText)summaryEl.textContent=summaryText;
   }
   function enhanceLeadDashboard(){
     syncAgentShell();
