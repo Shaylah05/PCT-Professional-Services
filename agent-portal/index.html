@@ -47,7 +47,7 @@
     </div>
   </section>
 
-  <section id="agentSetupStatus" class="card card-pad hidden" aria-live="polite"></section>
+  <div id="agentSetupStatusStaging" class="hidden"><section id="agentSetupStatus" class="card card-pad hidden" aria-live="polite"></section></div>
 
   <section id="loginScreen" class="card login">
     <div class="card-pad">
@@ -864,7 +864,7 @@ async function saveNotes(){const aw={...(selectedLead()?.adminWorkflow||{})}; if
 /* Focused admin navigation: dashboard first, one-return workspace second. */
 (function(){
   if(!document.getElementById('pctReturnWorkspaceStyles')){const s=document.createElement('style');s.id='pctReturnWorkspaceStyles';s.textContent='.workspace-mode{display:block!important}.workspace-mode .side{display:none}.workspace-mode #detailCard{width:100%}.return-workspace-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:18px 22px;background:linear-gradient(160deg,#241913,#15100b);color:#f7eedf}.return-workspace-head h2{color:#fff;font-size:28px}.return-workspace-head p{margin:6px 0 0;color:#d4c6ad}.return-workspace-body{padding:18px}.workspace-document-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin:18px 0 10px}.workbench-vertical{display:block}.workbench-vertical .workbench-viewer{width:100%;min-height:75vh;height:75vh;padding:0;display:block;background:#241b13}.workbench-vertical #adminUniversalViewer{width:100%;height:100%;min-height:75vh}.workbench-vertical #adminUniversalViewer .pctuv{width:100%;height:100%;min-height:75vh;border-radius:0}.workbench-vertical #adminUniversalViewer .pctuv-stage{min-height:calc(75vh - 52px);height:calc(75vh - 52px)}.workbench-vertical .workbench-side{margin-top:16px}.workbench-vertical .w2-entry-panel{max-height:none}.workspace-mode .detailView{min-height:0}@media(max-width:760px){.workbench-vertical .workbench-viewer{min-height:60vh;height:60vh}.workbench-vertical #adminUniversalViewer,.workbench-vertical #adminUniversalViewer .pctuv{min-height:60vh}.workbench-vertical #adminUniversalViewer .pctuv-stage{min-height:calc(60vh - 52px);height:calc(60vh - 52px)}}';document.head.appendChild(s)}
-  if(!document.getElementById('pctReturnWorkspaceFocusStyles')){const s=document.createElement('style');s.id='pctReturnWorkspaceFocusStyles';s.textContent='body:has(#appScreen.workspace-mode) .hero,body:has(#appScreen.workspace-mode) #agentSetupStatus,body:has(#appScreen.workspace-mode) #pctP20AgentShell{display:none!important}';document.head.appendChild(s)}
+  if(!document.getElementById('pctReturnWorkspaceFocusStyles')){const s=document.createElement('style');s.id='pctReturnWorkspaceFocusStyles';s.textContent='body:has(#appScreen.workspace-mode) .hero,body:has(#appScreen.workspace-mode) #pctP20AgentShell{display:none!important}';document.head.appendChild(s)}
   const dashboardRenderLeadList=renderLeadList;
   renderLeadList=function(){
     const q=$('searchInput').value.trim().toLowerCase();filteredLeads=leads.filter(l=>matchFilter(l)).filter(l=>{if(!q)return true;const c=l.client||{};return [clientName(l),c.email,c.phone,l.leadType,workflowStatus(l),l.filing?.taxYear,l.filing?.filingStatus,l.filing?.state].join(' ').toLowerCase().includes(q)});$('leadCount').textContent=filteredLeads.length+' found';
@@ -1623,7 +1623,6 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     app,
     oldHtml,
     oldClass,
-    oldSetupHidden,
     current;
   var SANDBOX_PROFILE_KEY = "pctTrainingPublishedProfile";
   function sandboxProfile() {
@@ -1752,19 +1751,13 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
       app.innerHTML = oldHtml;
       app.className = oldClass || "grid";
     }
-    var setupStatus = document.getElementById("agentSetupStatus");
-    if (setupStatus && oldSetupHidden !== undefined) setupStatus.classList.toggle("hidden", oldSetupHidden);
     oldHtml = undefined;
     oldClass = undefined;
-    oldSetupHidden = undefined;
     current = null;
   }
   function shell(title, subtitle, body) {
     app = document.getElementById("appScreen");
     if (!app) return;
-    var setupStatus = document.getElementById("agentSetupStatus");
-    if (oldSetupHidden === undefined) oldSetupHidden = setupStatus ? setupStatus.classList.contains("hidden") : undefined;
-    if (setupStatus) setupStatus.classList.add("hidden");
     oldHtml = app.innerHTML;
     oldClass = app.className;
     app.innerHTML =
@@ -2666,10 +2659,11 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   function demo(){return {onboarding:{stage:'ELEARNING',paymentStatus:'PAID',daysRemaining:47,trainingDeadline:new Date(Date.now()+47*86400000).toISOString(),productionAccess:false,directDeposit:{status:'NOT_STARTED'},taxSoftware:{accountStatus:'Not started'}},tasks:[['verify_contractor_information','Verify required contractor information'],['send_direct_deposit_invitation','Send direct-deposit invitation'],['create_tax_software_account','Create tax-software account'],['confirm_agent_portal_access','Confirm Agent Portal access'],['confirm_personalized_link','Confirm personalized link and profile']].map(function(x){return {key:x[0],title:x[1],status:'PENDING',agentVisibleStatus:'Pending'}})}}
   function isSandbox(){return /agent-portal-(sandbox|test)/i.test(location.pathname)||location.pathname==='/agent-portal-test'}
   function drawUnavailable(message){var app=document.getElementById('appScreen');if(!app)return;if(savedHtml===undefined){savedHtml=app.innerHTML;savedClass=app.className}app.className='portal-fullscreen-view';app.innerHTML='<div class="agp"><header class="agp-head"><div><div class="eyebrow">CONTRACTOR PREPARER ONBOARDING</div><h2>Onboarding Center</h2><p>Your verified onboarding status could not be loaded.</p></div><button class="btn btn-ghost" id="onboardingBack">← BACK TO DASHBOARD</button></header><div class="agp-body"><section class="agp-panel" style="padding:22px"><div class="warnbox" role="alert">'+esc(message||'Please refresh and try again. If this continues, open Messages & Support.')+'</div></section></div></div>';document.getElementById('onboardingBack').onclick=restore}
-  function restore(){var app=document.getElementById('appScreen');if(app&&savedHtml!==undefined){app.innerHTML=savedHtml;app.className=savedClass}savedHtml=undefined}
-  function draw(data){var app=document.getElementById('appScreen');if(!app)return; if(savedHtml===undefined){savedHtml=app.innerHTML;savedClass=app.className} var o=data.onboarding||{},elearning=o.stage==='ELEARNING',active=o.stage==='ACTIVE_AGENT',tasks=data.tasks||[];
+  function restore(){var app=document.getElementById('appScreen'),setup=document.getElementById('agentSetupStatus'),staging=document.getElementById('agentSetupStatusStaging');if(setup&&staging)staging.appendChild(setup);if(app&&savedHtml!==undefined){app.innerHTML=savedHtml;app.className=savedClass}savedHtml=undefined}
+  function draw(data){var app=document.getElementById('appScreen'),setup=document.getElementById('agentSetupStatus'),staging=document.getElementById('agentSetupStatusStaging');if(!app)return;if(setup&&staging)staging.appendChild(setup);if(savedHtml===undefined){savedHtml=app.innerHTML;savedClass=app.className} var o=data.onboarding||{},elearning=o.stage==='ELEARNING',active=o.stage==='ACTIVE_AGENT',tasks=data.tasks||[];
     app.className='portal-fullscreen-view';
     app.innerHTML='<div class="agp"><header class="agp-head"><div><div class="eyebrow">CONTRACTOR PREPARER ONBOARDING</div><h2>'+esc(elearning?'E-Learning Stage':'Onboarding Center')+'</h2><p>'+(elearning?'Complete training and submit your certification code within 60 days to continue.':'Track each required setup step before production access begins.')+'</p></div><button class="btn btn-ghost" id="onboardingBack">← BACK TO DASHBOARD</button></header><div class="agp-body"><section class="agp-panel" style="padding:22px"><div class="info-grid"><div class="info"><div class="k">Current stage</div><div class="v">'+esc(stageName(o.stage))+'</div></div><div class="info"><div class="k">Payment</div><div class="v">'+esc(stageName(o.paymentStatus))+'</div></div><div class="info"><div class="k">Days remaining</div><div class="v">'+esc(o.daysRemaining==null?'—':o.daysRemaining)+'</div></div><div class="info"><div class="k">Training deadline</div><div class="v">'+esc(date(o.trainingDeadline))+'</div></div></div>'+(elearning?'<div class="securebox"><h3>Training Certification</h3><p>Enter the current completion code only after passing the external training assessment.</p><input id="trainingCertificationCode" autocomplete="one-time-code" placeholder="Completion code"><button class="btn btn-gold" id="redeemTrainingCode" style="margin-top:10px">SUBMIT CERTIFICATION</button><div id="certificationResult" class="small" role="status"></div></div>':'')+'<div class="securebox"><h3>Direct Deposit</h3><div class="info-grid"><div class="info"><div class="k">Setup status</div><div class="v">'+esc(stageName(o.directDeposit?.status||'NOT_STARTED'))+'</div></div><div class="info"><div class="k">Bank</div><div class="v">'+esc(o.directDeposit?.bankName||'Shown after provider verification')+'</div></div><div class="info"><div class="k">Account</div><div class="v">'+esc(o.directDeposit?.accountLast4?'Ending in '+o.directDeposit.accountLast4:'No account details stored here')+'</div></div></div><button class="btn btn-soft" id="requestDepositUpdate" '+(!['READY_FOR_ONBOARDING','ADMIN_SETUP_IN_PROGRESS','AGENT_PORTAL_ONBOARDING','ACTIVE_AGENT'].includes(o.stage)?'disabled':'')+'>UPDATE DIRECT DEPOSIT</button><div id="depositResult" class="small" role="status"></div></div><h3 style="margin:22px 0 10px">Onboarding Checklist</h3><div>'+tasks.map(function(t){return '<div class="ledger-row"><strong>'+esc(t.title)+'</strong><div><span class="tag '+(t.status==='COMPLETE'?'green':'gold')+'">'+esc(t.agentVisibleStatus||stageName(t.status))+'</span></div>'+(t.dueAt?'<div class="small">Target date: '+esc(date(t.dueAt))+'</div>':'')+'</div>'}).join('')+'</div>'+(active?'<div class="infobox">Production access is active. Your client dashboard starts empty until a client uses your link, you add a client, or Master Admin assigns a return.</div>':'<div class="warnbox">Client returns, tax documents, and transmission controls remain unavailable until activation.</div>')+'</section></div></div>';
+    var setup=document.getElementById('agentSetupStatus'),setupSlot=document.createElement('div');setupSlot.id='onboardingAgentSetupStatusSlot';app.querySelector('.agp-head')?.insertAdjacentElement('afterend',setupSlot);if(setup)setupSlot.appendChild(setup);
     document.getElementById('onboardingBack').onclick=restore;
     var redeem=document.getElementById('redeemTrainingCode'); if(redeem)redeem.onclick=async function(){var out=document.getElementById('certificationResult'),call=fn('redeemTrainingCompletionCode'),code=document.getElementById('trainingCertificationCode').value.trim();if(!code){out.textContent='Enter your certification code.';return}redeem.disabled=true;out.textContent='Checking certification…';try{var r=await call({code:code,verificationSource:'weekly_code'});out.textContent='Certification accepted ✓ · '+r.data.certificateId;setTimeout(open,800)}catch(e){out.textContent=e.message||'Certification could not be accepted.';redeem.disabled=false}};
     var deposit=document.getElementById('requestDepositUpdate');if(deposit)deposit.onclick=async function(){var out=document.getElementById('depositResult'),call=fn('requestDirectDepositUpdate');deposit.disabled=true;try{var r=await call({});out.textContent=r.data.message||'Your direct-deposit update request was sent.'}catch(e){out.textContent=e.message||'The update request could not be sent.';deposit.disabled=false}};
