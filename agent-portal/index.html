@@ -219,6 +219,11 @@ function initFirebase(){
     fb.ready=true;
     $('backendStatus').textContent='System ready'; $('backendStatus').className='pill good hidden';
     fb.auth.onAuthStateChanged(handleAuthState);
+    window.addEventListener('focus',function(){
+      if(!fb.user||fb.authStatusRefreshInFlight)return;
+      fb.authStatusRefreshInFlight=true;
+      Promise.resolve(handleAuthState(fb.user)).finally(function(){fb.authStatusRefreshInFlight=false;});
+    });
   }catch(e){
     $('backendStatus').textContent='System unavailable'; $('backendStatus').className='pill warn hidden';
     $('loginError').textContent='Agent sign-in is temporarily unavailable. Please try again or contact PCT Agent Support.'; $('loginError').classList.remove('hidden');
@@ -233,20 +238,42 @@ async function handleAuthState(user){
   try{
     const token = await user.getIdTokenResult(true);
     fb.claims = token.claims || {};
+    const role=String(fb.claims.role||'').toLowerCase(),accessStatus=String(fb.claims.accessStatus||'').toLowerCase(),trainingComplete=String(fb.claims.trainingStatus||'').toLowerCase()==='complete'||fb.claims.taxTrainingComplete===true;
+    const showSignedInStatus=function(title,message,actionHtml){
+      $('userStatus').textContent='Agent Account · '+user.email;
+      $('userStatus').classList.remove('hidden'); $('signOutBtn').classList.remove('hidden');
+      document.querySelectorAll('[data-agent-menu]').forEach(el=>{if(el.id!=='userStatus')el.classList.add('hidden');});
+      $('refreshBtn').classList.add('hidden'); $('contractorManagerBtn').classList.add('hidden'); $('launchReadinessBtn').classList.add('hidden'); $('statusAuditBtn').classList.add('hidden');
+      $('loginScreen').classList.add('hidden'); $('appScreen').classList.add('hidden');
+      $('agentSetupStatus').innerHTML='<div class="eyebrow">PCT AGENT ACCOUNT</div><h3>'+escapeHtml(title)+'</h3><p>'+escapeHtml(message)+'</p>'+(actionHtml||'');
+      $('agentSetupStatus').classList.remove('hidden');
+    };
+    if(role!=='preparer_agent'){
+      showSignedInStatus('Account Access Unavailable','This account is signed in, but it is not configured for PCT Agent Portal access. Contact PCT Agent Support if you need assistance.');
+      return;
+    }
+    if(['suspended','terminated'].includes(accessStatus)){
+      showSignedInStatus('Production Access Unavailable','Your Agent account is signed in, but production Agent Portal access is currently unavailable. Contact PCT Agent Support if you need assistance.');
+      return;
+    }
+    if(!trainingComplete){
+      showSignedInStatus('Training Required','Your PCT training must be completed before your Agent Portal tools can be unlocked. Open your eLearning Portal to finish your training. You can access the eLearning Portal anytime using the button at the top of the Join My Team page. Once your training is complete and your account updates, this message will disappear automatically and you can continue your Agent onboarding.','<p><a class="btn btn-gold" href="https://www.pctquickfile.com/join-my-team" target="_blank" rel="noopener noreferrer">OPEN ELEARNING PORTAL ↗</a></p>');
+      return;
+    }
     let recoveredPortalAccess=false;
     fb.portalAccessMode='';
-    if(!(fb.claims.role==='preparer_agent' && fb.claims.accessStatus==='active' && fb.claims.trainingStatus==='complete')){
+    if(accessStatus!=='active'){
       try{
         const setup=(await fb.functions.httpsCallable('getContractorOnboardingStatus')({})).data;
         recoveredPortalAccess=setup?.productionAccess===true&&String(setup?.lifecycle?.ptin?.status||'').toUpperCase()==='UNDER_REVIEW';
         if(recoveredPortalAccess) fb.portalAccessMode='ptin_under_review';
       }catch(_){}
     }
-    const allowed=recoveredPortalAccess||(fb.claims.role==='preparer_agent' && fb.claims.accessStatus==='active' && fb.claims.trainingStatus==='complete');
-    const onboarding=!recoveredPortalAccess&&fb.claims.role==='preparer_agent' && fb.claims.accessStatus==='onboarding' && fb.claims.trainingStatus==='complete';
+    const allowed=recoveredPortalAccess||accessStatus==='active';
+    const onboarding=!recoveredPortalAccess&&accessStatus==='onboarding';
     if(!allowed && !onboarding){
-      $('agentSetupStatus').classList.add('hidden'); $('loginError').textContent='Your Agent Portal access is not active yet. Complete certification and activation before signing in.';
-      $('loginError').classList.remove('hidden'); await fb.auth.signOut(); return;
+      showSignedInStatus('Agent Setup Status','Your account is signed in. Your Agent onboarding status is still updating, so production Agent Portal tools are not available yet. Refresh this page after your account status updates or contact PCT Agent Support.');
+      return;
     }
     if(onboarding){
       $('userStatus').textContent='Agent Setup · '+user.email;
@@ -307,8 +334,12 @@ async function emailSignIn(){
   if(!fb.auth){$('loginError').textContent='Agent sign-in is not ready yet. Please try again.'; $('loginError').classList.remove('hidden'); return;}
   const email=$('loginEmail').value.trim(), pass=$('loginPassword').value;
   if(!email||!pass){$('loginError').textContent='Enter email and password.'; $('loginError').classList.remove('hidden'); return;}
+  if(fb.signInInFlight)return;
+  const button=document.querySelector('button[onclick="emailSignIn()"]'),label=button?.textContent||'Sign in';
+  fb.signInInFlight=true; if(button){button.disabled=true;button.textContent='Signing in…';}
   try{$('loginError').classList.add('hidden'); await fb.auth.signInWithEmailAndPassword(email,pass);}
   catch(e){$('loginError').textContent='Sign-in failed: '+pctFriendlyError(e); $('loginError').classList.remove('hidden');}
+  finally{fb.signInInFlight=false;if(button?.isConnected){button.disabled=false;button.textContent=label;}}
 }
 async function resetAgentPassword(){const email=$('loginEmail').value.trim();if(!email){$('loginError').textContent='Enter your signup email first.';$('loginError').classList.remove('hidden');return}try{await fb.auth.sendPasswordResetEmail(email);$('loginError').textContent='Password reset instructions sent. Check your email.';$('loginError').classList.remove('hidden')}catch(e){$('loginError').textContent='We could not send reset instructions. Verify your email and try again.';$('loginError').classList.remove('hidden')}}
 async function signOut(){
@@ -2382,6 +2413,8 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   }
 
   function decorateLogin() {
+    // Agent Portal owns its credential handler. Do not inject a second login path.
+    return;
     var password = passwordField();
     if (!password) return;
     var card = password.closest(".card-pad, .login") || password.parentElement;
@@ -2431,33 +2464,9 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     );
   };
 
-  async function signIn() {
-    var auth = authObject(), email = (emailField()?.value || "").trim();
-    var password = passwordField()?.value || "";
-    if (!auth) return message("PCT sign-in is temporarily unavailable.", true);
-    if (!email || !password) return message("Enter your email and password.", true);
-    try {
-      var remember = document.getElementById("rememberDevice")?.checked !== false;
-      if (auth.setPersistence && window.firebase?.auth?.Auth?.Persistence) {
-        await auth.setPersistence(
-          remember
-            ? firebase.auth.Auth.Persistence.LOCAL
-            : firebase.auth.Auth.Persistence.SESSION,
-        );
-      }
-      await auth.signInWithEmailAndPassword(email, password);
-    } catch (_) {
-      message("Sign-in was unsuccessful. Check your information or reset your password.", true);
-    }
-  }
-
   window.addEventListener("DOMContentLoaded", function () {
     window.setTimeout(function () {
       decorateLogin();
-      if (typeof window.emailSignIn === "function") window.emailSignIn = signIn;
-      if (typeof window.login === "function") window.login = signIn;
-      var signInButton = document.getElementById("signIn");
-      if (signInButton) signInButton.onclick = signIn;
     }, 0);
   });
 })();
