@@ -2289,7 +2289,12 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
         if (sf)
           sf({})
             .then(function (r) {
-              renderShare(r.data || {});
+              var data = r.data || {},
+                pid = data.publicAgentId || (data.agentProfile || {}).publicAgentId || "";
+              data.manualIntakeUrl = pid
+                ? location.origin + "/start/?pro=" + encodeURIComponent(pid)
+                : "";
+              renderShare(data);
             })
             .catch(function () {
               renderShare({});
