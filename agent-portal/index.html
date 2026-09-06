@@ -2769,7 +2769,8 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   'use strict';
   const byId=id=>document.getElementById(id);
   const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-  const callable=name=>window.fb?.functions?.httpsCallable?.(name);
+  const runtime=()=>typeof fb!=='undefined'?fb:null;
+  const callable=name=>runtime()?.functions?.httpsCallable?.(name);
   let root=null, submissions=[];
 
   function loadedAgentReturnRows(){return typeof window.pctAgentLeadRows==='function'?window.pctAgentLeadRows():[];}
@@ -2809,7 +2810,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   function renderList(){
     const host=ensure();
     host.classList.remove('hidden');
-    const rows=submissions.map((item,index)=>'<tr><td><strong>'+esc(item.clientDisplayName||'Client')+'</strong></td><td>'+esc(formatDate(item.signedAt))+'</td><td><span class="tag green">SIGNED / SUBMITTED</span></td><td><button type="button" class="btn btn-soft btn-sm" data-ptf-open="'+index+'">OPEN SUBMISSION</button></td></tr>').join('');
+    const rows=submissions.map((item,index)=>'<tr><td><strong>'+esc(item.clientDisplayName||'Client')+'</strong></td><td>'+esc(formatDate(item.signedAt))+'</td><td><span class="tag green">RECEIVED / COMPLETED</span></td><td><button type="button" class="btn btn-soft btn-sm" data-ptf-open="'+index+'">OPEN SUBMISSION</button></td></tr>').join('');
     host.innerHTML='<div class="pct-ptf-shell">'+header('← TAX RETURNS',back)+'<main class="pct-ptf-body">'+(rows?'<div style="overflow:auto"><table class="pct-ptf-table"><thead><tr><th>CLIENT</th><th>SUBMITTED</th><th>STATUS</th><th>ACTION</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="securebox"><strong>No Permission-to-File submissions yet.</strong><p class="small">Client submissions will appear here after they complete Permission to File.</p></div>')+'</main></div>';
     byId('pctPtfBack').onclick=back;
     host.querySelectorAll('[data-ptf-open]').forEach(button=>button.onclick=()=>renderSubmission(submissions[Number(button.dataset.ptfOpen)]));
@@ -2825,7 +2826,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
       ['Submitted',formatDate(item.signedAt)],
       ['Document version',item.documentVersion||'Not provided']
     ];
-    ensure().innerHTML='<div class="pct-ptf-shell">'+header('← BACK TO PERMISSION TO FILE',renderList)+'<main class="pct-ptf-body"><div class="section-title"><div><div class="kicker">'+esc(item.clientDisplayName||'Client')+'</div><h3>PERMISSION TO FILE</h3></div><span class="tag green">SIGNED / SUBMITTED</span></div><div class="pct-ptf-meta">'+fields.map(([label,value])=>'<div><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>').join('')+'</div><section class="securebox"><h4>CLIENT SUBMISSION</h4><dl class="pct-ptf-answer-grid"><div><dt>External tax signature status</dt><dd>'+responseHtml(externalTaxSignatureStatus)+'</dd></div><div><dt>External tax signature response</dt><dd>'+responseHtml(externalTaxSignatureResponse)+'</dd></div></dl></section><div class="actions" style="margin-top:16px"><button type="button" class="btn btn-soft" id="pctPtfOpenReturn">OPEN TAX RETURN</button></div></main></div>';
+    ensure().innerHTML='<div class="pct-ptf-shell">'+header('← BACK TO PERMISSION TO FILE',renderList)+'<main class="pct-ptf-body"><div class="section-title"><div><div class="kicker">'+esc(item.clientDisplayName||'Client')+'</div><h3>PERMISSION TO FILE</h3></div><span class="tag green">RECEIVED / COMPLETED</span></div><div class="pct-ptf-meta">'+fields.map(([label,value])=>'<div><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>').join('')+'</div><section class="securebox"><h4>CLIENT SUBMISSION</h4><dl class="pct-ptf-answer-grid"><div><dt>External tax signature status</dt><dd>'+responseHtml(externalTaxSignatureStatus)+'</dd></div><div><dt>External tax signature response</dt><dd>'+responseHtml(externalTaxSignatureResponse)+'</dd></div></dl></section><div class="actions" style="margin-top:16px"><button type="button" class="btn btn-soft" id="pctPtfOpenReturn">OPEN TAX RETURN</button></div></main></div>';
     byId('pctPtfBack').onclick=renderList;
     byId('pctPtfOpenReturn').onclick=()=>{back();window.openReturnWorkspace?.(item.leadId);};
   }
@@ -2837,7 +2838,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     submissions=results.flatMap(result=>Array.isArray(result.data?.submissions)?result.data.submissions:[]);
   }
   async function open(){
-    if(!window.fb?.user){window.toast?.('Your secure Agent Portal session is still loading. Please try again.');return;}
+    if(!runtime()?.user||!callable('getAgentPermissionToFileSubmissions')){window.toast?.('Your secure Agent Portal session is still loading. Please try again.');return;}
     const host=ensure();
     byId('pctP20AgentShell')?.classList.add('hidden');
     byId('appScreen')?.classList.add('hidden');
