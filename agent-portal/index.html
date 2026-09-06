@@ -1411,12 +1411,13 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
       makeButton('Share Intake Link',()=>clickExisting('[data-agent-center="share"]')),
       makeButton('Resources',()=>clickExisting('#pctP13ResourcesBtn'))
     );
+    nav.firstElementChild?.addEventListener('click',()=>window.pctPrepareAgentWorkspaceSwitch?.(),true);
     shell.append(copy,nav);
     document.querySelector('.hero')?.insertAdjacentElement('afterend',shell);
     return shell;
   }
   function syncAgentShell(){
-    const shell=ensureAgentShell(),show=activeAgent()&&!byId('appScreen')?.classList.contains('hidden');
+    const shell=ensureAgentShell(),show=activeAgent()&&(!byId('appScreen')?.classList.contains('hidden')||document.body.classList.contains('pct-agent-menu-workspace'));
     shell?.classList.toggle('hidden',!show);
     if(!show)return;
     const title=document.querySelector('#appScreen .section-title h3');if(title&&title.textContent!=='Client Returns')title.textContent='Client Returns';
@@ -1764,6 +1765,12 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     oldClass = undefined;
     current = null;
   }
+  window.pctPrepareAgentWorkspaceSwitch = function () {
+    if (current) restore();
+    window.pctCloseAgentMessages?.();
+    window.pctClosePermissionToFile?.();
+    window.pctCloseTaxSoftware?.();
+  };
   function shell(title, subtitle, body) {
     app = document.getElementById("appScreen");
     if (!app) return;
@@ -1781,6 +1788,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     document.getElementById("agpBack").onclick = restore;
   }
   window.pctOpenAgentCenterWorkspace = function (title, subtitle, body, afterRender) {
+    window.pctPrepareAgentWorkspaceSwitch?.();
     if (current) return false;
     current = "agent-center";
     css();
@@ -2107,6 +2115,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     document.getElementById("profileDepositUpdate").onclick = async function(){var out=document.getElementById("profileDepositResult"),fn=call("requestDirectDepositUpdate");this.disabled=true;if(!profileLive||!fn){out.textContent=" Training request demonstrated ✓";return}try{var r=await fn({});out.textContent=" "+(r.data.message||"Your direct-deposit update request was sent.")}catch(e){out.textContent=" "+(e.message||"The update request could not be sent.");this.disabled=false}};
   }
   window.openAgentProfilePage = function () {
+    window.pctPrepareAgentWorkspaceSwitch?.();
     if (current) return;
     current = "profile";
     css();
@@ -2423,7 +2432,10 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
       } else renderMessages(demoMessages);
     }
   }
-  window.pctOpenAgentCenter = open;
+  window.pctOpenAgentCenter = function (type) {
+    window.pctPrepareAgentWorkspaceSwitch?.();
+    return open(type);
+  };
   document.addEventListener(
     "click",
     function (e) {
@@ -2431,7 +2443,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
       if (!b) return;
       e.preventDefault();
       e.stopImmediatePropagation();
-      open(b.dataset.agentCenter);
+      window.pctOpenAgentCenter(b.dataset.agentCenter);
     },
     true,
   );
@@ -2796,9 +2808,10 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   async function openAttachment(storagePath){try{const result=await fn('getAgentSupportAttachmentUrl')({conversationId:state.selected,storagePath});window.open(result.data.url,'_blank','noopener,noreferrer');}catch(error){showError(error);}}
   async function sendReply(){const text=String(byId('pctMessageReply')?.value||'').trim(),button=byId('pctMessageSend'),feedback=byId('pctMessageFeedback');if(!text){feedback.textContent='Enter a reply before sending.';return;}const key=`${state.tab}:${state.selected}`;if(state.pending.has(key))return;state.pending.set(key,true);button.disabled=true;button.textContent='SENDING…';const messageId=state.pending.get(`${key}:id`)||id(state.tab==='client'?'preparer':'support-message');state.pending.set(`${key}:id`,messageId);try{const attachments=await attachmentData(byId('pctMessageFiles')),callable=fn(state.tab==='client'?'replyClientMessage':'replyAgentSupport');await callable({conversationId:state.selected,message:text,messageId,attachments});state.pending.delete(`${key}:id`);await openThread(state.selected);await load();}catch(error){feedback.textContent=error?.message||'Your reply was not sent. Your text is still here; please retry.';}finally{state.pending.delete(key);if(button.isConnected){button.disabled=false;button.textContent='SEND REPLY';}}}
   function showError(error){const feedback=byId('pctMessageFeedback')||byId('pctSupportFeedback');if(feedback)feedback.textContent=error?.message||'Secure messaging is temporarily unavailable. Please try again.';}
-  async function open(){if(!runtime()?.user||!fn('listAgentClientMessageConversations')){if(typeof window.toast==='function')window.toast('Your secure Agent Portal session is still loading. Please try again.');return;}ensure();byId('pctP20AgentShell')?.classList.add('hidden');byId('appScreen')?.classList.add('hidden');try{await load();root.scrollIntoView({behavior:'smooth',block:'start'});}catch(error){render();showError(error);}}
-  function back(){root?.classList.add('hidden');byId('pctP20AgentShell')?.classList.remove('hidden');byId('appScreen')?.classList.remove('hidden');byId('pctP20AgentShell')?.scrollIntoView({behavior:'smooth',block:'start'});}
-  window.pctOpenAgentMessages=open;
+  async function open(){if(!runtime()?.user||!fn('listAgentClientMessageConversations')){if(typeof window.toast==='function')window.toast('Your secure Agent Portal session is still loading. Please try again.');return;}ensure();document.body.classList.add('pct-agent-menu-workspace');byId('appScreen')?.classList.add('hidden');try{await load();root.scrollIntoView({behavior:'smooth',block:'start'});}catch(error){render();showError(error);}}
+  function back(){root?.classList.add('hidden');document.body.classList.remove('pct-agent-menu-workspace');byId('pctP20AgentShell')?.classList.remove('hidden');byId('appScreen')?.classList.remove('hidden');byId('pctP20AgentShell')?.scrollIntoView({behavior:'smooth',block:'start'});}
+  window.pctCloseAgentMessages=back;
+  window.pctOpenAgentMessages=function(){window.pctPrepareAgentWorkspaceSwitch?.();return open();};
   window.pctOpenAgentMessageConversation=async function(conversationId){state.tab='client';await open();if(conversationId)await openThread(conversationId);};
   new MutationObserver(nav).observe(document.body,{childList:true,subtree:true});nav();
 })();
@@ -2882,17 +2895,18 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   async function open(){
     if(!runtime()?.user||!callable('getAgentPermissionToFileSubmissions')){window.toast?.('Your secure Agent Portal session is still loading. Please try again.');return;}
     const host=ensure();
-    byId('pctP20AgentShell')?.classList.add('hidden');
+    document.body.classList.add('pct-agent-menu-workspace');
     byId('appScreen')?.classList.add('hidden');
     host.classList.remove('hidden');
     host.innerHTML='<div class="pct-ptf-shell">'+header('← TAX RETURNS',back)+'<main class="pct-ptf-body"><div class="loading">Loading Permission-to-File submissions...</div></main></div>';
     byId('pctPtfBack').onclick=back;
     try{await load();renderList();}catch(_){host.innerHTML='<div class="pct-ptf-shell">'+header('← TAX RETURNS',back)+'<main class="pct-ptf-body"><div class="warnbox">Unable to load Permission-to-File submissions. Please try again.</div></main></div>';byId('pctPtfBack').onclick=back;}
   }
-  function back(){root?.classList.add('hidden');byId('pctP20AgentShell')?.classList.remove('hidden');byId('appScreen')?.classList.remove('hidden');byId('pctP20AgentShell')?.scrollIntoView({behavior:'smooth',block:'start'});}
-  window.pctOpenPermissionToFile=open;
+  function back(){root?.classList.add('hidden');document.body.classList.remove('pct-agent-menu-workspace');byId('pctP20AgentShell')?.classList.remove('hidden');byId('appScreen')?.classList.remove('hidden');byId('pctP20AgentShell')?.scrollIntoView({behavior:'smooth',block:'start'});}
+  window.pctClosePermissionToFile=back;
+  window.pctOpenPermissionToFile=function(){window.pctPrepareAgentWorkspaceSwitch?.();return open();};
   window.pctGetPermissionToFileSubmissions=load;
-  window.pctOpenPermissionToFileSubmission=async function(leadId,returnId){await open();const item=submissions.find(row=>String(row.leadId)===String(leadId)&&String(row.returnId)===String(returnId));if(item)renderSubmission(item);};
+  window.pctOpenPermissionToFileSubmission=async function(leadId,returnId){window.pctPrepareAgentWorkspaceSwitch?.();await open();const item=submissions.find(row=>String(row.leadId)===String(leadId)&&String(row.returnId)===String(returnId));if(item)renderSubmission(item);};
 })();
 </script>
 <script>
@@ -2905,7 +2919,8 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   const TAX_SOFTWARE_URL='https://nto.cloudtaxoffice.com/proavalon/CoreLink/Index?ReturnUrl=%2fproavalon';
   let taxRoot=null, notificationPanel=null, notifications=[];
 
-  function restorePortal(){taxRoot?.classList.add('hidden');byId('pctP20AgentShell')?.classList.remove('hidden');byId('appScreen')?.classList.remove('hidden');byId('pctP20AgentShell')?.scrollIntoView({behavior:'smooth',block:'start'});}
+  function restorePortal(){taxRoot?.classList.add('hidden');document.body.classList.remove('pct-agent-menu-workspace');byId('pctP20AgentShell')?.classList.remove('hidden');byId('appScreen')?.classList.remove('hidden');byId('pctP20AgentShell')?.scrollIntoView({behavior:'smooth',block:'start'});}
+  window.pctCloseTaxSoftware=restorePortal;
   function ensureTaxWorkspace(){
     if(taxRoot)return taxRoot;
     taxRoot=document.createElement('section');taxRoot.id='pctTaxSoftwareWorkspace';taxRoot.className='pct-tax-workspace hidden';
@@ -2913,8 +2928,9 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     const style=document.createElement('style');style.id='pctAgentAccessNotificationStyles';style.textContent='.pct-tax-workspace{margin:0 0 24px}.pct-tax-shell{overflow:hidden;border:1px solid var(--line);border-radius:22px;background:var(--paper);box-shadow:var(--shadow)}.pct-tax-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:25px;background:linear-gradient(140deg,#241913,#17110c);color:#fff}.pct-tax-head h2{color:#fff;font-size:clamp(30px,4vw,44px)}.pct-tax-head p{margin:7px 0 0;color:#eadfc9}.pct-tax-body{padding:22px}.pct-tax-credential{padding:15px;border:1px solid var(--line);border-radius:12px;background:#fffaf2}.pct-tax-credential span{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--muted)}.pct-tax-credential strong{display:block;margin-top:6px;font-size:20px}.pct-notification-panel{position:absolute;right:16px;top:58px;z-index:70;width:min(390px,calc(100vw - 32px));max-height:min(560px,calc(100vh - 80px));overflow:auto;border:1px solid var(--line);border-radius:15px;background:var(--paper);box-shadow:0 22px 55px -24px rgba(0,0,0,.7);padding:12px}.pct-notification-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 5px 12px}.pct-notification-item{width:100%;display:block;text-align:left;padding:13px;border:0;border-top:1px solid var(--line);background:transparent;cursor:pointer}.pct-notification-item:hover,.pct-notification-item:focus-visible{background:#fff4d8}.pct-notification-item strong,.pct-notification-item span{display:block}.pct-notification-item span{margin-top:4px;color:var(--muted);font-size:13px}.pct-notification-count{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#9c1f36;color:#fff;font-size:11px;font-weight:900}@media(max-width:680px){.pct-tax-head{padding:20px;flex-direction:column}.pct-tax-body{padding:16px}}';document.head.append(style);return taxRoot;
   }
   window.openAgentTaxSoftwareStatus=async function(){
+    window.pctPrepareAgentWorkspaceSwitch?.();
     const callable=fn('getMyOnboardingStatus');if(!runtime()?.user||!callable){window.toast?.('Your secure Agent Portal session is still loading. Please try again.');return;}
-    const host=ensureTaxWorkspace();byId('pctP20AgentShell')?.classList.add('hidden');byId('appScreen')?.classList.add('hidden');host.classList.remove('hidden');
+    const host=ensureTaxWorkspace();document.body.classList.add('pct-agent-menu-workspace');byId('appScreen')?.classList.add('hidden');host.classList.remove('hidden');
     host.innerHTML='<div class="pct-tax-shell"><header class="pct-tax-head"><div><div class="eyebrow" style="color:#e6cd97">AGENT PORTAL</div><h2>TAX SOFTWARE ACCESS</h2><p>Your secure PCT tax-software access details.</p></div><button type="button" class="btn btn-soft" id="pctTaxBack">← BACK TO TAX RETURNS</button></header><main class="pct-tax-body"><div class="loading">Loading tax software access...</div></main></div>';byId('pctTaxBack').onclick=restorePortal;
     try{const onboarding=(await callable({})).data?.onboarding||{},software=onboarding.taxSoftware||{},username=String(software.username||'').trim(),body=host.querySelector('.pct-tax-body');body.innerHTML=username?'<section class="pct-tax-credential"><span>TAX SOFTWARE USERNAME</span><strong>'+esc(username)+'</strong></section><section class="securebox" style="margin-top:14px"><h3>PASSWORD</h3><p>Your tax software password was sent to your email when your account was created. For security, passwords are not displayed in the Agent Portal.</p><a class="btn btn-gold" href="'+TAX_SOFTWARE_URL+'" target="_blank" rel="noopener noreferrer">OPEN TAX SOFTWARE ↗</a></section>':'<section class="securebox"><strong>Tax software access is still being prepared.</strong><p class="small">Your username will appear here when PCT completes your setup.</p></section>';}
     catch(_){host.querySelector('.pct-tax-body').innerHTML='<div class="warnbox">Tax software access is temporarily unavailable. Please try again.</div>';}
