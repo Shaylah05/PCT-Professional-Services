@@ -31,6 +31,7 @@
       <button type="button" class="btn btn-soft btn-sm hidden" data-agent-menu data-production-agent-menu id="pctPhase11MyReviews">My Reviews</button>
       <button type="button" class="btn btn-soft btn-sm hidden" data-agent-menu data-production-agent-menu id="pctPhase11AdminReviews">Client Reviews</button>
       <button id="refreshBtn" class="btn btn-gold btn-sm hidden" onclick="loadLeads()">Refresh</button>
+      <button id="pctAgentNotificationsButton" type="button" class="btn btn-soft btn-sm hidden" data-agent-menu aria-haspopup="dialog" aria-expanded="false">🔔 <span id="pctAgentNotificationsCount" class="hidden"></span></button>
       <button id="signOutBtn" class="btn btn-ghost btn-sm hidden" onclick="signOut()">Sign out</button>
     </div>
   </div>
@@ -330,7 +331,7 @@ async function loadLeads(){
     const snap = await leadQuery.orderBy('createdAt','desc').limit(250).get();
     leads = snap.docs.map(d=>({id:d.id,...d.data()}));
     leads=leads.filter(lead=>String(lead.agentId||lead.preparerAssignment?.assignedPreparerId||lead.assignedPreparerId||'')===signedInUid);
-    renderStats(); renderLeadList();
+    renderStats(); renderLeadList(); window.pctRefreshAgentNotifications?.();
     toast('My client returns refreshed');
   }catch(e){
     $('leadList').innerHTML='<div class="warnbox">Could not load leads: '+escapeHtml(pctFriendlyError(e,'Your client returns could not be loaded. Please refresh and try again.'))+'</div>';
@@ -2759,7 +2760,9 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   function showError(error){const feedback=byId('pctMessageFeedback')||byId('pctSupportFeedback');if(feedback)feedback.textContent=error?.message||'Secure messaging is temporarily unavailable. Please try again.';}
   async function open(){if(!runtime()?.user||!fn('listAgentClientMessageConversations')){if(typeof window.toast==='function')window.toast('Your secure Agent Portal session is still loading. Please try again.');return;}ensure();byId('pctP20AgentShell')?.classList.add('hidden');byId('appScreen')?.classList.add('hidden');try{await load();root.scrollIntoView({behavior:'smooth',block:'start'});}catch(error){render();showError(error);}}
   function back(){root?.classList.add('hidden');byId('pctP20AgentShell')?.classList.remove('hidden');byId('appScreen')?.classList.remove('hidden');byId('pctP20AgentShell')?.scrollIntoView({behavior:'smooth',block:'start'});}
-  window.pctOpenAgentMessages=open;new MutationObserver(nav).observe(document.body,{childList:true,subtree:true});nav();
+  window.pctOpenAgentMessages=open;
+  window.pctOpenAgentMessageConversation=async function(conversationId){state.tab='client';await open();if(conversationId)await openThread(conversationId);};
+  new MutationObserver(nav).observe(document.body,{childList:true,subtree:true});nav();
 })();
 </script>
 <script>
@@ -2836,6 +2839,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     const batches=[];for(let index=0;index<refs.length;index+=50)batches.push(refs.slice(index,index+50));
     const results=await Promise.all(batches.map(returnRefs=>fn({returnRefs})));
     submissions=results.flatMap(result=>Array.isArray(result.data?.submissions)?result.data.submissions:[]);
+    return submissions;
   }
   async function open(){
     if(!runtime()?.user||!callable('getAgentPermissionToFileSubmissions')){window.toast?.('Your secure Agent Portal session is still loading. Please try again.');return;}
@@ -2849,6 +2853,46 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   }
   function back(){root?.classList.add('hidden');byId('pctP20AgentShell')?.classList.remove('hidden');byId('appScreen')?.classList.remove('hidden');byId('pctP20AgentShell')?.scrollIntoView({behavior:'smooth',block:'start'});}
   window.pctOpenPermissionToFile=open;
+  window.pctGetPermissionToFileSubmissions=load;
+  window.pctOpenPermissionToFileSubmission=async function(leadId,returnId){await open();const item=submissions.find(row=>String(row.leadId)===String(leadId)&&String(row.returnId)===String(returnId));if(item)renderSubmission(item);};
+})();
+</script>
+<script>
+/* Agent access and action notifications reuse existing onboarding, return,
+   messaging, and signed-PTF data. No browser writes or polling are added. */
+(function(){
+  'use strict';
+  const byId=id=>document.getElementById(id), esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const runtime=()=>typeof fb!=='undefined'?fb:null, fn=name=>runtime()?.functions?.httpsCallable?.(name);
+  const TAX_SOFTWARE_URL='https://nto.cloudtaxoffice.com/proavalon/CoreLink/Index?ReturnUrl=%2fproavalon';
+  let taxRoot=null, notificationPanel=null, notifications=[];
+
+  function restorePortal(){taxRoot?.classList.add('hidden');byId('pctP20AgentShell')?.classList.remove('hidden');byId('appScreen')?.classList.remove('hidden');byId('pctP20AgentShell')?.scrollIntoView({behavior:'smooth',block:'start'});}
+  function ensureTaxWorkspace(){
+    if(taxRoot)return taxRoot;
+    taxRoot=document.createElement('section');taxRoot.id='pctTaxSoftwareWorkspace';taxRoot.className='pct-tax-workspace hidden';
+    byId('pctP20AgentShell')?.insertAdjacentElement('afterend',taxRoot);
+    const style=document.createElement('style');style.id='pctAgentAccessNotificationStyles';style.textContent='.pct-tax-workspace{margin:0 0 24px}.pct-tax-shell{overflow:hidden;border:1px solid var(--line);border-radius:22px;background:var(--paper);box-shadow:var(--shadow)}.pct-tax-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:25px;background:linear-gradient(140deg,#241913,#17110c);color:#fff}.pct-tax-head h2{color:#fff;font-size:clamp(30px,4vw,44px)}.pct-tax-head p{margin:7px 0 0;color:#eadfc9}.pct-tax-body{padding:22px}.pct-tax-credential{padding:15px;border:1px solid var(--line);border-radius:12px;background:#fffaf2}.pct-tax-credential span{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--muted)}.pct-tax-credential strong{display:block;margin-top:6px;font-size:20px}.pct-notification-panel{position:absolute;right:16px;top:58px;z-index:70;width:min(390px,calc(100vw - 32px));max-height:min(560px,calc(100vh - 80px));overflow:auto;border:1px solid var(--line);border-radius:15px;background:var(--paper);box-shadow:0 22px 55px -24px rgba(0,0,0,.7);padding:12px}.pct-notification-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 5px 12px}.pct-notification-item{width:100%;display:block;text-align:left;padding:13px;border:0;border-top:1px solid var(--line);background:transparent;cursor:pointer}.pct-notification-item:hover,.pct-notification-item:focus-visible{background:#fff4d8}.pct-notification-item strong,.pct-notification-item span{display:block}.pct-notification-item span{margin-top:4px;color:var(--muted);font-size:13px}.pct-notification-count{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#9c1f36;color:#fff;font-size:11px;font-weight:900}@media(max-width:680px){.pct-tax-head{padding:20px;flex-direction:column}.pct-tax-body{padding:16px}}';document.head.append(style);return taxRoot;
+  }
+  window.openAgentTaxSoftwareStatus=async function(){
+    const callable=fn('getMyOnboardingStatus');if(!runtime()?.user||!callable){window.toast?.('Your secure Agent Portal session is still loading. Please try again.');return;}
+    const host=ensureTaxWorkspace();byId('pctP20AgentShell')?.classList.add('hidden');byId('appScreen')?.classList.add('hidden');host.classList.remove('hidden');
+    host.innerHTML='<div class="pct-tax-shell"><header class="pct-tax-head"><div><div class="eyebrow" style="color:#e6cd97">AGENT PORTAL</div><h2>TAX SOFTWARE ACCESS</h2><p>Your secure PCT tax-software access details.</p></div><button type="button" class="btn btn-soft" id="pctTaxBack">← BACK TO TAX RETURNS</button></header><main class="pct-tax-body"><div class="loading">Loading tax software access...</div></main></div>';byId('pctTaxBack').onclick=restorePortal;
+    try{const onboarding=(await callable({})).data?.onboarding||{},software=onboarding.taxSoftware||{},username=String(software.username||'').trim(),body=host.querySelector('.pct-tax-body');body.innerHTML=username?'<section class="pct-tax-credential"><span>TAX SOFTWARE USERNAME</span><strong>'+esc(username)+'</strong></section><section class="securebox" style="margin-top:14px"><h3>PASSWORD</h3><p>Your tax software password was sent to your email when your account was created. For security, passwords are not displayed in the Agent Portal.</p><a class="btn btn-gold" href="'+TAX_SOFTWARE_URL+'" target="_blank" rel="noopener noreferrer">OPEN TAX SOFTWARE ↗</a></section>':'<section class="securebox"><strong>Tax software access is still being prepared.</strong><p class="small">Your username will appear here when PCT completes your setup.</p></section>';}
+    catch(_){host.querySelector('.pct-tax-body').innerHTML='<div class="warnbox">Tax software access is temporarily unavailable. Please try again.</div>';}
+  };
+
+  function isFinished(lead){const status=String(lead?.adminWorkflow?.status||lead?.workflow?.status||lead?.workflow?.dashboardStatus||lead?.filingWorkflow?.status||lead?.reviewStatus||'').toLowerCase();return ['filed','completed','accepted'].includes(status);}
+  function intakeItems(){return (typeof leads!=='undefined'&&Array.isArray(leads)?leads:[]).filter(lead=>{const status=String(lead?.adminWorkflow?.status||lead?.workflow?.status||lead?.workflow?.dashboardStatus||'').toLowerCase();return ['new_lead','estimate_only'].includes(status)&&!isFinished(lead);}).map(lead=>({type:'NEW INTAKE',title:(typeof clientName==='function'?clientName(lead):'Client')+' submitted a new client intake.',leadId:lead.id,action:'VIEW INTAKE →'}));}
+  async function messageItems(){const call=fn('listAgentClientMessageConversations');if(!call)return[];const data=(await call({})).data||{};return (data.conversations||[]).filter(item=>item.unreadForPreparer===true).map(item=>({type:'NEW MESSAGE',title:(item.clientName||'Client')+' sent you a message.',conversationId:item.id||item.conversationId,action:'OPEN MESSAGE →'}));}
+  async function ptfItems(){if(typeof window.pctGetPermissionToFileSubmissions!=='function')return[];const rows=await window.pctGetPermissionToFileSubmissions();const known=new Map((typeof leads!=='undefined'&&Array.isArray(leads)?leads:[]).map(lead=>[String(lead.id),lead]));return (rows||[]).filter(item=>!['filed','accepted','completed'].includes(String(item.filingStatus||'').toLowerCase())&&!isFinished(known.get(String(item.leadId)))).map(item=>({type:'PERMISSION TO FILE RECEIVED',title:(item.clientDisplayName||'Client')+' completed Permission to File.',leadId:item.leadId,returnId:item.returnId,action:'OPEN SUBMISSION →'}));}
+  function updateBadge(){const badge=byId('pctAgentNotificationsCount'),button=byId('pctAgentNotificationsButton');if(!badge||!button)return;badge.textContent=notifications.length?String(notifications.length):'';badge.className=notifications.length?'pct-notification-count':'';button.setAttribute('aria-label',notifications.length?`${notifications.length} actionable notifications`:'Notifications');}
+  async function refreshNotifications(){if(!runtime()?.user)return;const base=intakeItems();try{const [messages,ptf]=await Promise.all([messageItems(),ptfItems()]);notifications=[...base,...messages,...ptf];}catch(_){notifications=base;}updateBadge();}
+  function closeNotifications(){notificationPanel?.remove();notificationPanel=null;byId('pctAgentNotificationsButton')?.setAttribute('aria-expanded','false');}
+  async function activate(item){closeNotifications();if(item.type==='NEW INTAKE'){window.openReturnWorkspace?.(item.leadId);return;}if(item.type==='NEW MESSAGE'){await window.pctOpenAgentMessageConversation?.(item.conversationId);return;}if(item.type==='PERMISSION TO FILE RECEIVED')await window.pctOpenPermissionToFileSubmission?.(item.leadId,item.returnId);}
+  function renderNotifications(){const button=byId('pctAgentNotificationsButton');if(!button)return;closeNotifications();notificationPanel=document.createElement('section');notificationPanel.className='pct-notification-panel';notificationPanel.setAttribute('role','dialog');notificationPanel.setAttribute('aria-label','Notifications');notificationPanel.innerHTML='<div class="pct-notification-head"><strong>NOTIFICATIONS</strong><button type="button" class="btn btn-ghost btn-sm" id="pctNotificationClose">×</button></div>'+(notifications.length?notifications.map((item,index)=>'<button type="button" class="pct-notification-item" data-pct-notification="'+index+'"><strong>'+esc(item.type)+'</strong><span>'+esc(item.title)+'</span><span>'+esc(item.action)+'</span></button>').join(''):'<div class="securebox"><strong>You’re all caught up.</strong><p class="small">No new Agent actions right now.</p></div>');button.parentElement?.append(notificationPanel);button.setAttribute('aria-expanded','true');byId('pctNotificationClose').onclick=closeNotifications;notificationPanel.querySelectorAll('[data-pct-notification]').forEach(control=>control.onclick=()=>activate(notifications[Number(control.dataset.pctNotification)]));}
+  const button=byId('pctAgentNotificationsButton');if(button)button.onclick=async()=>{await refreshNotifications();renderNotifications();};
+  window.pctRefreshAgentNotifications=refreshNotifications;
 })();
 </script>
 </body>
