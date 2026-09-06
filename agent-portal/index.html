@@ -1386,6 +1386,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   const activeAgent=()=>fb?.claims?.role==='preparer_agent'&&fb?.claims?.accessStatus==='active'&&fb?.claims?.trainingStatus==='complete';
   const byId=id=>document.getElementById(id);
   const leadRows=()=>typeof leads!=='undefined'&&Array.isArray(leads)?leads:[];
+  window.pctAgentLeadRows=leadRows;
   const visibleLeadRows=()=>typeof filteredLeads!=='undefined'&&Array.isArray(filteredLeads)?filteredLeads:[];
   const clickExisting=selector=>{const target=document.querySelector(selector);if(target&&!target.classList.contains('hidden'))target.click();};
   function makeButton(label,action,primary){const button=document.createElement('button');button.type='button';button.className='pct-p20-nav-button'+(primary?' primary':'');button.textContent=label;button.addEventListener('click',action);return button;}
@@ -1401,6 +1402,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
       makeButton('Earnings',()=>window.pctOpenAgentCenter?.('earnings')),
       makeButton('Messages / Support',()=>window.pctOpenAgentMessages?.()),
       makeButton('Referral Circle',()=>window.pctOpenReferralCircle?.()),
+      makeButton('Permission to File',()=>window.pctOpenPermissionToFile?.()),
       makeButton('Needs My Review',()=>{if(byId('appScreen')?.classList.contains('workspace-mode'))window.backToClientDashboard?.();window.setFilter?.('review');}),
       makeButton('Waiting / Follow-Up',()=>{if(byId('appScreen')?.classList.contains('workspace-mode'))window.backToClientDashboard?.();window.setFilter?.('follow');}),
       makeButton('All Client Returns',()=>{if(byId('appScreen')?.classList.contains('workspace-mode'))window.backToClientDashboard?.();window.setFilter?.('all');}),
@@ -2758,6 +2760,94 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   async function open(){if(!runtime()?.user||!fn('listAgentClientMessageConversations')){if(typeof window.toast==='function')window.toast('Your secure Agent Portal session is still loading. Please try again.');return;}ensure();byId('pctP20AgentShell')?.classList.add('hidden');byId('appScreen')?.classList.add('hidden');try{await load();root.scrollIntoView({behavior:'smooth',block:'start'});}catch(error){render();showError(error);}}
   function back(){root?.classList.add('hidden');byId('pctP20AgentShell')?.classList.remove('hidden');byId('appScreen')?.classList.remove('hidden');byId('pctP20AgentShell')?.scrollIntoView({behavior:'smooth',block:'start'});}
   window.pctOpenAgentMessages=open;new MutationObserver(nav).observe(document.body,{childList:true,subtree:true});nav();
+})();
+</script>
+<script>
+/* Permission to File viewer: reads the existing loaded Agent return rows and
+   the already-deployed, assigned-return callable. It never writes PTF data. */
+(function(){
+  'use strict';
+  const byId=id=>document.getElementById(id);
+  const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const callable=name=>window.fb?.functions?.httpsCallable?.(name);
+  let root=null, submissions=[];
+
+  function loadedAgentReturnRows(){return typeof window.pctAgentLeadRows==='function'?window.pctAgentLeadRows():[];}
+  function candidateRefs(){
+    const seen=new Set();
+    return loadedAgentReturnRows().map(lead=>({leadId:String(lead?.id||''),returnId:String(lead?.currentReturnId||lead?.completedReturnSummary?.returnId||'')})).filter(ref=>{
+      const key=ref.leadId+'|'+ref.returnId;
+      if(!ref.leadId||!ref.returnId||seen.has(key))return false;
+      seen.add(key);return true;
+    });
+  }
+  function formatDate(value){
+    const source=value?.toDate?value.toDate():value;
+    const date=new Date(source);
+    return Number.isFinite(date.getTime())?date.toLocaleString():(source?String(source):'Not provided');
+  }
+  function labelFor(key){return String(key||'Response').replace(/([a-z])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').replace(/^./,char=>char.toUpperCase());}
+  function responseHtml(value){
+    if(value===null||value===undefined||value==='')return '<span class="small">Not provided</span>';
+    if(Array.isArray(value))return value.length?'<ul class="pct-ptf-answer-list">'+value.map(item=>'<li>'+responseHtml(item)+'</li>').join('')+'</ul>':'<span class="small">Not provided</span>';
+    if(typeof value==='object')return '<dl class="pct-ptf-answer-grid">'+Object.entries(value).map(([key,item])=>'<div><dt>'+esc(labelFor(key))+'</dt><dd>'+responseHtml(item)+'</dd></div>').join('')+'</dl>';
+    return esc(value);
+  }
+  function ensure(){
+    if(root)return root;
+    root=document.createElement('section');
+    root.id='pctPermissionToFileWorkspace';
+    root.className='pct-ptf-workspace hidden';
+    byId('pctP20AgentShell')?.insertAdjacentElement('afterend',root);
+    const style=document.createElement('style');
+    style.id='pctPermissionToFileStyles';
+    style.textContent='.pct-ptf-workspace{margin:0 0 24px}.pct-ptf-shell{overflow:hidden;border:1px solid var(--line);border-radius:22px;background:var(--paper);box-shadow:var(--shadow)}.pct-ptf-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:25px;background:linear-gradient(140deg,#241913,#17110c);color:#fff}.pct-ptf-head h2{color:#fff;font-size:clamp(30px,4vw,44px)}.pct-ptf-head p{margin:7px 0 0;color:#eadfc9}.pct-ptf-body{padding:20px}.pct-ptf-table{width:100%;border-collapse:collapse}.pct-ptf-table th,.pct-ptf-table td{padding:13px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}.pct-ptf-table th{font-size:11px;letter-spacing:.08em;color:var(--muted)}.pct-ptf-answer-grid{display:grid;gap:10px;margin:0}.pct-ptf-answer-grid>div{padding:12px;border:1px solid var(--line);border-radius:10px;background:#fffaf2}.pct-ptf-answer-grid dt{font-size:11px;font-weight:800;letter-spacing:.07em;color:var(--muted)}.pct-ptf-answer-grid dd{margin:5px 0 0;white-space:pre-wrap}.pct-ptf-answer-list{margin:0;padding-left:19px}.pct-ptf-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}.pct-ptf-meta>div{padding:12px;border:1px solid var(--line);border-radius:10px;background:#fffaf2}.pct-ptf-meta span{display:block;font-size:11px;letter-spacing:.07em;color:var(--muted)}.pct-ptf-meta strong{display:block;margin-top:5px}@media(max-width:680px){.pct-ptf-head{padding:20px;flex-direction:column}.pct-ptf-table thead{display:none}.pct-ptf-table,.pct-ptf-table tbody,.pct-ptf-table tr,.pct-ptf-table td{display:block;width:100%}.pct-ptf-table tr{padding:12px 0;border-bottom:1px solid var(--line)}.pct-ptf-table td{padding:4px 0;border:0}.pct-ptf-meta{grid-template-columns:1fr}}';
+    document.head.append(style);
+    return root;
+  }
+  function header(backLabel,back){return '<header class="pct-ptf-head"><div><div class="eyebrow" style="color:#e6cd97">AGENT PORTAL</div><h2>PERMISSION TO FILE</h2><p>Client Permission-to-File submissions ready for your review.</p></div><button type="button" class="btn btn-soft" id="pctPtfBack">'+esc(backLabel)+'</button></header>';}
+  function renderList(){
+    const host=ensure();
+    host.classList.remove('hidden');
+    const rows=submissions.map((item,index)=>'<tr><td><strong>'+esc(item.clientDisplayName||'Client')+'</strong></td><td>'+esc(formatDate(item.signedAt))+'</td><td><span class="tag green">SIGNED / SUBMITTED</span></td><td><button type="button" class="btn btn-soft btn-sm" data-ptf-open="'+index+'">OPEN SUBMISSION</button></td></tr>').join('');
+    host.innerHTML='<div class="pct-ptf-shell">'+header('← TAX RETURNS',back)+'<main class="pct-ptf-body">'+(rows?'<div style="overflow:auto"><table class="pct-ptf-table"><thead><tr><th>CLIENT</th><th>SUBMITTED</th><th>STATUS</th><th>ACTION</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="securebox"><strong>No Permission-to-File submissions yet.</strong><p class="small">Client submissions will appear here after they complete Permission to File.</p></div>')+'</main></div>';
+    byId('pctPtfBack').onclick=back;
+    host.querySelectorAll('[data-ptf-open]').forEach(button=>button.onclick=()=>renderSubmission(submissions[Number(button.dataset.ptfOpen)]));
+  }
+  function renderSubmission(item){
+    if(!item)return;
+    const confirmations=item.clientConfirmations||{};
+    const externalTaxSignatureStatus=item.externalTaxSignatureStatus??confirmations.externalTaxSignatureStatus;
+    const externalTaxSignatureResponse=item.externalTaxSignatureResponse??confirmations.externalTaxSignatureResponse;
+    const fields=[
+      ['Client',item.clientDisplayName||'Client'],
+      ['Status',item.signatureStatus||'SIGNED'],
+      ['Submitted',formatDate(item.signedAt)],
+      ['Document version',item.documentVersion||'Not provided']
+    ];
+    ensure().innerHTML='<div class="pct-ptf-shell">'+header('← BACK TO PERMISSION TO FILE',renderList)+'<main class="pct-ptf-body"><div class="section-title"><div><div class="kicker">'+esc(item.clientDisplayName||'Client')+'</div><h3>PERMISSION TO FILE</h3></div><span class="tag green">SIGNED / SUBMITTED</span></div><div class="pct-ptf-meta">'+fields.map(([label,value])=>'<div><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>').join('')+'</div><section class="securebox"><h4>CLIENT SUBMISSION</h4><dl class="pct-ptf-answer-grid"><div><dt>External tax signature status</dt><dd>'+responseHtml(externalTaxSignatureStatus)+'</dd></div><div><dt>External tax signature response</dt><dd>'+responseHtml(externalTaxSignatureResponse)+'</dd></div></dl></section><div class="actions" style="margin-top:16px"><button type="button" class="btn btn-soft" id="pctPtfOpenReturn">OPEN TAX RETURN</button></div></main></div>';
+    byId('pctPtfBack').onclick=renderList;
+    byId('pctPtfOpenReturn').onclick=()=>{back();window.openReturnWorkspace?.(item.leadId);};
+  }
+  async function load(){
+    const refs=candidateRefs(), fn=callable('getAgentPermissionToFileSubmissions');
+    if(!fn)throw new Error('Permission-to-File submissions are temporarily unavailable.');
+    const batches=[];for(let index=0;index<refs.length;index+=50)batches.push(refs.slice(index,index+50));
+    const results=await Promise.all(batches.map(returnRefs=>fn({returnRefs})));
+    submissions=results.flatMap(result=>Array.isArray(result.data?.submissions)?result.data.submissions:[]);
+  }
+  async function open(){
+    if(!window.fb?.user){window.toast?.('Your secure Agent Portal session is still loading. Please try again.');return;}
+    const host=ensure();
+    byId('pctP20AgentShell')?.classList.add('hidden');
+    byId('appScreen')?.classList.add('hidden');
+    host.classList.remove('hidden');
+    host.innerHTML='<div class="pct-ptf-shell">'+header('← TAX RETURNS',back)+'<main class="pct-ptf-body"><div class="loading">Loading Permission-to-File submissions...</div></main></div>';
+    byId('pctPtfBack').onclick=back;
+    try{await load();renderList();}catch(_){host.innerHTML='<div class="pct-ptf-shell">'+header('← TAX RETURNS',back)+'<main class="pct-ptf-body"><div class="warnbox">Unable to load Permission-to-File submissions. Please try again.</div></main></div>';byId('pctPtfBack').onclick=back;}
+  }
+  function back(){root?.classList.add('hidden');byId('pctP20AgentShell')?.classList.remove('hidden');byId('appScreen')?.classList.remove('hidden');byId('pctP20AgentShell')?.scrollIntoView({behavior:'smooth',block:'start'});}
+  window.pctOpenPermissionToFile=open;
 })();
 </script>
 </body>
