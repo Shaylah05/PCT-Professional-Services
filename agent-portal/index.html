@@ -1744,6 +1744,9 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   function profileIsLive() {
     return live || /^\/agent-portal\/?$/.test(location.pathname);
   }
+  function shareIsLive() {
+    return live || /^\/agent-portal\/?$/.test(location.pathname);
+  }
   function css() {
     if (document.getElementById("agentGlobalPagesCss")) return;
     var s = document.createElement("style");
@@ -2127,8 +2130,9 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     }
   };
   function renderShare(link) {
-    var url = (link && link.intakeUrl) || "",
-      profile = (link && link.agentProfile) || (!live ? sandboxProfile() : {}),
+    var publicAgentId = String((link && (link.publicAgentId || (link.agentProfile || {}).publicAgentId)) || "").trim(),
+      url = String((link && link.intakeUrl) || "").trim() || (/^agent-[A-Za-z0-9_-]+$/.test(publicAgentId) ? "https://www.pctquickfile.com/start/?pro=" + encodeURIComponent(publicAgentId) : ""),
+      profile = (link && link.agentProfile) || (!shareIsLive() ? sandboxProfile() : {}),
       qrUrl =
         "https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=" +
         encodeURIComponent(url);
@@ -2145,7 +2149,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
         esc(url) +
         '"></div><div class="actions"><button type="button" class="btn btn-gold" id="shareCopy">COPY LINK</button><a class="btn btn-soft" href="' +
         esc(url) +
-        '" target="_blank" rel="noopener noreferrer">OPEN MY LINK ↗</a><a class="btn btn-soft" id="shareEmail">EMAIL LINK</a><a class="btn btn-soft" id="shareText">TEXT LINK</a><a class="btn btn-soft" href="' +
+        '" target="_blank" rel="noopener noreferrer" id="shareOpen">OPEN MY LINK ↗</a><a class="btn btn-soft" id="shareEmail">EMAIL LINK</a><a class="btn btn-soft" id="shareText">TEXT LINK</a><a class="btn btn-soft" id="shareQr" href="' +
         esc(qrUrl) +
         '" target="_blank" rel="noopener noreferrer">DOWNLOAD QR CODE ↗</a></div><div id="shareStatus" class="small" role="status" aria-live="polite"></div><div class="securebox"><strong>Booking Link</strong><p class="small">Add or remove your booking page. The Book button appears only when a valid link is saved.</p><input id="shareBooking" type="url" placeholder="https://calendly.com/agent-name" value="' +
         esc((link && link.bookingUrl) || "") +
@@ -2225,7 +2229,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
         out.textContent = "Use a valid HTTPS booking URL or leave it empty.";
         return;
       }
-      if (!live) {
+      if (!shareIsLive()) {
         var savedProfile = Object.assign({}, sandboxProfile(), {
           bookingUrl: value,
         });
@@ -2250,6 +2254,16 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
           out.textContent = e.message || "Booking Link could not be saved.";
         });
     };
+    if (!url) {
+      document.getElementById("shareStatus").textContent = "Your personalized client link is still being prepared.";
+      document.getElementById("shareCopy").disabled = true;
+      ["shareOpen", "shareEmail", "shareText", "shareQr"].forEach(function (id) {
+        var control = document.getElementById(id);
+        control.removeAttribute("href");
+        control.setAttribute("aria-disabled", "true");
+        control.classList.add("disabled");
+      });
+    }
   }
   function renderMessages(items) {
     shell(
@@ -2336,17 +2350,12 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     current = type;
     css();
     if (type === "share") {
-      if (live) {
+      if (shareIsLive()) {
         var sf = call("getPreparerPersonalizedLinks");
         if (sf)
           sf({})
             .then(function (r) {
-              var data = r.data || {},
-                pid = data.publicAgentId || (data.agentProfile || {}).publicAgentId || "";
-              data.manualIntakeUrl = pid
-                ? location.origin + "/start/?pro=" + encodeURIComponent(pid)
-                : "";
-              renderShare(data);
+              renderShare(r.data || {});
             })
             .catch(function () {
               renderShare({});
