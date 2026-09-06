@@ -64,6 +64,7 @@
         <a class="pct-master-admin-card" href="/contractors"><span class="pct-master-admin-icon">🏦</span><span><strong>Banking</strong><small>Direct Deposit</small></span><span class="pct-master-admin-arrow">↗</span></a>
         <a class="pct-master-admin-card" href="/contractors"><span class="pct-master-admin-icon">🎓</span><span><strong>Training</strong><small>Codes / Progress</small></span><span class="pct-master-admin-arrow">↗</span></a>
         <button type="button" class="pct-master-admin-card dark" data-pct-admin-workspace="returns"><span class="pct-master-admin-icon">📂</span><span><strong>All Returns</strong><small>Return Oversight</small></span><span class="pct-master-admin-arrow">→</span></button>
+        <button type="button" class="pct-master-admin-card accent" data-pct-admin-workspace="owner-returns"><span class="pct-master-admin-icon">👩🏽‍💼</span><span><strong>Owner Tax Returns</strong><small>Direct PCT Clients</small></span><span class="pct-master-admin-arrow">→</span></button>
         <button type="button" class="pct-master-admin-card accent" data-pct-admin-workspace="payments"><span class="pct-master-admin-icon">💰</span><span><strong>Payments</strong><small>Funding / Ledger</small></span><span class="pct-master-admin-arrow">→</span></button>
         <button type="button" class="pct-master-admin-card" data-pct-admin-workspace="earnings"><span class="pct-master-admin-icon">💵</span><span><strong>Earnings</strong><small>Company Financial Health</small></span><span class="pct-master-admin-arrow">→</span></button>
         <button type="button" class="pct-master-admin-card" data-pct-admin-workspace="reports"><span class="pct-master-admin-icon">📊</span><span><strong>Reports</strong><small>Search / Export</small></span><span class="pct-master-admin-arrow">→</span></button>
@@ -1488,6 +1489,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   function openWorkspace(area='returns'){
     if(!fb?.isMasterAdmin)return;
     if(area==='returns'&&typeof window.pctOpenAdminReturns==='function'){window.pctOpenAdminReturns();return;}
+    if(area==='owner-returns'&&typeof window.pctOpenAdminReturns==='function'){window.pctOpenAdminReturns(true);return;}
     if(area==='payments'&&typeof window.pctOpenAdminPayments==='function'){window.pctOpenAdminPayments();return;}
     if(area==='earnings'&&typeof window.pctOpenCompanyFinancialHealth==='function'){window.pctOpenCompanyFinancialHealth();return;}
     if(area==='reports'&&typeof window.pctOpenMasterAdminReports==='function'){window.pctOpenMasterAdminReports();return;}
@@ -1682,20 +1684,22 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
    only changes which existing frontend surface is visible. */
 (function(){
   const byId=id=>document.getElementById(id), home=()=>byId('pctMasterAdminHome'), workspace=()=>byId('appScreen'), hero=()=>byId('pctAdminWorkspaceHero'), overview=()=>byId('pctAdminOverviewBtn');
-  let root=null;
+  let root=null, ownerOnly=false;
+  const isOwnerDirectLead=lead=>String(lead?.preparerAssignment?.assignedPreparerType||'').toUpperCase()==='MASTER_ADMIN_OWNER'||String(lead?.intakeOrigin||'').toUpperCase()==='OWNER_PUBLIC_INTAKE';
   function ensure(){
     if(root)return root;
     root=document.createElement('section');
     root.id='pctAdminReturnsNavigation';
     root.className='pct-admin-returns-nav hidden';
-    root.innerHTML='<div><strong>All Returns</strong><span>Search, filter, and open the existing PCT return workspace.</span></div><button type="button" class="btn btn-soft" id="pctAdminReturnsHome">← BACK TO ADMIN HOME</button>';
+    root.innerHTML='<div><strong id="pctAdminReturnsTitle">All Returns</strong><span id="pctAdminReturnsSummary">Search, filter, and open the existing PCT return workspace.</span></div><button type="button" class="btn btn-soft" id="pctAdminReturnsHome">← BACK TO ADMIN HOME</button>';
     hero()?.insertAdjacentElement('afterend',root);
     byId('pctAdminReturnsHome').onclick=()=>window.pctShowMasterAdminHome?.();
     return root;
   }
   function hideOtherFocusedViews(){byId('pctMoneyIntegrityWorkspace')?.classList.add('hidden');byId('pctAdminMessagesWorkspace')?.classList.add('hidden');byId('pctCompanyFinancialHealthWorkspace')?.classList.add('hidden');byId('pctMasterAdminReportsWorkspace')?.classList.add('hidden');}
-  function showList(){
+  function showList(onlyOwnerDirect=false){
     if(!fb?.isMasterAdmin)return;
+    ownerOnly=onlyOwnerDirect===true;
     ensure();hideOtherFocusedViews();
     document.body.classList.remove('pct-master-admin-home-active');
     home()?.classList.add('hidden');
@@ -1703,6 +1707,8 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     workspace()?.classList.remove('hidden');
     overview()?.classList.remove('hidden');
     root.classList.remove('hidden');
+    byId('pctAdminReturnsTitle').textContent=ownerOnly?'Owner Tax Returns':'All Returns';
+    byId('pctAdminReturnsSummary').textContent=ownerOnly?'Direct PCT clients submitted through the main website. Agent-owned returns are excluded.':'Search, filter, and open the existing PCT return workspace.';
     if(workspace()?.classList.contains('workspace-mode'))window.backToClientDashboard?.();
     window.setFilter?.('all');
     window.setTimeout(()=>{sync();byId('searchInput')?.focus({preventScroll:true});workspace()?.scrollIntoView({behavior:'smooth',block:'start'});},0);
@@ -1712,7 +1718,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     const selected=workspace()?.classList.contains('workspace-mode');
     root.classList.toggle('hidden',!workspace()||workspace().classList.contains('hidden')||selected);
     const back=workspace()?.querySelector('.return-workspace-head button[onclick*="backToClientDashboard"]');
-    if(back)back.textContent='← BACK TO ALL RETURNS';
+    if(back)back.textContent=ownerOnly?'← BACK TO OWNER TAX RETURNS':'← BACK TO ALL RETURNS';
   }
   const priorOpen=window.openReturnWorkspace;
   if(typeof priorOpen==='function')window.openReturnWorkspace=function(){
@@ -1730,8 +1736,36 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     const prior=window[name];
     if(typeof prior==='function')window[name]=function(){if(root)root.classList.add('hidden');return prior.apply(this,arguments);};
   }
+  const priorRenderLeadList=window.renderLeadList;
+  window.renderLeadList=function(){
+    if(!ownerOnly)return priorRenderLeadList.apply(this,arguments);
+    const allLeads=leads;
+    leads=allLeads.filter(isOwnerDirectLead);
+    try{return priorRenderLeadList.apply(this,arguments);}
+    finally{leads=allLeads;}
+  };
   window.pctOpenAdminReturns=showList;
   new MutationObserver(sync).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+})();
+</script>
+<script>
+/* Owner-direct PTF status reuses the existing read-only submission check for
+   the exact lead and tax-year return; it creates no separate PTF store. */
+(function(){
+  const ownerDirect=lead=>String(lead?.preparerAssignment?.assignedPreparerType||'').toUpperCase()==='MASTER_ADMIN_OWNER'||String(lead?.intakeOrigin||'').toUpperCase()==='OWNER_PUBLIC_INTAKE';
+  async function renderOwnerPtf(lead){
+    const r=window.currentCompletedReturn,host=document.getElementById('completedReturnWorkspace');
+    if(!ownerDirect(lead)||!r||!host||document.getElementById('pctOwnerDirectPtf')||!fb?.functions)return;
+    const box=document.createElement('section');box.id='pctOwnerDirectPtf';box.className='securebox';box.innerHTML='<div class="section-title"><div><div class="kicker">OWNER DIRECT CLIENT</div><h3>PERMISSION TO FILE</h3></div><span class="tag gold">CHECKING</span></div><p class="small">This is the client’s existing Permission to File for this exact tax-year return. It does not mark the return filed.</p>';
+    host.appendChild(box);
+    try{
+      const result=await fb.functions.httpsCallable('getAgentPermissionToFileSubmissions')({returnRefs:[{leadId:lead.id,returnId:r.returnId||r.id}]}),submission=result.data?.submissions?.[0];
+      if(!box.isConnected)return;
+      box.innerHTML='<div class="section-title"><div><div class="kicker">OWNER DIRECT CLIENT</div><h3>PERMISSION TO FILE</h3></div><span class="tag '+(submission?'green':'gold')+'">'+(submission?'RECEIVED / COMPLETED':'AWAITING CLIENT')+'</span></div><p class="small">'+(submission?'Signed '+escapeHtml(submission.signedAt||'')+' · Document version '+escapeHtml(submission.documentVersion||'current')+'.':'Send the existing Client Portal review access code when the confirmed return is ready for client action.')+'</p>';
+    }catch(_){if(box.isConnected)box.innerHTML='<div class="warnbox">Permission to File status is temporarily unavailable. The existing client review workflow is unchanged.</div>';}
+  }
+  const prior=window.renderCompletedReturnWorkspace;
+  window.renderCompletedReturnWorkspace=function(lead){const result=prior.apply(this,arguments);renderOwnerPtf(lead);return result;};
 })();
 </script>
 </body>
