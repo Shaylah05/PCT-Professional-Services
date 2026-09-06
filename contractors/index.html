@@ -718,7 +718,6 @@
           agents = a.agents || [];
           ledger = l.records || [];
           fines = a.fines || [];
-          renderStats();
           renderAgents();
           await loadOnboardingQueue();
           if (selected) {
@@ -758,6 +757,7 @@
           const queue = rows.filter((x) => x.onboardingComplete !== true);
           host.innerHTML = queue.map((x) => `<tr><td><strong>${esc(x.displayName || "Unnamed agent")}</strong><div class="tiny">${esc(x.email)}</div></td><td>${esc(x.businessName || "—")}</td><td><strong>${Number(x.completedRequiredTaskCount || 0)} / ${Number(x.requiredTaskCount || 0)} REQUIRED TASKS COMPLETE</strong><div class="tiny">${Number(x.remainingRequiredTaskCount || 0)} remaining</div></td><td><span class="badge training-b">ONBOARDING IN PROGRESS</span></td><td><button class="btn small" onclick="openOnboardingWorkspace('${esc(x.agentUid)}')">OPEN ONBOARDING WORKSPACE</button></td></tr>`).join("") || '<tr><td colspan="5">No agents currently require Admin onboarding.</td></tr>';
           renderAgents();
+          renderStats();
           const codeInfo=await call("getTrainingCertificationAdmin",{}),certification=codeInfo.certification||{},attempts=codeInfo.attempts||[];
           $("activeTrainingCode").textContent=certification.currentCode||"Not configured";
           $("trainingCodeMeta").textContent=`Last changed ${fmtTimestamp(certification.updatedAt)} · by ${certification.updatedBy||"system-initialization"}`;
@@ -853,7 +853,7 @@
       }
       function renderStats() {
         const active = agents.filter((x) => x.status === "active").length,
-          pending = agents.length - active,
+          pending = onboardingAgents.filter((x) => x.onboardingComplete !== true).length,
           ready = ledger
             .filter((x) => x.payoutStatus === "available")
             .reduce((s, x) => s + Number(x.adjustedAgentEarnings || 0), 0);
@@ -979,19 +979,26 @@
             '<div class="notice error">These returns could not be loaded. Please refresh and try again.</div>';
         }
       }
+      function visibleOnboardingTasks(tasks) {
+        const requiredTaskKeys = onboardingQueueAgent(selected?.uid)?.requiredTaskKeys || [];
+        const prefix = `${selected?.uid || ""}_`;
+        return requiredTaskKeys.map((key) => {
+          const task = tasks.find((item) => item.key === key || (String(item.taskId || "").startsWith(prefix) && String(item.taskId).slice(prefix.length) === key));
+          return task ? {...task,key} : {key,title:key.replaceAll("_", " "),status:"PENDING",agentVisibleStatus:"Pending"};
+        });
+      }
       async function loadOnboardingAgentDetail() {
         if (!selected || currentTab !== "onboarding") return;
         const host = $("onboardingWorkspaceContent");
         try {
-          const result = await call("getAdminOnboardingAgent", {agentUid:selected.uid}), o=result.onboarding||{}, tasks=result.tasks||[], software=o.taxSoftware||{}, deposit=o.directDeposit||{};
+          const result = await call("getAdminOnboardingAgent", {agentUid:selected.uid}), o=result.onboarding||{}, tasks=result.tasks||[], visibleTasks=visibleOnboardingTasks(tasks), software=o.taxSoftware||{}, deposit=o.directDeposit||{};
           const attempts=result.redemptionAttempts||[], successCount=attempts.filter(x=>x.success).length, failedCount=attempts.length-successCount;
-          host.innerHTML = `<div class="notice"><strong>ONBOARDING IN PROGRESS</strong> · Payment ${esc(o.paymentStatus||"Not recorded")} · Training deadline ${esc(fmtDeadline(o.trainingDeadline))} · Code attempts: ${successCount} successful / ${failedCount} unsuccessful<div class="tiny">Stage: ${esc(String(o.stage||"Not recorded").replaceAll("_"," "))}</div></div><div id="manualDirectDepositCard" class="card"><b>Direct deposit provider setup</b></div><div id="taxSoftwareAccessSetup" class="card"><b>Tax-software setup</b></div><div class="card"><b>Required onboarding tasks</b>${tasks.sort((a,b)=>(a.order||0)-(b.order||0)).map(t=>`<div class="ledger-row"><strong>${esc(t.title)}</strong><div class="tiny">Agent sees: ${esc(t.agentVisibleStatus||t.status)}</div><select id="task_${esc(t.key)}"><option ${t.status==="PENDING"?"selected":""}>PENDING</option><option ${t.status==="IN_PROGRESS"?"selected":""}>IN_PROGRESS</option><option ${t.status==="BLOCKED"?"selected":""}>BLOCKED</option><option ${t.status==="COMPLETE"?"selected":""}>COMPLETE</option></select><button class="btn small" onclick="saveOnboardingTask('${esc(t.key)}')">SAVE TASK</button></div>`).join("")||'<div class="tiny">Tasks are created automatically after certification.</div>'}</div><div class="notice">When the first seven required tasks are complete, the account-ready email is prepared automatically. Production access turns on only after delivery is recorded.</div><div class="actions"><button class="btn gold" onclick="activateOnboardingAgent()">RETRY WELCOME / ACTIVATION</button><button class="btn" onclick="extendOnboardingDeadline()">EXTEND TRAINING DEADLINE</button></div>`;
+          host.innerHTML = `<div class="notice"><strong>ONBOARDING IN PROGRESS</strong> · Payment ${esc(o.paymentStatus||"Not recorded")} · Training deadline ${esc(fmtDeadline(o.trainingDeadline))} · Code attempts: ${successCount} successful / ${failedCount} unsuccessful<div class="tiny">Stage: ${esc(String(o.stage||"Not recorded").replaceAll("_"," "))}</div></div><div id="manualDirectDepositCard" class="card"><b>Direct deposit provider setup</b></div><div id="taxSoftwareAccessSetup" class="card"><b>Tax-software setup</b></div><div class="card"><b>Required onboarding tasks</b>${visibleTasks.map(t=>`<div class="ledger-row"><strong>${esc(t.title)}</strong><div class="tiny">Agent sees: ${esc(t.agentVisibleStatus||t.status)}</div><select id="task_${esc(t.key)}"><option ${t.status==="PENDING"?"selected":""}>PENDING</option><option ${t.status==="IN_PROGRESS"?"selected":""}>IN_PROGRESS</option><option ${t.status==="BLOCKED"?"selected":""}>BLOCKED</option><option ${t.status==="COMPLETE"?"selected":""}>COMPLETE</option></select><button class="btn small" onclick="saveOnboardingTask('${esc(t.key)}')">SAVE TASK</button></div>`).join("")}</div><div class="notice">When the first seven required tasks are complete, the account-ready email is prepared automatically. Production access turns on only after delivery is recorded.</div><div class="actions"><button class="btn gold" onclick="activateOnboardingAgent()">RETRY WELCOME / ACTIVATION</button><button class="btn" onclick="extendOnboardingDeadline()">EXTEND TRAINING DEADLINE</button></div>`;
           const productionReady=o.stage==='ACTIVE_AGENT'||o.productionAccess===true||String(o.accessStatus||'').toLowerCase()==='active';
           const headline=host.querySelector('.notice strong');if(headline&&productionReady)headline.textContent='ACTIVE / PRODUCTION READY';
-          renderOnboardingTaskControls(host,tasks);
+          renderOnboardingTaskControls(host,visibleTasks);
           renderManualDirectDepositSetup(host,o,deposit);
           renderTaxSoftwareAccessSetup(host,software);
-          host.querySelector('#task_send_direct_deposit_invitation')?.closest('.ledger-row')?.remove();
           renderAdminPtinPanel(result,host);
         } catch (error) { host.innerHTML='<div class="notice error">No onboarding record is available for this contractor yet.</div>'; }
       }
