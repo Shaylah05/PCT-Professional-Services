@@ -1741,6 +1741,9 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
       ? fb.functions.httpsCallable(n)
       : null;
   }
+  function profileIsLive() {
+    return live || /^\/agent-portal\/?$/.test(location.pathname);
+  }
   function css() {
     if (document.getElementById("agentGlobalPagesCss")) return;
     var s = document.createElement("style");
@@ -1944,20 +1947,20 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     };
     draw();
   }
-  function installPtinCard(onboarding) {
-    var section=document.querySelector(".agp-body section"),ptin=onboarding.ptin||{},year=Number(ptin.requiredCalendarYear||new Date().getFullYear()),card=document.createElement("div"),previewUrl=!live?"/fake-ptin-sample.svg":"",rotation=0,zoom=1,currentFile=null;
+  function installPtinCard(onboarding, profileLive) {
+    var section=document.querySelector(".agp-body section"),ptin=onboarding.ptin||{},year=Number(ptin.requiredCalendarYear||new Date().getFullYear()),card=document.createElement("div"),previewUrl=!profileLive?"/fake-ptin-sample.svg":"",rotation=0,zoom=1,currentFile=null;
     if(!section)return;
     card.className="securebox";
     card.id="ptinVerificationCard";
     card.style.margin="18px 0";
-    card.innerHTML=(live?"":'<div class="warnbox"><strong>Training Sandbox — Do Not Upload Real PTIN Information.</strong><br>Use only the fake sample information and document shown below.</div>')+
+    card.innerHTML=(profileLive?"":'<div class="warnbox"><strong>Training Sandbox — Do Not Upload Real PTIN Information.</strong><br>Use only the fake sample information and document shown below.</div>')+
       '<div class="section-title"><div><h3>Current-Year PTIN Verification — Required</h3><div class="small">Status: <strong id="ptinStatusText">'+esc(stageName(ptin.status||"MISSING"))+'</strong> · Required year: '+esc(year)+'</div></div><a class="btn btn-soft btn-sm" href="https://www.irs.gov/tax-professionals/ptin-requirements-for-tax-return-preparers" target="_blank" rel="noopener noreferrer">IRS PTIN Requirements ↗</a></div>'+
       '<p>Upload proof from your IRS PTIN account showing your legal name, PTIN number, active status, and the current calendar year. PCT must verify your current PTIN before we can create your tax-software account or allow return preparation.</p>'+
       (ptin.correctionReason?'<div class="warnbox"><strong>Correction required:</strong> '+esc(ptin.correctionReason)+'</div>':'')+
-      '<div class="two"><div><div class="field"><label>Legal name exactly as displayed by the IRS</label><input id="ptinLegalName" value="'+esc(ptin.legalName||(!live?"Taylor Training":""))+'"></div><div class="field"><label>PTIN number</label><input id="ptinNumber" maxlength="9" placeholder="P00000000" value="'+esc(ptin.ptinNumber||(!live?"P00000000":""))+'"></div><div class="field"><label>PTIN calendar year</label><input id="ptinYear" type="number" readonly value="'+esc(year)+'"></div><div class="field"><label>PTIN status</label><select id="ptinReportedStatus"><option value="">Choose status</option><option value="ACTIVE" '+((ptin.reportedStatus||(!live?"ACTIVE":""))==="ACTIVE"?"selected":"")+'>Active</option><option value="CURRENT" '+(ptin.reportedStatus==="CURRENT"?"selected":"")+'>Current</option></select></div><div class="field"><label>Supporting PTIN image or PDF</label><input id="ptinFile" type="file" accept="application/pdf,image/png,image/jpeg"><div class="small">PDF, PNG, JPG, or JPEG · maximum 8 MB. Replace blurry, cropped, or unreadable files.</div></div><label class="checkline"><input id="ptinAcknowledge" type="checkbox"> I confirm that this is my current IRS-issued PTIN information and that the information entered above matches the uploaded document.</label><button type="button" class="btn btn-gold" id="ptinSubmit">SUBMIT PTIN VERIFICATION</button><div id="ptinSubmitResult" class="small" role="status" aria-live="polite"></div></div>'+
-      '<div><div id="ptinTypedSummary" class="infobox"></div><div id="ptinPreviewFrame" style="height:430px;overflow:auto;background:#2a241d;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:16px"><img id="ptinPreviewImage" alt="PTIN document preview" style="max-width:100%;max-height:100%;transform-origin:center;transition:transform .15s" src="'+esc(previewUrl)+'"><iframe id="ptinPreviewPdf" title="PTIN PDF preview" style="display:none;width:100%;height:100%;background:#fff"></iframe></div><div class="actions" style="margin-top:10px"><button type="button" class="btn btn-soft btn-sm" id="ptinZoomIn">ZOOM +</button><button type="button" class="btn btn-soft btn-sm" id="ptinZoomOut">ZOOM −</button><button type="button" class="btn btn-soft btn-sm" id="ptinRotate">ROTATE</button><button type="button" class="btn btn-soft btn-sm" id="ptinReplace">REPLACE</button><button type="button" class="btn btn-soft btn-sm" id="ptinFullscreen">FULL SCREEN</button>'+(live&&ptin.hasDocument?'<button type="button" class="btn btn-soft btn-sm" id="ptinLoadStored">OPEN SUBMITTED DOCUMENT</button>':'')+'</div><div id="ptinImageWarning" class="small"></div><div class="small">Document version: '+esc(ptin.documentVersion||0)+' · Upload date: '+esc(ptin.uploadedAt?"Recorded in PCT":"Not submitted")+'</div></div></div>';
+      '<div class="two"><div><div class="field"><label>Legal name exactly as displayed by the IRS</label><input id="ptinLegalName" value="'+esc(ptin.legalName||(!profileLive?"Taylor Training":""))+'"></div><div class="field"><label>PTIN number</label><input id="ptinNumber" maxlength="9" placeholder="P00000000" value="'+esc(ptin.ptinNumber||(!profileLive?"P00000000":""))+'"></div><div class="field"><label>PTIN calendar year</label><input id="ptinYear" type="number" readonly value="'+esc(year)+'"></div><div class="field"><label>PTIN status</label><select id="ptinReportedStatus"><option value="">Choose status</option><option value="ACTIVE" '+((ptin.reportedStatus||(!profileLive?"ACTIVE":""))==="ACTIVE"?"selected":"")+'>Active</option><option value="CURRENT" '+(ptin.reportedStatus==="CURRENT"?"selected":"")+'>Current</option></select></div><div class="field"><label>Supporting PTIN image or PDF</label><input id="ptinFile" type="file" accept="application/pdf,image/png,image/jpeg"><div class="small">PDF, PNG, JPG, or JPEG · maximum 8 MB. Replace blurry, cropped, or unreadable files.</div></div><label class="checkline"><input id="ptinAcknowledge" type="checkbox"> I confirm that this is my current IRS-issued PTIN information and that the information entered above matches the uploaded document.</label><button type="button" class="btn btn-gold" id="ptinSubmit">SUBMIT PTIN VERIFICATION</button><div id="ptinSubmitResult" class="small" role="status" aria-live="polite"></div></div>'+
+      '<div><div id="ptinTypedSummary" class="infobox"></div><div id="ptinPreviewFrame" style="height:430px;overflow:auto;background:#2a241d;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:16px"><img id="ptinPreviewImage" alt="PTIN document preview" style="max-width:100%;max-height:100%;transform-origin:center;transition:transform .15s" src="'+esc(previewUrl)+'"><iframe id="ptinPreviewPdf" title="PTIN PDF preview" style="display:none;width:100%;height:100%;background:#fff"></iframe></div><div class="actions" style="margin-top:10px"><button type="button" class="btn btn-soft btn-sm" id="ptinZoomIn">ZOOM +</button><button type="button" class="btn btn-soft btn-sm" id="ptinZoomOut">ZOOM −</button><button type="button" class="btn btn-soft btn-sm" id="ptinRotate">ROTATE</button><button type="button" class="btn btn-soft btn-sm" id="ptinReplace">REPLACE</button><button type="button" class="btn btn-soft btn-sm" id="ptinFullscreen">FULL SCREEN</button>'+(profileLive&&ptin.hasDocument?'<button type="button" class="btn btn-soft btn-sm" id="ptinLoadStored">OPEN SUBMITTED DOCUMENT</button>':'')+'</div><div id="ptinImageWarning" class="small"></div><div class="small">Document version: '+esc(ptin.documentVersion||0)+' · Upload date: '+esc(ptin.uploadedAt?"Recorded in PCT":"Not submitted")+'</div></div></div>';
     var boxes=section.querySelectorAll(".securebox");section.insertBefore(card,boxes.length>1?boxes[boxes.length-1]:document.getElementById("profileSave"));
-    if(!live){var sampleHost=document.createElement("div");sampleHost.className="actions";sampleHost.style.marginTop="8px";sampleHost.innerHTML='<button type="button" class="btn btn-soft btn-sm" id="ptinUseSample">USE FAKE SAMPLE DOCUMENT</button><button type="button" class="btn btn-soft btn-sm" id="ptinSimCorrection">SIMULATE CORRECTION</button><button type="button" class="btn btn-soft btn-sm" id="ptinSimVerified">SIMULATE VERIFIED</button>';document.getElementById("ptinFile").parentElement.appendChild(sampleHost);document.getElementById("ptinUseSample").onclick=async function(){var response=await fetch("/fake-ptin-sample.svg"),blob=await response.blob();currentFile=new File([blob],"fake-ptin-training-sample.png",{type:"image/png"});showFile(currentFile,"/fake-ptin-sample.svg");document.getElementById("ptinSubmitResult").textContent="Fake training document loaded. No real PTIN information is used."};document.getElementById("ptinSimCorrection").onclick=function(){document.getElementById("ptinStatusText").textContent="Needs Correction";document.getElementById("ptinSubmitResult").textContent="Training example: Image is blurry or cropped. Replace the fake document and resubmit."};document.getElementById("ptinSimVerified").onclick=function(){document.getElementById("ptinStatusText").textContent="Verified";document.getElementById("ptinSubmitResult").textContent="Training example: PTIN verified. Tax-software setup may now begin — no production task was created."}}
+    if(!profileLive){var sampleHost=document.createElement("div");sampleHost.className="actions";sampleHost.style.marginTop="8px";sampleHost.innerHTML='<button type="button" class="btn btn-soft btn-sm" id="ptinUseSample">USE FAKE SAMPLE DOCUMENT</button><button type="button" class="btn btn-soft btn-sm" id="ptinSimCorrection">SIMULATE CORRECTION</button><button type="button" class="btn btn-soft btn-sm" id="ptinSimVerified">SIMULATE VERIFIED</button>';document.getElementById("ptinFile").parentElement.appendChild(sampleHost);document.getElementById("ptinUseSample").onclick=async function(){var response=await fetch("/fake-ptin-sample.svg"),blob=await response.blob();currentFile=new File([blob],"fake-ptin-training-sample.png",{type:"image/png"});showFile(currentFile,"/fake-ptin-sample.svg");document.getElementById("ptinSubmitResult").textContent="Fake training document loaded. No real PTIN information is used."};document.getElementById("ptinSimCorrection").onclick=function(){document.getElementById("ptinStatusText").textContent="Needs Correction";document.getElementById("ptinSubmitResult").textContent="Training example: Image is blurry or cropped. Replace the fake document and resubmit."};document.getElementById("ptinSimVerified").onclick=function(){document.getElementById("ptinStatusText").textContent="Verified";document.getElementById("ptinSubmitResult").textContent="Training example: PTIN verified. Tax-software setup may now begin — no production task was created."}}
     function summary(){document.getElementById("ptinTypedSummary").innerHTML='<strong>Typed PTIN details</strong><br>'+esc(document.getElementById("ptinLegalName").value||"Name not entered")+'<br>'+esc(document.getElementById("ptinNumber").value.toUpperCase()||"PTIN not entered")+' · '+esc(document.getElementById("ptinYear").value)+' · '+esc(document.getElementById("ptinReportedStatus").value||"Status not selected")}
     ["ptinLegalName","ptinNumber","ptinReportedStatus"].forEach(function(id){document.getElementById(id).addEventListener("input",summary)});summary();
     function transform(){document.getElementById("ptinPreviewImage").style.transform="scale("+zoom+") rotate("+rotation+"deg)"}
@@ -1965,10 +1968,10 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     document.getElementById("ptinFile").onchange=function(){currentFile=this.files[0]||null;if(!currentFile)return;if(currentFile.size>8*1024*1024||!["application/pdf","image/png","image/jpeg"].includes(currentFile.type)){document.getElementById("ptinSubmitResult").textContent="Use a PDF, PNG, JPG, or JPEG file no larger than 8 MB.";this.value="";currentFile=null;return}showFile(currentFile,URL.createObjectURL(currentFile))};
     document.getElementById("ptinZoomIn").onclick=function(){zoom=Math.min(3,zoom+.25);transform()};document.getElementById("ptinZoomOut").onclick=function(){zoom=Math.max(.5,zoom-.25);transform()};document.getElementById("ptinRotate").onclick=function(){rotation=(rotation+90)%360;transform()};document.getElementById("ptinReplace").onclick=function(){document.getElementById("ptinFile").click()};document.getElementById("ptinFullscreen").onclick=function(){var frame=document.getElementById("ptinPreviewFrame");if(frame.requestFullscreen)frame.requestFullscreen()};
     var loadStored=document.getElementById("ptinLoadStored");if(loadStored)loadStored.onclick=async function(){var out=document.getElementById("ptinSubmitResult"),fn=call("getMyPtinDocument");this.disabled=true;out.textContent="Opening protected document…";try{var r=await fn({calendarYear:year}),d=r.data.document,url="data:"+d.contentType+";base64,"+d.dataBase64;showFile({type:d.contentType,size:0},url);out.textContent="Protected document opened."}catch(e){out.textContent=e.message||"The document could not be opened.";this.disabled=false}};
-    document.getElementById("ptinSubmit").onclick=async function(){var out=document.getElementById("ptinSubmitResult"),legal=document.getElementById("ptinLegalName").value.trim(),number=document.getElementById("ptinNumber").value.trim().toUpperCase(),status=document.getElementById("ptinReportedStatus").value,ack=document.getElementById("ptinAcknowledge").checked;if(!legal||!/^P\d{8}$/.test(number)||!status||!ack||!currentFile){out.textContent="Enter the fake/current legal name, PTIN, year, active status, acknowledgment, and supporting document.";return}if(!live){out.textContent="Training submission demonstrated ✓ — no production record, task, file, or notification was created.";document.getElementById("ptinStatusText").textContent="Under Review";return}var fn=call("submitPtinVerification");if(!fn){out.textContent="PTIN submission is temporarily unavailable.";return}this.disabled=true;out.textContent="Submitting protected PTIN verification…";try{var base64=await new Promise(function(resolve,reject){var reader=new FileReader();reader.onload=function(){resolve(String(reader.result).split(",")[1]||"")};reader.onerror=reject;reader.readAsDataURL(currentFile)}),r=await fn({legalName:legal,ptinNumber:number,calendarYear:year,reportedStatus:status,acknowledged:true,contentType:currentFile.type,originalFileName:currentFile.name,documentDataBase64:base64});out.textContent=r.data.message;document.getElementById("ptinStatusText").textContent="Under Review"}catch(e){out.textContent=e.message||"PTIN verification could not be submitted.";this.disabled=false}};
+    document.getElementById("ptinSubmit").onclick=async function(){var out=document.getElementById("ptinSubmitResult"),legal=document.getElementById("ptinLegalName").value.trim(),number=document.getElementById("ptinNumber").value.trim().toUpperCase(),status=document.getElementById("ptinReportedStatus").value,ack=document.getElementById("ptinAcknowledge").checked;if(!legal||!/^P\d{8}$/.test(number)||!status||!ack||!currentFile){out.textContent="Enter the fake/current legal name, PTIN, year, active status, acknowledgment, and supporting document.";return}if(!profileLive){out.textContent="Training submission demonstrated ✓ — no production record, task, file, or notification was created.";document.getElementById("ptinStatusText").textContent="Under Review";return}var fn=call("submitPtinVerification");if(!fn){out.textContent="PTIN submission is temporarily unavailable.";return}this.disabled=true;out.textContent="Submitting protected PTIN verification…";try{var base64=await new Promise(function(resolve,reject){var reader=new FileReader();reader.onload=function(){resolve(String(reader.result).split(",")[1]||"")};reader.onerror=reject;reader.readAsDataURL(currentFile)}),r=await fn({legalName:legal,ptinNumber:number,calendarYear:year,reportedStatus:status,acknowledged:true,contentType:currentFile.type,originalFileName:currentFile.name,documentDataBase64:base64});out.textContent=r.data.message;document.getElementById("ptinStatusText").textContent="Under Review"}catch(e){out.textContent=e.message||"PTIN verification could not be submitted.";this.disabled=false}};
   }
   function renderProfile(profile, onboarding) {
-    var p = (profile && profile.agentProfile) || {};
+    var p = (profile && profile.agentProfile) || {}, profileLive = profileIsLive();
     var deposit = (onboarding && onboarding.directDeposit) || {};
     shell(
       "Profile Setup",
@@ -2003,10 +2006,25 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
         esc(p.partnerBranding || "") +
         '" placeholder="Optional approved partner business"></div></div></div><div class="securebox"><h3>Direct Deposit</h3><div class="small">Status: <strong>'+esc(stageName(deposit.status||"NOT_STARTED"))+'</strong>'+(deposit.bankName?' · '+esc(deposit.bankName):'')+(deposit.accountLast4?' · account ending '+esc(deposit.accountLast4):'')+'</div><button type="button" class="btn btn-soft btn-sm" id="profileDepositUpdate">UPDATE DIRECT DEPOSIT</button><span id="profileDepositResult" class="small" role="status"></span></div><button type="button" class="btn btn-gold" id="profileSave">SAVE &amp; PUBLISH</button><div id="profileStatus" class="small" role="status" aria-live="polite"></div></section>',
     );
-    installPtinCard(onboarding || {});
+    installPtinCard(onboarding || {}, profileLive);
+    var selectedPhotoPreviewUrl = "", profilePhotoInput = document.getElementById("profilePhoto");
+    profilePhotoInput.onchange = function () {
+      var selected = this.files[0], out = document.getElementById("profileStatus"), preview = document.getElementById("profilePreviewPhoto");
+      if (!selected) return;
+      if (selected.size > 3 * 1024 * 1024 || !/^image\/(png|jpeg|webp)$/.test(selected.type)) {
+        out.textContent = "Use a PNG, JPEG, or WEBP image under 3 MB.";
+        this.value = "";
+        return;
+      }
+      if (selectedPhotoPreviewUrl) URL.revokeObjectURL(selectedPhotoPreviewUrl);
+      selectedPhotoPreviewUrl = URL.createObjectURL(selected);
+      preview.src = selectedPhotoPreviewUrl;
+      out.textContent = "Photo selected. Choose SAVE & PUBLISH to publish it.";
+    };
     document.getElementById("profileSave").onclick = async function () {
       var out = document.getElementById("profileStatus"),
         file = document.getElementById("profilePhoto").files[0],
+        saveButton = this,
         data = {
           displayName: document
             .getElementById("profileDisplayName")
@@ -2041,17 +2059,22 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
           return;
         }
         data.photoContentType = file.type;
-        data.photoDataBase64 = await new Promise(function (resolve, reject) {
-          var reader = new FileReader();
-          reader.onload = function () {
-            resolve(String(reader.result).split(",")[1] || "");
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        data.photoUrl = "data:" + file.type + ";base64," + data.photoDataBase64;
+        try {
+          data.photoDataBase64 = await new Promise(function (resolve, reject) {
+            var reader = new FileReader();
+            reader.onload = function () {
+              resolve(String(reader.result).split(",")[1] || "");
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        } catch (_) {
+          out.textContent = "We couldn't save your profile photo. Please try again.";
+          return;
+        }
+        if (!profileLive) data.photoUrl = "data:" + file.type + ";base64," + data.photoDataBase64;
       }
-      if (!live) {
+      if (!profileLive) {
         var saved = Object.assign({}, sandboxProfile(), data);
         localStorage.setItem(SANDBOX_PROFILE_KEY, JSON.stringify(saved));
         document.getElementById("profilePreviewName").textContent = saved.displayName;
@@ -2065,20 +2088,26 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
         out.textContent = "Profile publishing is temporarily unavailable.";
         return;
       }
+      saveButton.disabled = true;
+      out.textContent = "Saving profile…";
       try {
-        await fn(data);
-        out.textContent = "Profile published ✓";
+        var result = await fn(data), savedPhotoUrl = String(result.data?.photoUrl || "");
+        if (savedPhotoUrl) document.getElementById("profilePreviewPhoto").src = savedPhotoUrl;
+        if (selectedPhotoPreviewUrl) { URL.revokeObjectURL(selectedPhotoPreviewUrl); selectedPhotoPreviewUrl = ""; }
+        out.textContent = "Profile saved and published.";
       } catch (e) {
-        out.textContent = e.message || "Profile could not be published.";
+        out.textContent = file ? "We couldn't save your profile photo. Please try again." : (e.message || "Profile could not be published.");
+      } finally {
+        if (saveButton.isConnected) saveButton.disabled = false;
       }
     };
-    document.getElementById("profileDepositUpdate").onclick = async function(){var out=document.getElementById("profileDepositResult"),fn=call("requestDirectDepositUpdate");this.disabled=true;if(!live||!fn){out.textContent=" Training request demonstrated ✓";return}try{var r=await fn({});out.textContent=" "+(r.data.message||"Your direct-deposit update request was sent.")}catch(e){out.textContent=" "+(e.message||"The update request could not be sent.");this.disabled=false}};
+    document.getElementById("profileDepositUpdate").onclick = async function(){var out=document.getElementById("profileDepositResult"),fn=call("requestDirectDepositUpdate");this.disabled=true;if(!profileLive||!fn){out.textContent=" Training request demonstrated ✓";return}try{var r=await fn({});out.textContent=" "+(r.data.message||"Your direct-deposit update request was sent.")}catch(e){out.textContent=" "+(e.message||"The update request could not be sent.");this.disabled=false}};
   }
   window.openAgentProfilePage = function () {
     if (current) return;
     current = "profile";
     css();
-    if (live) {
+    if (profileIsLive()) {
       var fn = call("getPreparerPersonalizedLinks"), statusFn=call("getMyOnboardingStatus");
       if (fn)
         Promise.all([fn({}),statusFn?statusFn({}):Promise.resolve({data:{onboarding:{}}})])
