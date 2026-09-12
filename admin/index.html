@@ -792,7 +792,7 @@ function detectForms(lead){
   return forms;
 }
 
-function buildExactAnswersText(lead){return JSON.stringify(lead,null,2)}
+function buildExactAnswersText(lead){const answers={...(lead||{})};delete answers.scheduleCInterview;return JSON.stringify(answers,null,2)}
 function buildFormDetectorText(lead){return detectForms(lead).map(f=>`${f.form}\nReason: ${f.reason}\nEstimated Fee: ${money(f.price||0)}\nMissing/Verify: ${f.missing||'Confirm with documents'}\n`).join('\n')}
 function buildTaxSoftwareSummary(lead){
   const c=lead.client||{}, filing=lead.filing||{}, q=lead.quickEstimateInputs||{}, ext=lead.extension, am=lead.amendedReturn, aw=lead.adminWorkflow||{}, est=lead.estimate||{};
@@ -1768,6 +1768,114 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   }
   const prior=window.renderCompletedReturnWorkspace;
   window.renderCompletedReturnWorkspace=function(lead){const result=prior.apply(this,arguments);renderOwnerPtf(lead);return result;};
+})();
+</script>
+<script>
+/* Phase 3.2: read-only Schedule C interview detail in the existing owner
+   return workspace. The Master Admin gate and return routing stay unchanged. */
+(function(){
+  'use strict';
+  const INTERVIEW_VERSION='pct-schedule-c-interview-2026-v1';
+  const incomeFields=[
+    ['cash','Cash'],['zelle','Zelle'],['cashApp','Cash App'],['venmo','Venmo'],
+    ['payPal','PayPal'],['checks','Checks'],['cardProcessorReceipts','Card / payment processor receipts'],
+    ['otherIncome','Other income']
+  ];
+  const expenseFields=[
+    ['advertising','Advertising'],['supplies','Supplies'],['contractLabor','Contract labor'],
+    ['commissionsFees','Commissions / fees'],['insurance','Insurance'],
+    ['legalProfessional','Legal / professional'],['office','Office'],['rentLease','Rent / lease'],
+    ['repairs','Repairs'],['taxesLicenses','Taxes / licenses'],['travel','Travel'],['meals','Meals'],
+    ['utilities','Utilities'],['softwareSubscriptions','Software / subscriptions'],['other','Other']
+  ];
+  const record=value=>Boolean(value&&typeof value==='object'&&!Array.isArray(value));
+  const esc=value=>escapeHtml(String(value??''));
+  const amount=value=>{const number=Number(value);return Number.isFinite(number)?number:0;};
+  const currency=value=>'$'+amount(value).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const answer=value=>value===true?'Yes':value===false?'No':'Not answered';
+  const taxYear=lead=>String(lead?.filing?.taxYear||lead?.amendedReturn?.taxYear||lead?.extension?.taxYear||lead?.taxYear||'').trim();
+  const returnId=value=>String(value?.returnId||value?.id||'').trim();
+  let requestSequence=0;
+
+  function validInterview(value){
+    return record(value)&&value.interviewVersion===INTERVIEW_VERSION&&record(value.income)&&record(value.expenses)&&record(value.vehicle)&&record(value.homeOffice)&&record(value.equipment)&&record(value.helpers)&&value.income.form1099KIsReferenceOnly===true;
+  }
+  function interviewForReturn(lead,reviewedReturn){
+    if(!record(lead)||!record(reviewedReturn))return null;
+    const leadId=String(lead.id||lead.leadId||'').trim(),reviewLeadId=String(reviewedReturn.leadId||'').trim();
+    const reviewedReturnId=returnId(reviewedReturn),leadReturnId=String(lead.currentReturnId||lead.completedReturnSummary?.returnId||'').trim();
+    const leadTaxYear=taxYear(lead),returnTaxYear=String(reviewedReturn.taxYear||'').trim();
+    if(!leadId||!reviewedReturnId||(reviewLeadId&&reviewLeadId!==leadId))return null;
+    if(leadReturnId?reviewedReturnId!==leadReturnId:reviewedReturn.currentReturn!==true)return null;
+    if(!leadTaxYear||!returnTaxYear||leadTaxYear!==returnTaxYear)return null;
+    if(validInterview(reviewedReturn.scheduleCInterview))return {interview:reviewedReturn.scheduleCInterview,source:'return'};
+    return validInterview(lead.scheduleCInterview)?{interview:lead.scheduleCInterview,source:'lead'}:null;
+  }
+  function moneyRows(fields,values){
+    const rows=fields.filter(([key])=>amount(values?.[key])>0).map(([key,label])=>'<div class="info"><div class="k">'+esc(label)+'</div><div class="v">'+currency(values[key])+'</div></div>');
+    return rows.length?rows.join(''):'<div class="info"><div class="k">Reported amounts</div><div class="v">No nonzero amounts reported</div></div>';
+  }
+  function detailsCard(title,label,value,extra){
+    return '<div class="info"><div class="k">'+esc(title)+'</div><div class="v">'+esc(label)+((value&&extra)?'<br>'+extra:'')+'</div></div>';
+  }
+  function renderInterview(interview,source){
+    const income=interview.income,expenses=interview.expenses,vehicle=interview.vehicle,homeOffice=interview.homeOffice,equipment=interview.equipment,helpers=interview.helpers;
+    const status=interview.completedAt?'COMPLETED':'PARTIAL / INCOMPLETE',statusClass=interview.completedAt?'green':'gold';
+    const otherExplanation=String(income.otherIncomeExplanation||'').trim();
+    const vehicleExtra=vehicle.used===true?'<span class="small">Business miles: '+esc(amount(vehicle.businessMiles).toLocaleString('en-US'))+'<br>Total miles: '+esc(amount(vehicle.totalMiles).toLocaleString('en-US'))+'<br>No mileage deduction is calculated here.</span>':'';
+    const homeExtra=homeOffice.used===true?'<span class="small">Business-use square feet: '+esc(amount(homeOffice.businessUseSquareFeet).toLocaleString('en-US'))+'<br>Total home square feet: '+esc(amount(homeOffice.totalHomeSquareFeet).toLocaleString('en-US'))+'<br>Client answered Yes to regularly using part of the home just for this work. Preparer review required; no deduction is calculated here.</span>':'';
+    const equipmentExtra=equipment.bought===true?'<span class="small">'+esc(String(equipment.details||'No details provided'))+'<br>Depreciation or Section 179 treatment is not determined here.</span>':'';
+    const helpersExtra=helpers.paid===true?'<span class="small">'+esc(String(helpers.details||'No details provided'))+'<br>Worker classification is not determined here.</span>':'';
+    return '<section class="securebox" data-schedule-c-source="'+esc(source)+'">'+
+      '<div class="section-title"><div><div class="eyebrow">CLIENT-REPORTED ORGANIZER DETAIL</div><h3>SCHEDULE C GUIDED INTERVIEW</h3></div><span class="tag '+statusClass+'">'+status+'</span></div>'+
+      '<div class="info-grid"><div class="info"><div class="k">What they did</div><div class="v">'+esc(interview.businessDescription||'Not provided')+'</div></div><div class="info"><div class="k">Interview status</div><div class="v">'+esc(status==='COMPLETED'?'Completed':'Partial / incomplete')+'</div></div><div class="info"><div class="k">Interview version</div><div class="v">'+esc(interview.interviewVersion)+'</div></div></div>'+
+      '<div style="margin-top:18px"><div class="eyebrow">MONEY IN</div><div class="info-grid">'+moneyRows(incomeFields,income)+'</div></div>'+
+      (otherExplanation?'<div class="infobox"><strong>Other income explanation:</strong> '+esc(otherExplanation)+'</div>':'')+
+      '<div class="info-grid" style="margin-top:12px"><div class="info"><div class="k">Total once-counted gross receipts</div><div class="v money">'+currency(income.onceCountedGrossReceipts)+'</div></div><div class="info"><div class="k">1099-K reported / reference amount</div><div class="v">'+currency(income.form1099KReportedAmount)+'</div></div></div>'+
+      '<div class="infobox"><strong>1099-K reference only:</strong> This amount may already be included in the payment receipts above and is not automatically additional gross receipts.</div>'+
+      '<div style="margin-top:18px"><div class="eyebrow">EXPENSES</div><div class="info-grid">'+moneyRows(expenseFields,expenses)+'</div><div class="small" style="margin-top:9px">Client-reported organizer expense — preparer review required.</div></div>'+
+      '<div class="info-grid" style="margin-top:12px"><div class="info"><div class="k">Total client-reported expenses</div><div class="v">'+currency(expenses.totalExpenses)+'</div></div></div>'+
+      '<div class="eyebrow" style="margin-top:18px">BUSINESS-USE DETAILS</div><div class="info-grid">'+
+        detailsCard('Vehicle used for business',answer(vehicle.used),vehicle.used,vehicleExtra)+
+        detailsCard('Home office reported',answer(homeOffice.used),homeOffice.used,homeExtra)+
+        detailsCard('Equipment / tools purchased',answer(equipment.bought),equipment.bought,equipmentExtra)+
+        detailsCard('Paid helpers / contractors',answer(helpers.paid),helpers.paid,helpersExtra)+
+      '</div>'+
+      '<div class="eyebrow" style="margin-top:18px">ORGANIZER TOTALS</div><div class="info-grid"><div class="info"><div class="k">Gross receipts</div><div class="v">'+currency(income.onceCountedGrossReceipts)+'</div></div><div class="info"><div class="k">Total expenses</div><div class="v">'+currency(expenses.totalExpenses)+'</div></div><div class="info"><div class="k">Preliminary organizer profit</div><div class="v money">'+currency(interview.preliminaryOrganizerNetProfit)+'</div></div></div>'+
+      '<div class="warnbox"><strong>Client-reported preliminary organizer figure — preparer review required.</strong> This is not a final taxable profit determination.</div>'+
+    '</section>';
+  }
+  function ensureHost(lead){
+    const body=document.querySelector('.return-workspace-body'),panel=document.getElementById('documentsPanel-'+String(lead?.id||''));
+    if(!body||!panel)return null;
+    let host=document.getElementById('pctAdminScheduleCInterviewHost');
+    if(!host){host=document.createElement('div');host.id='pctAdminScheduleCInterviewHost';body.insertBefore(host,panel);}
+    return host;
+  }
+  function selectedLeadStillMatches(lead,sequence){
+    return sequence===requestSequence&&String(selectedLeadId||'')===String(lead?.id||'');
+  }
+  async function loadInterview(lead,sequence){
+    const host=ensureHost(lead);if(!host||!fb?.db)return;
+    host.replaceChildren();
+    try{
+      const snap=await fb.db.collection(PCT_DASHBOARD_CONFIG.collectionName).doc(lead.id).collection('completedReturns').orderBy('createdAt','desc').get();
+      if(!selectedLeadStillMatches(lead,sequence)||!host.isConnected)return;
+      const returns=snap.docs.map(document=>({id:document.id,...document.data()}));
+      const expectedReturnId=String(lead.currentReturnId||lead.completedReturnSummary?.returnId||'').trim();
+      const reviewedReturn=expectedReturnId?returns.find(item=>returnId(item)===expectedReturnId):returns.find(item=>item.currentReturn===true);
+      const selected=interviewForReturn(lead,reviewedReturn);
+      if(selected)host.innerHTML=renderInterview(selected.interview,selected.source);
+    }catch(_){if(selectedLeadStillMatches(lead,sequence)&&host.isConnected)host.replaceChildren();}
+  }
+  window.PCTAdminScheduleCInterviewDashboard={validInterview,interviewForReturn,renderInterview};
+  const priorOpenReturnWorkspace=window.openReturnWorkspace;
+  if(typeof priorOpenReturnWorkspace==='function')window.openReturnWorkspace=function(){
+    const result=priorOpenReturnWorkspace.apply(this,arguments),lead=leads.find(item=>String(item.id)===String(arguments[0]));
+    const sequence=++requestSequence;
+    if(lead){ensureHost(lead);loadInterview(lead,sequence);}
+    return result;
+  };
 })();
 </script>
 </body>
