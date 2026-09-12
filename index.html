@@ -1979,6 +1979,7 @@ const STATES = [["","Select your state"],["AL","Alabama"],["AK","Alaska"],["AZ",
 
 /* =================== STATE =================== */
 const state = {
+  scheduleCInterview:null,
   leadType:null, taxYear:"2025", state:"", filingStatus:"", over65:"no", blind:"no", claimedDependent:"no",
   incomeSource:"", wages:"", fedWithholding:"", stateWithholding:"", numW2:"1",
   yearJobCount:"", allTaxDocsConfirmed:"", missingTaxDocNotes:"", marketplaceAwareness:"", marketplaceLookupPlan:"",
@@ -2204,7 +2205,7 @@ function setEstimateDependentCounts(){
   state.estimateDependentsUnder17=String(under17);state.estimateDependents17Plus=String(age17Plus);state.numDeps=String(under17+age17Plus);state.depAges=[];
   const extra=$('#depExtra');if(extra)extra.style.display=(under17+age17Plus)>0?'block':'none';
 }
-function pctV2AgentDraftSave(){const component=window.PCT_INTAKE_DEPENDENTS_V2,resume=state.agentIntakeResume;if(!component?.enabled()||!resume?.leadId||!resume?.resumeCode||!pctFirebase?.functions)return Promise.resolve();const v2Draft=component.draftPayload(state),agentPublicId=publicAgentIdFromUrl?.();if(!v2Draft||!agentPublicId)return Promise.resolve();state.v2DraftSaveChain=(state.v2DraftSaveChain||Promise.resolve()).catch(()=>{}).then(()=>pctFirebase.functions.httpsCallable('saveAgentIntakeDraftV2')({leadId:resume.leadId,resumeCode:resume.resumeCode,agentPublicId,v2Draft}));return state.v2DraftSaveChain.catch(()=>{});}
+function pctV2AgentDraftSave(){const component=window.PCT_INTAKE_DEPENDENTS_V2,resume=state.agentIntakeResume;if(!component?.enabled()||!resume?.leadId||!resume?.resumeCode||!pctFirebase?.functions)return Promise.resolve();const v2Draft=component.draftPayload(state),agentPublicId=publicAgentIdFromUrl?.();if(!v2Draft||!agentPublicId)return Promise.resolve();if(state.scheduleCInterview)v2Draft.scheduleCInterview=state.scheduleCInterview;state.v2DraftSaveChain=(state.v2DraftSaveChain||Promise.resolve()).catch(()=>{}).then(()=>pctFirebase.functions.httpsCallable('saveAgentIntakeDraftV2')({leadId:resume.leadId,resumeCode:resume.resumeCode,agentPublicId,v2Draft}));return state.v2DraftSaveChain.catch(()=>{});}
 function pctCommittedDependentCount(){const total=Math.max(0,+state.numDeps||0);return window.PCT_INTAKE_DEPENDENTS_V2?.enabled()?Math.min(10,total):Math.min(4,total);}
 function setReturnDependentCount(value){const component=window.PCT_INTAKE_DEPENDENTS_V2;if(component?.enabled()&&component.setCount(state,value,{onChange:pctV2AgentDraftSave}))return;state.numDeps=value;renderReturnDependentDetails();}
 function renderReturnDependentDetails(){
@@ -2446,6 +2447,7 @@ async function loadAgentIntakeResume(){
     const result=await pctFirebase.functions.httpsCallable('loadAgentIntakeDraft')({leadId:resume.leadId,resumeCode:resume.resumeCode,agentPublicId:publicAgentId}),draft=result.data||{},client=draft.client||{};
     state.agentIntakeResume={leadId:resume.leadId,resumeCode:resume.resumeCode};state.agentIntakeResumeLoaded=true;state.leadId=String(draft.leadId||resume.leadId);state.firstName=String(client.firstName||'');state.lastName=String(client.lastName||'');state.email=String(client.email||'');state.phone=String(client.phone||'');state.taxYear=String(draft.taxYear||state.taxYear);
     ['firstName','lastName','email','phone','taxYear'].forEach(key=>syncMirror(key,state[key]));setSeg('taxYear',state.taxYear);
+    if(draft.v2Draft?.scheduleCInterview){state.scheduleCInterview=draft.v2Draft.scheduleCInterview;window.PCTScheduleCWizard?.restoreCompletedInterviewToForm(state.scheduleCInterview);}
     if(window.PCT_INTAKE_DEPENDENTS_V2?.enabled()&&window.PCT_INTAKE_DEPENDENTS_V2.restoreDraft(state,draft.v2Draft))renderReturnDependentDetails();
     toast('Your saved intake is ready to finish.');
     return draft;
@@ -2618,6 +2620,7 @@ function buildLeadPayload(){
     filingIntent:{proceed:!!state.phase17Proceed},
     phase17Interview:phase17InterviewPayload(),
     phase17Consents:phase17ConsentsPayload(),
+    scheduleCInterview:state.scheduleCInterview||null,
     taxpayer: {
       firstName: safeTrim(state.firstName), middleName: safeTrim(state.taxpayerMiddleName), lastName: safeTrim(state.lastName), suffix: safeTrim(state.taxpayerSuffix),
       identificationType: state.taxpayerIdType || '', identificationNumber: safeTrim(state.taxpayerIdNumber),
@@ -3532,7 +3535,7 @@ window.addEventListener('DOMContentLoaded',()=>{init(); initFirebaseIfReady(); l
 <script src="assets/pct-signature-pad.js"></script>
 <script src="assets/pct-taxslayer-bank-product-disclosure.js"></script>
 <script src="assets/pct-schedule-c-wizard.js"></script>
-<script>function pctScwLaunch(){var l=document.getElementById('pctScwLauncher');if(l)l.style.display='none';var m=document.getElementById('pctScwMount');if(m){m.style.display='block';if(window.PCTScheduleCWizard)window.PCTScheduleCWizard.mount(m);}}</script>
+<script>var pctScwDraftTimer=0;function pctScwPersist(interview){if(typeof state==='undefined'||!interview)return;state.scheduleCInterview=interview;clearTimeout(pctScwDraftTimer);pctScwDraftTimer=setTimeout(function(){if(typeof pctV2AgentDraftSave==='function')pctV2AgentDraftSave();},600);}function pctScwLaunch(){var l=document.getElementById('pctScwLauncher');if(l)l.style.display='none';var m=document.getElementById('pctScwMount');if(m){m.style.display='block';if(window.PCTScheduleCWizard)window.PCTScheduleCWizard.mount(m,{initialInterview:state.scheduleCInterview,onChange:pctScwPersist});}}</script>
 <script src="assets/pct-intake-wizard-j1.js"></script>
 <script>
 /* J2B.2 keeps the existing wizard intact while separating its two authorization pages. */

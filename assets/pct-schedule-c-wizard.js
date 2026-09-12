@@ -24,6 +24,8 @@
 (function () {
   'use strict';
 
+  const INTERVIEW_VERSION = 'pct-schedule-c-interview-2026-v1';
+
   const INCOME_SOURCES = [
     { id: 'cash', label: 'Cash people handed you', hint: 'Paper money, in person' },
     { id: 'zelle', label: 'Zelle', hint: '' },
@@ -35,21 +37,21 @@
   ];
 
   const EXPENSE_CATEGORIES = [
-    { field: 'businessExpense_advertising', label: 'Advertising or promoting your work', hint: 'Flyers, boosted posts, business cards' },
-    { field: 'businessExpense_supplies', label: 'Supplies or materials', hint: 'Things you buy up and use for the work' },
-    { field: 'businessExpense_contractLabor', label: 'Paid someone to help you', hint: 'Not on payroll — just paid them for help' },
-    { field: 'businessExpense_commissionsFees', label: 'Platform fees or commissions', hint: 'App fees, processing fees, referral cuts' },
-    { field: 'businessExpense_insurance', label: 'Business insurance', hint: 'Not health insurance — insurance for the work itself' },
-    { field: 'businessExpense_legalProfessional', label: 'Paid a lawyer, accountant, or consultant', hint: '' },
-    { field: 'businessExpense_office', label: 'Office or work supplies', hint: 'Small tools, printer paper, packaging' },
-    { field: 'businessExpense_rentLease', label: 'Rented space or equipment', hint: 'A booth, studio, storage unit, machine rental' },
-    { field: 'businessExpense_repairs', label: 'Repairs or upkeep', hint: 'Fixing tools or equipment you use' },
-    { field: 'businessExpense_taxesLicenses', label: 'Licenses, permits, or fees to operate', hint: '' },
-    { field: 'businessExpense_travel', label: 'Travel for the work', hint: 'Hotel, flight, not your regular commute' },
-    { field: 'businessExpense_meals', label: 'Business meals', hint: 'Meeting a client or vendor over food' },
-    { field: 'businessExpense_utilities', label: 'Phone or internet used for the work', hint: 'Just the business-use share' },
-    { field: 'businessExpense_software', label: 'Apps, software, or subscriptions', hint: 'Anything you pay monthly/yearly for the work' },
-    { field: 'businessExpense_other', label: 'Anything else you spent money on for this', hint: 'Catch-all — we\u2019ll ask what it was' }
+    { field: 'businessExpense_advertising', key: 'advertising', label: 'Advertising or promoting your work', hint: 'Flyers, boosted posts, business cards' },
+    { field: 'businessExpense_supplies', key: 'supplies', label: 'Supplies or materials', hint: 'Things you buy up and use for the work' },
+    { field: 'businessExpense_contractLabor', key: 'contractLabor', label: 'Paid someone to help you', hint: 'Not on payroll — just paid them for help' },
+    { field: 'businessExpense_commissionsFees', key: 'commissionsFees', label: 'Platform fees or commissions', hint: 'App fees, processing fees, referral cuts' },
+    { field: 'businessExpense_insurance', key: 'insurance', label: 'Business insurance', hint: 'Not health insurance — insurance for the work itself' },
+    { field: 'businessExpense_legalProfessional', key: 'legalProfessional', label: 'Paid a lawyer, accountant, or consultant', hint: '' },
+    { field: 'businessExpense_office', key: 'office', label: 'Office or work supplies', hint: 'Small tools, printer paper, packaging' },
+    { field: 'businessExpense_rentLease', key: 'rentLease', label: 'Rented space or equipment', hint: 'A booth, studio, storage unit, machine rental' },
+    { field: 'businessExpense_repairs', key: 'repairs', label: 'Repairs or upkeep', hint: 'Fixing tools or equipment you use' },
+    { field: 'businessExpense_taxesLicenses', key: 'taxesLicenses', label: 'Licenses, permits, or fees to operate', hint: '' },
+    { field: 'businessExpense_travel', key: 'travel', label: 'Travel for the work', hint: 'Hotel, flight, not your regular commute' },
+    { field: 'businessExpense_meals', key: 'meals', label: 'Business meals', hint: 'Meeting a client or vendor over food' },
+    { field: 'businessExpense_utilities', key: 'utilities', label: 'Phone or internet used for the work', hint: 'Just the business-use share' },
+    { field: 'businessExpense_software', key: 'softwareSubscriptions', label: 'Apps, software, or subscriptions', hint: 'Anything you pay monthly/yearly for the work' },
+    { field: 'businessExpense_other', key: 'other', label: 'Anything else you spent money on for this', hint: 'Catch-all — we\u2019ll ask what it was' }
   ];
 
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -73,11 +75,36 @@
     const isOn = btn.classList.contains('selected');
     if (isOn !== !!shouldBeOn) btn.click();
   }
+  function restoreCompletedInterviewToForm(interview) {
+    if (!interview || interview.interviewVersion !== INTERVIEW_VERSION || !interview.completedAt) return false;
+    const income=interview.income || {}, expenses=interview.expenses || {}, vehicle=interview.vehicle || {}, homeOffice=interview.homeOffice || {}, equipment=interview.equipment || {}, helpers=interview.helpers || {};
+    clickOrganizerFlagIfNeeded('business', true);
+    setField('businessOwner', 'taxpayer');
+    setField('businessDescription', String(interview.businessDescription || ''));
+    setField('businessGrossReceipts', num(income.onceCountedGrossReceipts).toFixed(2));
+    setField('businessCashIncome', num(income.cash).toFixed(2));
+    setField('business1099Income', num(income.form1099KReportedAmount).toFixed(2));
+    setField('businessOtherIncome', num(income.otherIncome).toFixed(2));
+    EXPENSE_CATEGORIES.forEach(category => setField(category.field, num(expenses[category.key]).toFixed(2)));
+    clickOrganizerFlagIfNeeded('vehicle', vehicle.used === true);
+    if (vehicle.used === true) {
+      setField('businessVehicleMiles', num(vehicle.businessMiles));
+      setField('businessTotalVehicleMiles', num(vehicle.totalMiles));
+    }
+    clickOrganizerFlagIfNeeded('homeOffice', homeOffice.used === true);
+    if (homeOffice.used === true) setField('businessHomeOfficeDetails', 'Simplified method estimate — ' + num(homeOffice.businessUseSquareFeet) + ' sq ft of ' + num(homeOffice.totalHomeSquareFeet) + ' sq ft total home (client self-reported via wizard; confirm regular/exclusive use).');
+    if (equipment.bought === true && equipment.details) setField('businessAssetsDetails', String(equipment.details));
+    if (helpers.paid === true && helpers.details) setField('businessContractorDetails', String(helpers.details));
+    return true;
+  }
 
-  function PCTScheduleCWizard(container) {
+  function PCTScheduleCWizard(container, options) {
     this.container = container;
+    this.onChange = typeof options?.onChange === 'function' ? options.onChange : null;
     this.step = 0;
     this.data = {
+      lastUpdatedAt: '',
+      completedAt: '',
       businessDescription: '',
       income: {}, // sourceId -> amount
       form1099KAmount: '', // documentation amount; never added to receipts
@@ -95,8 +122,61 @@
       paidHelpers: null,
       helpersNote: ''
     };
+    this.restore(options?.initialInterview);
     this.render();
   }
+
+  PCTScheduleCWizard.prototype.restore = function (interview) {
+    if (!interview || interview.interviewVersion !== INTERVIEW_VERSION) return;
+    const income = interview.income || {}, expenses = interview.expenses || {};
+    this.data.lastUpdatedAt = String(interview.lastUpdatedAt || '');
+    this.data.completedAt = String(interview.completedAt || '');
+    this.data.businessDescription = String(interview.businessDescription || '');
+    this.data.income = {cash:income.cash,zelle:income.zelle,cashapp:income.cashApp,venmo:income.venmo,paypal:income.payPal,checks:income.checks,card:income.cardProcessorReceipts};
+    this.data.form1099KAmount = income.form1099KReportedAmount;
+    this.data.otherIncomeAmount = income.otherIncome;
+    this.data.otherIncomeNote = String(income.otherIncomeExplanation || '');
+    EXPENSE_CATEGORIES.forEach(category => { this.data.expenses[category.field] = expenses[category.key]; });
+    this.data.usedVehicle = interview.vehicle?.used ?? null;
+    this.data.vehicleBusinessMiles = interview.vehicle?.businessMiles ?? '';
+    this.data.vehicleTotalMiles = interview.vehicle?.totalMiles ?? '';
+    this.data.usedHomeOffice = interview.homeOffice?.used ?? null;
+    this.data.homeOfficeSqFt = interview.homeOffice?.businessUseSquareFeet ?? '';
+    this.data.homeTotalSqFt = interview.homeOffice?.totalHomeSquareFeet ?? '';
+    this.data.boughtEquipment = interview.equipment?.bought ?? null;
+    this.data.equipmentNote = String(interview.equipment?.details || '');
+    this.data.paidHelpers = interview.helpers?.paid ?? null;
+    this.data.helpersNote = String(interview.helpers?.details || '');
+  };
+
+  PCTScheduleCWizard.prototype.interviewSnapshot = function () {
+    const expenses = {};
+    EXPENSE_CATEGORIES.forEach(category => { expenses[category.key] = num(this.data.expenses[category.field]); });
+    expenses.totalExpenses = this.totalExpenses();
+    return {
+      interviewVersion: INTERVIEW_VERSION,
+      lastUpdatedAt: this.data.lastUpdatedAt || new Date().toISOString(),
+      completedAt: this.data.completedAt || '',
+      businessDescription: this.data.businessDescription,
+      income: {
+        cash: num(this.data.income.cash), zelle: num(this.data.income.zelle), cashApp: num(this.data.income.cashapp), venmo: num(this.data.income.venmo), payPal: num(this.data.income.paypal), checks: num(this.data.income.checks), cardProcessorReceipts: num(this.data.income.card),
+        otherIncome: num(this.data.otherIncomeAmount), otherIncomeExplanation: this.data.otherIncomeNote,
+        form1099KReportedAmount: this.reported1099K(), form1099KIsReferenceOnly: true,
+        onceCountedGrossReceipts: this.totalIncome()
+      },
+      expenses,
+      vehicle: {used:this.data.usedVehicle,businessMiles:num(this.data.vehicleBusinessMiles),totalMiles:num(this.data.vehicleTotalMiles)},
+      homeOffice: {used:this.data.usedHomeOffice,businessUseSquareFeet:num(this.data.homeOfficeSqFt),totalHomeSquareFeet:num(this.data.homeTotalSqFt)},
+      equipment: {bought:this.data.boughtEquipment,details:this.data.equipmentNote},
+      helpers: {paid:this.data.paidHelpers,details:this.data.helpersNote},
+      preliminaryOrganizerNetProfit: this.netProfit()
+    };
+  };
+
+  PCTScheduleCWizard.prototype.notifyChange = function () {
+    this.data.lastUpdatedAt = new Date().toISOString();
+    if (this.onChange) this.onChange(this.interviewSnapshot());
+  };
 
   PCTScheduleCWizard.prototype.totalIncome = function () {
     let t = 0;
@@ -232,7 +312,9 @@
   };
 
   PCTScheduleCWizard.prototype.collectScreen = function () {
-    if (this.step === 1) {
+    if (this.step === 0) {
+      const description = document.getElementById('pctScwDescription'); if (description) this.data.businessDescription = description.value.trim();
+    } else if (this.step === 1) {
       document.querySelectorAll('[data-scw-income]').forEach(el => { this.data.income[el.getAttribute('data-scw-income')] = el.value; });
       const other = document.getElementById('pctScwOtherIncome'); if (other) this.data.otherIncomeAmount = other.value;
       const form1099K = document.getElementById('pctScw1099K'); if (form1099K) this.data.form1099KAmount = form1099K.value;
@@ -263,25 +345,30 @@
     const self = this;
     const start = document.getElementById('pctScwStart');
     if (start) start.addEventListener('click', () => {
-      const d = document.getElementById('pctScwDescription');
-      self.data.businessDescription = d ? d.value.trim() : '';
+      self.collectScreen();
+      self.notifyChange();
       self.next();
     });
     const nextBtn = document.getElementById('pctScwNext');
-    if (nextBtn) nextBtn.addEventListener('click', () => { self.collectScreen(); self.next(); });
+    if (nextBtn) nextBtn.addEventListener('click', () => { self.collectScreen(); self.notifyChange(); self.next(); });
     const backBtn = document.getElementById('pctScwBack');
-    if (backBtn) backBtn.addEventListener('click', () => { self.collectScreen(); self.back(); });
+    if (backBtn) backBtn.addEventListener('click', () => { self.collectScreen(); self.notifyChange(); self.back(); });
     this.container.querySelectorAll('[data-scw-yn]').forEach(btn => {
       btn.addEventListener('click', () => {
         const key = btn.getAttribute('data-scw-yn'), val = btn.getAttribute('data-val') === 'true';
         if (self.step === 3) self.collectScreen();
         self.data[key] = val;
+        self.notifyChange();
         self.render();
       });
     });
+    this.container.querySelectorAll('input,textarea,select').forEach(input => input.addEventListener('input', () => { self.collectScreen(); self.notifyChange(); }));
     const finish = document.getElementById('pctScwFinish');
     if (finish) finish.addEventListener('click', () => {
+      self.collectScreen();
       self.commitToForm();
+      self.data.completedAt = new Date().toISOString();
+      self.notifyChange();
       finish.textContent = 'Saved to your return \u2713';
       finish.disabled = true;
       if (typeof window.toast === 'function') window.toast('Your organized numbers have been added to your Schedule C section.');
@@ -335,9 +422,11 @@
   };
 
   window.PCTScheduleCWizard = {
-    mount(container) {
+    version: INTERVIEW_VERSION,
+    restoreCompletedInterviewToForm,
+    mount(container, options) {
       if (!container) return null;
-      return new PCTScheduleCWizard(container);
+      return new PCTScheduleCWizard(container, options || {});
     }
   };
 }());
