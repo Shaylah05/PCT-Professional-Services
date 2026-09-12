@@ -4,6 +4,14 @@
   'use strict';
   // PCT's V2 online intake capacity. This is not a tax-law eligibility limit.
   const MAX_DEPENDENTS = 10;
+  const COPYABLE_FACT_KEYS = Object.freeze([
+    'relationship', 'monthsLived', 'temporaryAbsence', 'supportDetails',
+    'competingClaimant', 'custodyDetails', 'student', 'disability', 'marriedJointReturn'
+  ]);
+  const COPYABLE_NARRATIVE_IDS = new Set([
+    'dependent_relationship_context', 'dependent_residency', 'dependent_temporary_absence',
+    'dependent_possible_claimant', 'dependent_custody_arrangement'
+  ]);
   const enabled = () => window.PCT_INTAKE_V2_CONFIG?.enabled === true && !!window.PCT_INTAKE_INTERVIEW_V2;
   const text = value => String(value ?? '').trim();
   const esc = value => text(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -39,7 +47,7 @@
       <section class="pct-v2-dependent-section"><h4>SUPPORT</h4><div class="pct-v2-dependent-grid"><div class="field pct-v2-dependent-wide"><label for="${id}-supportDetails">Who provided most support?</label><input id="${id}-supportDetails" data-pct-v2-dependent-key="supportDetails" value="${esc(dependent.supportDetails)}" placeholder="Taxpayer, spouse, other"></div></div></section>
       <section class="pct-v2-dependent-section"><h4>OTHER POSSIBLE CLAIMANT</h4><div class="pct-v2-dependent-grid">${yesNo('Could another person claim this dependent?', 'competingClaimant', dependent, id)}<div class="field pct-v2-dependent-wide"><label for="${id}-custodyDetails">Custody, shared living, or competing-claim facts</label><textarea id="${id}-custodyDetails" data-pct-v2-dependent-key="custodyDetails" placeholder="Facts only. Leave blank if none.">${esc(dependent.custodyDetails)}</textarea></div><div data-pct-v2-narrative-slot="claimant" class="pct-v2-dependent-wide"></div></div></section>
       <section class="pct-v2-dependent-section"><h4>ADDITIONAL DETAILS</h4><div class="pct-v2-dependent-grid">${yesNo('Full-time student, if applicable?', 'student', dependent, id)}${yesNo('Permanent disability, if applicable?', 'disability', dependent, id)}${yesNo('Married / filing a joint return?', 'marriedJointReturn', dependent, id)}<div data-pct-v2-narrative-slot="additional" class="pct-v2-dependent-wide"></div></div></section>
-      <div class="pct-v2-dependent-actions"><button type="button" class="btn btn-ghost" data-pct-v2-remove-dependent="${index}">REMOVE DEPENDENT</button></div>
+      <div class="pct-v2-dependent-actions">${index > 0 ? '<div class="pct-v2-dependent-wide"><p class="small">If the household details are the same, you can reuse the previous dependent\'s answers and change anything that is different.</p><button type="button" class="btn btn-soft" data-pct-v2-copy-previous="'+index+'">COPY PREVIOUS DEPENDENT DETAILS</button></div>' : ''}<button type="button" class="btn btn-ghost" data-pct-v2-remove-dependent="${index}">REMOVE DEPENDENT</button></div>
     </fieldset>`;
   }
   function prepareCountControls() {
@@ -66,6 +74,26 @@
     narrative()?.renderDependents?.(state); return true;
   }
   function requestSave(state, options) { if (typeof options.onChange === 'function') options.onChange(state); }
+  function copyPreviousDependent(state, index) {
+    const prior = state.dependentDetails?.[index - 1], current = state.dependentDetails?.[index];
+    if (!prior || !current) return false;
+    const newSubjectId = ensureSubject(current);
+    COPYABLE_FACT_KEYS.forEach(key => { if (prior[key] !== undefined) current[key] = prior[key]; });
+    const answers = state.v2NarrativeAnswers || {}, active = new Set((narrative()?.getVisibleQuestions?.(state) || [])
+      .filter(item => item.subject?.subjectId === newSubjectId)
+      .map(item => item.question?.questionId));
+    const priorSubjectId = text(prior.v2SubjectId);
+    if (priorSubjectId) Object.entries(answers).forEach(([key, row]) => {
+      const questionId = text(row?.questionId);
+      if (!COPYABLE_NARRATIVE_IDS.has(questionId) || !active.has(questionId) || text(row?.subject?.subjectId) !== priorSubjectId) return;
+      answers[`${questionId}:${newSubjectId}`] = {
+        ...row,
+        subject: {...row.subject, subjectId: newSubjectId, subjectType: 'DEPENDENT', subjectNameSnapshot: text(current.fullName)},
+        createdAtClient: new Date().toISOString()
+      };
+    });
+    return true;
+  }
   function bind(host, state, options) {
     host.querySelectorAll('[data-pct-v2-dependent-index]').forEach(card => card.querySelectorAll('[data-pct-v2-dependent-key]').forEach(input => {
       const index = Number(card.dataset.pctV2DependentIndex), key = input.dataset.pctV2DependentKey;
@@ -74,6 +102,11 @@
       input.addEventListener('change', () => requestSave(state, options));
     }));
     host.querySelector('[data-pct-v2-add-dependent]')?.addEventListener('click', () => { if (count(state) >= MAX_DEPENDENTS) return; state.dependentDetails ||= []; state.dependentDetails.push({v2SubjectId:subjectId()}); state.numDeps=String(count(state)+1); render(state,options); requestSave(state,options); });
+    host.querySelectorAll('[data-pct-v2-copy-previous]').forEach(button => button.addEventListener('click', () => {
+      const index = Number(button.dataset.pctV2CopyPrevious);
+      if (!copyPreviousDependent(state, index)) return;
+      render(state, options); requestSave(state, options);
+    }));
     host.querySelectorAll('[data-pct-v2-remove-dependent]').forEach(button => button.addEventListener('click', () => { const index=Number(button.dataset.pctV2RemoveDependent), dependent=state.dependentDetails?.[index]; if (!dependent || !window.confirm('Removing this dependent will also remove the information you entered for them. Continue?')) return; purge(state,dependent); state.dependentDetails.splice(index,1); state.numDeps=String(Math.max(0,count(state)-1)); render(state,options); requestSave(state,options); }));
   }
   function setCount(state, requestedCount, options = {}) {
