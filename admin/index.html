@@ -876,7 +876,7 @@ async function saveNotes(){const aw={...(selectedLead()?.adminWorkflow||{})}; if
     if(!filteredLeads.length){$('leadList').innerHTML='<div class="loading"><strong>No clients match this view.</strong><br>Share your personalized Client Intake Link from Profile Setup, or choose + Add Client to begin with a client now.</div>';return}
     $('leadList').innerHTML=filteredLeads.map(l=>{const docs=Array.isArray(l.documents)?l.documents:[],entered=docs.filter(d=>['entered','verified'].includes(normalizedDocumentStatus(d))).length,year=l.filing?.taxYear||l.amendedReturn?.taxYear||l.extension?.taxYear||'Tax year?';return '<div class="lead-card '+(selectedLeadId===l.id?'active':'')+'"><div class="lead-top"><div><div class="lead-name">'+escapeHtml(clientName(l))+'</div><div class="lead-meta">'+escapeHtml(year)+' · '+escapeHtml(statusLabel(workflowStatus(l)))+'</div></div><span class="tag '+tagClass(workflowStatus(l))+'">'+escapeHtml(statusLabel(workflowStatus(l)))+'</span></div><div class="lead-row"><span class="tag gray">'+docs.length+' documents</span><span class="tag blue">'+entered+'/'+docs.length+' entered</span><button class="btn btn-gold btn-sm" onclick="openReturnWorkspace('+escapeHtml(JSON.stringify(l.id))+')">OPEN RETURN</button></div></div>'}).join('');
   };
-  window.openReturnWorkspace=function(id){const lead=leads.find(l=>l.id===id);if(!lead)return;selectedLeadId=id;renderLeadList();$('appScreen').classList.add('workspace-mode');$('detailEmpty').classList.add('hidden');$('detailView').classList.remove('hidden');$('detailView').innerHTML='<div class="return-workspace-head"><div><button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3);margin-bottom:10px" onclick="backToClientDashboard()">← BACK TO CLIENT DASHBOARD</button><h2>'+escapeHtml(clientName(lead))+' — '+escapeHtml(currentTaxYearForLead(lead))+' RETURN</h2><p>Client details · Taxpayer Setup · Documents · Preparation progress</p></div><span class="tag '+tagClass(workflowStatus(lead))+'">'+escapeHtml(statusLabel(workflowStatus(lead)))+'</span></div><div class="return-workspace-body"><div id="documentsPanel-'+escapeHtml(lead.id)+'"><div class="loading">Loading secure return workspace…</div></div></div>';loadDocumentsForLead(lead)};
+  window.openReturnWorkspace=function(id){const lead=leads.find(l=>l.id===id);if(!lead)return;selectedLeadId=id;renderLeadList();$('appScreen').classList.add('workspace-mode');$('detailEmpty').classList.add('hidden');$('detailView').classList.remove('hidden');$('detailView').innerHTML='<div class="return-workspace-head"><div><button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3);margin-bottom:10px" onclick="backToClientDashboard()">← BACK TO CLIENT DASHBOARD</button><h2>'+escapeHtml(clientName(lead))+' — '+escapeHtml(currentTaxYearForLead(lead))+' RETURN</h2><p>Client details · Taxpayer Setup · Documents · Preparation progress</p></div><span class="tag '+tagClass(workflowStatus(lead))+'">'+escapeHtml(statusLabel(workflowStatus(lead)))+'</span></div><div class="return-workspace-body"><div id="documentsPanel-'+escapeHtml(lead.id)+'"><div class="loading">Loading secure return workspace…</div></div><div id="pctDueDiligenceWorkspace"></div></div>';loadDocumentsForLead(lead)};
   window.backToClientDashboard=function(){$('appScreen').classList.remove('workspace-mode');$('detailView').classList.add('hidden');$('detailEmpty').classList.remove('hidden');renderLeadList()};
   selectLead=function(id){openReturnWorkspace(id)};
   renderDetail=function(){const lead=selectedLead();if(lead)openReturnWorkspace(lead.id)};
@@ -1771,8 +1771,8 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
 })();
 </script>
 <script>
-/* Phase 3.2: read-only Schedule C interview detail in the existing owner
-   return workspace. The Master Admin gate and return routing stay unchanged. */
+/* Phase 3.2/3.4B: read-only Schedule C detail and the shared Due Diligence
+   mount use one exact-return load. Master Admin auth and routing stay unchanged. */
 (function(){
   'use strict';
   const INTERVIEW_VERSION='pct-schedule-c-interview-2026-v1';
@@ -1800,7 +1800,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   function validInterview(value){
     return record(value)&&value.interviewVersion===INTERVIEW_VERSION&&record(value.income)&&record(value.expenses)&&record(value.vehicle)&&record(value.homeOffice)&&record(value.equipment)&&record(value.helpers)&&value.income.form1099KIsReferenceOnly===true;
   }
-  function interviewForReturn(lead,reviewedReturn){
+  function returnMatchesLead(lead,reviewedReturn){
     if(!record(lead)||!record(reviewedReturn))return null;
     const leadId=String(lead.id||lead.leadId||'').trim(),reviewLeadId=String(reviewedReturn.leadId||'').trim();
     const reviewedReturnId=returnId(reviewedReturn),leadReturnId=String(lead.currentReturnId||lead.completedReturnSummary?.returnId||'').trim();
@@ -1808,6 +1808,10 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     if(!leadId||!reviewedReturnId||(reviewLeadId&&reviewLeadId!==leadId))return null;
     if(leadReturnId?reviewedReturnId!==leadReturnId:reviewedReturn.currentReturn!==true)return null;
     if(!leadTaxYear||!returnTaxYear||leadTaxYear!==returnTaxYear)return null;
+    return true;
+  }
+  function interviewForReturn(lead,reviewedReturn){
+    if(!returnMatchesLead(lead,reviewedReturn))return null;
     if(validInterview(reviewedReturn.scheduleCInterview))return {interview:reviewedReturn.scheduleCInterview,source:'return'};
     return validInterview(lead.scheduleCInterview)?{interview:lead.scheduleCInterview,source:'lead'}:null;
   }
@@ -1864,16 +1868,21 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
       const returns=snap.docs.map(document=>({id:document.id,...document.data()}));
       const expectedReturnId=String(lead.currentReturnId||lead.completedReturnSummary?.returnId||'').trim();
       const reviewedReturn=expectedReturnId?returns.find(item=>returnId(item)===expectedReturnId):returns.find(item=>item.currentReturn===true);
+      if(!returnMatchesLead(lead,reviewedReturn))return;
+      currentCompletedReturns=returns;
+      currentCompletedReturn=reviewedReturn;
+      currentCompletedReturnLeadId=lead.id;
       const selected=interviewForReturn(lead,reviewedReturn);
       if(selected)host.innerHTML=renderInterview(selected.interview,selected.source);
-    }catch(_){if(selectedLeadStillMatches(lead,sequence)&&host.isConnected)host.replaceChildren();}
+      if(typeof window.pctP17RenderWorkspace==='function')await window.pctP17RenderWorkspace(lead);
+    }catch(_){if(selectedLeadStillMatches(lead,sequence)&&host.isConnected){host.replaceChildren();document.getElementById('pctDueDiligenceWorkspace')?.replaceChildren();currentCompletedReturns=[];currentCompletedReturn=null;currentCompletedReturnLeadId=null;}}
   }
   window.PCTAdminScheduleCInterviewDashboard={validInterview,interviewForReturn,renderInterview};
   const priorOpenReturnWorkspace=window.openReturnWorkspace;
   if(typeof priorOpenReturnWorkspace==='function')window.openReturnWorkspace=function(){
     const result=priorOpenReturnWorkspace.apply(this,arguments),lead=leads.find(item=>String(item.id)===String(arguments[0]));
     const sequence=++requestSequence;
-    if(lead){ensureHost(lead);loadInterview(lead,sequence);}
+    if(lead){currentCompletedReturns=[];currentCompletedReturn=null;currentCompletedReturnLeadId=null;document.getElementById('pctDueDiligenceWorkspace')?.replaceChildren();ensureHost(lead);loadInterview(lead,sequence);}
     return result;
   };
 })();
