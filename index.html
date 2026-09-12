@@ -1652,14 +1652,18 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
         <div class="organizer-followup show" style="margin-top:18px"><div class="kicker">Schedule C / self-employment — only if applicable</div><div class="business-grid"><div class="field"><label>Did you report all business income you received?</label><select data-bind="phase17ScheduleC_allIncomeReported"><option value="">Not applicable / select</option><option value="YES">Yes</option><option value="NO">No</option><option value="UNSURE">Not sure</option></select></div><div class="field"><label>Do you have records for income and expenses?</label><select data-bind="phase17ScheduleC_recordkeeping"><option value="">Not applicable / select</option><option value="YES">Yes</option><option value="NO">No</option><option value="UNSURE">Not sure</option></select></div><div class="field"><label>How were your income totals determined?</label><input data-bind="phase17ScheduleC_incomeMethod" placeholder="Books, platform reports, bank records, other"></div><div class="field"><label>Accounting / recordkeeping method</label><input data-bind="phase17ScheduleC_accountingMethod" placeholder="Spreadsheet, app, receipts, other"></div></div><div class="field"><label>Business recordkeeping or income details for preparer review</label><textarea data-bind="phase17ScheduleC_details" placeholder="Describe the records you have. Your preparer will review the facts and request anything else needed."></textarea></div></div>
         <div class="completion-box"><label><input type="checkbox" onchange="phase17Set('attestation',this.checked)"> <span>I confirm that the factual information I provided, including any dependent relationship, residency, support, and claiming facts, is complete and accurate to the best of my knowledge. I will answer follow-up questions truthfully.</span></label></div>
         <div id="phase17ConsentSteps" class="organizer-followup">
+          <div id="phase17PctAuthorizationPage">
           <div class="kicker">Intake authorization</div><h3 style="font-size:22px">PCT Tax Preparation Authorization</h3>
           <p>By signing this PCT Tax Preparation Authorization, I authorize PCT Professional Services LLC and my tax professional to use the information and documents I provide to review my tax situation; prepare an estimate or quote where applicable; prepare and review my tax return; contact me about questions or missing information; and provide completed or review materials to me.</p>
           <p>This intake authorization is limited to tax preparation and review services. It does not authorize PCT Professional Services LLC or my tax professional to electronically file, e-file, or transmit my tax return. Before any filing or transmission, I must separately review my completed return and complete the required filing/e-file authorization or Permission to File.</p>
           <p>This authorization does not permit use or disclosure of my tax return information for life insurance, unrelated products or services, marketing programs, or other third-party offers. Any bank-product consent is separate.</p>
           <div class="business-grid"><div class="field"><label>Taxpayer name</label><input id="phase17TaxpayerName" oninput="phase17SetConsent('taxpayerName',this.value)" placeholder="Your legal name"></div><div class="field"><label>Taxpayer signature</label><div id="phase17TaxpayerSignaturePad" data-pct-signature-pad></div></div><div class="field phase17-joint-field"><label>Joint taxpayer name, if applicable</label><input id="phase17JointName" oninput="phase17SetConsent('jointTaxpayerName',this.value)" placeholder="Joint taxpayer legal name"></div><div class="field phase17-joint-field"><label>Joint taxpayer signature, if applicable</label><div id="phase17JointSignaturePad" data-pct-signature-pad></div></div></div>
           <div class="completion-box"><label><input type="checkbox" onchange="phase17Set('pctAuthorization',this.checked)"> <span>I have read and agree to the PCT Tax Preparation Authorization above.</span></label></div>
-          <div class="kicker" style="margin-top:20px">Your selected refund option</div><p class="small">We’ll show any applicable bank information based on the choice you made earlier.</p>
+          </div>
+          <section id="phase17BankProductsPage" class="organizer-followup" hidden aria-label="Refund and bank products">
+          <div class="kicker" style="margin-top:20px">Refund &amp; Bank Products</div><h3 style="font-size:22px">Refund &amp; Bank Products</h3><p class="small">Review and sign the TaxSlayer bank-product authorization for the refund option you selected.</p>
           <div id="phase17BankConsent" class="organizer-followup"></div>
+          </section>
         </div>
       </div>
       <div id="expectedChecklist" class="organizer-followup">
@@ -2538,7 +2542,7 @@ function phase17BankDisclosurePreparerName(){return PCT_BACKEND_CONFIG.intakeMod
 function phase17BankDisclosureTaxpayerName(){return String(state.phase17TaxpayerName||[state.firstName,state.taxpayerMiddleName,state.lastName,state.taxpayerSuffix].filter(Boolean).join(' ')).trim();}
 function phase17BankDisclosureJointName(){return String(state.phase17JointTaxpayerName||state.spouseFullName||'').trim();}
 function phase17RenderBankConsent(){
-  const box=$('#phase17BankConsent');if(!box)return;const complete=!!state.phase17RefundAdvanceInterest&&!!state.phase17RefundTransferInterest;
+  const box=$('#phase17BankConsent'),bankPage=$('#phase17BankProductsPage');if(!box||bankPage?.hidden)return;const complete=!!state.phase17RefundAdvanceInterest&&!!state.phase17RefundTransferInterest;
   if(!complete){box.innerHTML='<div class="small">Answer both refund-option questions to see whether a TaxSlayer bank-product disclosure is needed.</div>';delete box.dataset.pctTaxslayerRenderKey;return;}
   if(!phase17BankRequired()){box.innerHTML='<div class="callout gold"><div><strong>TaxSlayer bank-product disclosure: not required</strong><br>You selected neither bank option. Your ordinary tax preparation continues without a bank-product disclosure.</div></div>';delete box.dataset.pctTaxslayerRenderKey;return;}
   const joint=phase17JointReturn(),taxpayerName=phase17BankDisclosureTaxpayerName(),jointName=phase17BankDisclosureJointName(),renderKey=[state.phase17RefundAdvanceInterest,state.phase17RefundTransferInterest,joint,taxpayerName,jointName].join('|');
@@ -3526,6 +3530,39 @@ window.addEventListener('DOMContentLoaded',()=>{init(); initFirebaseIfReady(); l
 <script src="assets/pct-signature-pad.js"></script>
 <script src="assets/pct-taxslayer-bank-product-disclosure.js"></script>
 <script src="assets/pct-intake-wizard-j1.js"></script>
+<script>
+/* J2B.2 keeps the existing wizard intact while separating its two authorization pages. */
+(function(){
+  const one=selector=>document.querySelector(selector);
+  function setNextLabel(label){const row=one('#screen-organizer .organizer-card > .btn-row'),next=row?.querySelector('.btn-primary');if(next)next.textContent=label;}
+  function showPctAuthorizationPage(){const pct=one('#phase17PctAuthorizationPage'),bank=one('#phase17BankProductsPage');if(!pct||!bank)return;pct.hidden=false;bank.hidden=true;setNextLabel('Continue');}
+  function showBankProductsPage(){const pct=one('#phase17PctAuthorizationPage'),bank=one('#phase17BankProductsPage'),box=one('#phase17BankConsent');if(!pct||!bank)return;pct.hidden=true;bank.hidden=false;if(box)delete box.dataset.pctTaxslayerRenderKey;window.phase17RenderBankConsent?.();setNextLabel('Continue to documents');bank.querySelector('h3')?.focus({preventScroll:true});window.scrollTo({top:0,behavior:'smooth'});}
+  function pctAuthorizationReady(){const consent=window.phase17ConsentsPayload?.();if(!consent?.pctAuthorizationAccepted||!consent.taxpayerName||!window.phase17HasSignature?.(consent.taxpayerSignature)){window.toast?.('Read and sign the PCT Tax Preparation Authorization before continuing.');return false;}if(window.phase17JointReturn?.()&&(!consent.jointTaxpayerName||!window.phase17HasSignature?.(consent.jointTaxpayerSignature))){window.toast?.('Add the joint taxpayer name and signature for this joint filing intake.');return false;}return true;}
+  function refundChoicesReady(){if(state?.phase17RefundAdvanceInterest&&state?.phase17RefundTransferInterest)return true;window.toast?.('Answer both conditional refund-option questions before continuing.');return false;}
+  document.addEventListener('DOMContentLoaded',()=>{
+    if(window.__pctJ2B2BankRoutingInstalled)return;
+    const originalNext=window.organizerNext,originalBack=window.intakeWizardBack;
+    if(typeof originalNext!=='function'||typeof originalBack!=='function')return;
+    window.__pctJ2B2BankRoutingInstalled=true;
+    window.organizerNext=function(){
+      if(Number(state?.intakeWizardStep)!==6)return originalNext.apply(this,arguments);
+      const bank=one('#phase17BankProductsPage');
+      if(bank&&!bank.hidden){
+        if(!window.phase17TaxSlayerDisclosureComplete?.()){window.toast?.('Review and sign the TaxSlayer bank-product disclosure before continuing.');return;}
+        return originalNext.apply(this,arguments);
+      }
+      if(!pctAuthorizationReady()||!refundChoicesReady())return;
+      if(window.phase17BankRequired?.()){showBankProductsPage();return;}
+      return originalNext.apply(this,arguments);
+    };
+    window.intakeWizardBack=function(){
+      if(Number(state?.intakeWizardStep)===6&&!one('#phase17BankProductsPage')?.hidden){showPctAuthorizationPage();return;}
+      return originalBack.apply(this,arguments);
+    };
+    showPctAuthorizationPage();
+  });
+})();
+</script>
 
 <script type="text/plain" data-pct-j1-retired-phase20>
 /* Phase 20: guided presentation for the existing Phase 17 filing intake.
