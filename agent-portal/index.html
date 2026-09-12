@@ -459,7 +459,17 @@ function moneyReturn(value){return '$'+Number(value||0).toLocaleString('en-US',{
 function completedReturnHtml(lead){const id='completedReturnPanel-'+escapeHtml(lead.id);setTimeout(()=>loadCompletedReturnsForLead(lead),0);return '<div id="'+id+'"><div class="section-title"><h3>Return Review</h3><small>Tax-year workspace</small></div><div class="infobox">Return Review is available from the existing client and tax-year record. A completed-return upload is <strong>not</strong> required to save the result, fees, or confirmation. TaxSlayer data and a completed PDF remain optional protected review sources.</div><div class="two"><div class="securebox"><h4>OPTIONAL: PASTE FROM TAXSLAYER</h4><p>Paste raw return data when you want PCT to parse it for your review.</p><textarea id="taxSlayerPaste" style="min-height:230px" placeholder="PASTE TAXSLAYER RETURN DATA"></textarea><div class="actions"><button class="btn btn-gold" onclick="parsePastedCompletedReturn()">PARSE RETURN</button><button class="btn btn-ghost" onclick="clearTaxSlayerPaste()">CLEAR</button></div></div><div class="securebox"><h4>OPTIONAL: COMPLETED RETURN PDF</h4><p>Attach a protected PDF only when it helps your internal review. It is not a client-workflow prerequisite.</p><input id="completedReturnFileInput" type="file" accept="application/pdf" onchange="handleCompletedReturnPdf(this.files[0])"><div class="small" style="margin-top:10px">PDFs are stored under the authenticated case and tax-year path. No public URL is created.</div></div></div><div id="completedReturnWorkspace" class="loading">Loading tax-year return workspace…</div></div>'}
 function currentTaxYearForLead(lead){return lead.filing?.taxYear||lead.amendedReturn?.taxYear||lead.extension?.taxYear||'unknown'}
 function returnActor(){return {createdBy:fb.user?.uid||fb.user?.email||'authenticated-staff',createdByName:fb.user?.displayName||fb.user?.email||'Authenticated staff',assignedPreparerId:selectedLead()?.preparerAssignment?.assignedPreparerId||null,preparedByPreparerId:selectedLead()?.preparerAssignment?.assignedPreparerId||null,preparedByName:selectedLead()?.preparerAssignment?.assignedPreparerName||''}}
-async function loadCompletedReturnsForLead(lead){const panel=$('completedReturnPanel-'+lead.id);if(!panel||!fb.db)return;try{const snap=await fb.db.collection(PCT_DASHBOARD_CONFIG.collectionName).doc(lead.id).collection('completedReturns').orderBy('createdAt','desc').get();currentCompletedReturns=snap.docs.map(x=>({id:x.id,...x.data()}));currentCompletedReturnLeadId=lead.id;currentCompletedReturn=currentCompletedReturns.find(x=>x.currentReturn)||currentCompletedReturns[0]||null;renderCompletedReturnWorkspace(lead)}catch(e){panel.innerHTML='<div class="warnbox">Could not load completed returns: '+escapeHtml(pctFriendlyError(e,'The tax-year return workspace could not be loaded. Please retry.'))+'</div>'}}
+async function loadCompletedReturnsForLead(lead){
+  const panel=$('completedReturnPanel-'+lead.id);if(!panel||!fb.db)return;
+  try{
+    const snap=await fb.db.collection(PCT_DASHBOARD_CONFIG.collectionName).doc(lead.id).collection('completedReturns').orderBy('createdAt','desc').get();
+    if(!panel.isConnected||String(selectedLeadId)!==String(lead.id))return;
+    currentCompletedReturns=snap.docs.map(x=>({id:x.id,...x.data()}));currentCompletedReturnLeadId=lead.id;
+    const leadReturnId=String(lead.currentReturnId||lead.completedReturnSummary?.returnId||'');
+    currentCompletedReturn=currentCompletedReturns.find(x=>leadReturnId&&String(x.returnId||x.id)===leadReturnId)||currentCompletedReturns.find(x=>x.currentReturn)||currentCompletedReturns[0]||null;
+    renderCompletedReturnWorkspace(lead);
+  }catch(e){if(panel.isConnected)panel.innerHTML='<div class="warnbox">Could not load completed returns: '+escapeHtml(pctFriendlyError(e,'The tax-year return workspace could not be loaded. Please retry.'))+'</div>'}
+}
 function returnRecordStatus(r){if(!r)return 'RETURN SUMMARY NEEDS VERIFICATION';if(r.preparerVerification?.confirmed&&r.approvalStatus==='approved_by_both')return 'CLIENT APPROVED';if(r.preparerVerification?.confirmed&&r.approvalStatus==='changes_requested')return 'CLIENT CHANGES REQUESTED';if(r.preparerVerification?.confirmed)return 'CLIENT REVIEW PENDING';return 'RETURN SUMMARY NEEDS VERIFICATION'}
 function returnSummaryEditorHtml(r){const summary=r?.parsedReturnData?.summary||{};const fields=RETURN_SUMMARY_FIELDS.filter(([key])=>summary[key]!==undefined||r?.verifiedReturnSummary?.[key]!==undefined);if(!fields.length)return '<div class="loading">No major summary values parsed yet.</div>';return '<div class="return-summary-grid">'+fields.map(([key,label])=>'<div class="info"><label>'+escapeHtml(label)+'</label><input id="returnField_'+key+'" value="'+escapeHtml(r.verifiedReturnSummary?.[key]??summary[key]??'')+'"></div>').join('')+'</div><div class="actions"><button class="btn btn-soft" onclick="saveReturnSummaryEdits()">SAVE EDITS</button><button class="btn btn-gold" onclick="confirmReturnSummary()">CONFIRM RETURN SUMMARY</button></div>'}
 function clientReturnReviewHtml(lead,r){const s=r?.verifiedReturnSummary||r?.parsedReturnData?.summary||{};const income=Object.entries(r?.parsedReturnData?.concepts||{}).filter(([k,v])=>v.value!==null&&v.value!==0&&['wages','taxableInterest','ordinaryDividends','taxablePension','taxableSocialSecurity','capitalGainLoss','otherIncome'].includes(k));const mfj=String(lead.filing?.filingStatus||'').toLowerCase().includes('married');return '<div class="client-review-preview"><div class="section-title"><h3>YOUR TAX RETURN IS READY FOR REVIEW</h3><span class="tag blue">'+escapeHtml(returnRecordStatus(r))+'</span></div><p>Please review the information below carefully before approving your return.</p><h4>YOUR INCOME</h4><div class="info-grid">'+income.map(([k,v])=>'<div class="info"><div class="k">'+escapeHtml(v.label||k)+'</div><div class="v">'+moneyReturn(v.value)+'</div></div>').join('')+'</div><div class="info-grid"><div class="info"><div class="k">Total Income</div><div class="v">'+moneyReturn(s.totalIncome)+'</div></div><div class="info"><div class="k">Adjusted Gross Income</div><div class="v">'+moneyReturn(s.adjustedGrossIncome)+'</div></div><div class="info"><div class="k">Taxable Income</div><div class="v">'+moneyReturn(s.taxableIncome)+'</div></div></div><h4>YOUR TAX RESULT</h4><div class="result-card">'+(Number(s.federalRefund)>0?'<div class="k">FEDERAL REFUND</div><div class="result-amount">'+moneyReturn(s.federalRefund)+'</div>':(Number(s.federalAmountOwed)>0?'<div class="k">FEDERAL AMOUNT OWED</div><div class="result-amount">'+moneyReturn(s.federalAmountOwed)+'</div>':'<div class="result-amount">No federal refund or balance parsed</div>'))+'<div class="small">Total tax: '+moneyReturn(s.totalTax)+' · Federal withholding: '+moneyReturn(s.federalWithholding)+' · Total payments: '+moneyReturn(s.totalPayments)+'</div></div><h4>REVIEW CONFIRMATIONS</h4>'+['nameAndFiling','dependents','incomeSources','federalResult','creditsAndTaxes','fullReturnDetails'].map(k=>'<label class="checkline"><input type="checkbox" id="reviewConfirm_'+k+'" '+(r.clientConfirmations?.[k]?'checked':'')+'> I reviewed '+k.replace(/[A-Z]/g,m=>' '+m.toLowerCase())+'.</label>').join('')+'<div class="actions"><button class="btn btn-gold" onclick="submitPreviewApproval(\'taxpayer\')">APPROVE RETURN</button><button class="btn btn-ghost" onclick="submitPreviewChanges()">I NEED A CHANGE / QUESTION</button></div>'+(mfj?'<div class="securebox"><strong>MFJ approval:</strong> Spouse approval remains separate and must be completed independently.</div>':'')+'</div>'}
@@ -634,6 +644,7 @@ function overviewHtml(lead,total,prep){
     <div class="info"><div class="k">Submitted</div><div class="v">${escapeHtml(fmtDate(lead.createdAt||lead.createdAtClient))}</div></div>
   </div>
   ${alertsHtml(lead)}
+  <div id="pctScheduleCInterviewHost"></div>
   <div class="actions"><button class="btn btn-soft" onclick="copyExactAnswers()">Copy Exact Answers</button><button class="btn btn-blue" onclick="copyFormDetector()">Copy Form Detector</button></div>`;
 }
 function alertsHtml(lead){const alerts=buildDashboardAlerts(lead); return alerts.map(a=>`<div class="${a.type==='warn'?'warnbox':'infobox'}">${escapeHtml(a.text)}</div>`).join('')}
@@ -810,7 +821,7 @@ function detectForms(lead){
   return forms;
 }
 
-function buildExactAnswersText(lead){return JSON.stringify(lead,null,2)}
+function buildExactAnswersText(lead){const answers={...(lead||{})};delete answers.scheduleCInterview;return JSON.stringify(answers,null,2)}
 function buildFormDetectorText(lead){return detectForms(lead).map(f=>`${f.form}\nReason: ${f.reason}\nEstimated Fee: ${money(f.price||0)}\nMissing/Verify: ${f.missing||'Confirm with documents'}\n`).join('\n')}
 function buildTaxSoftwareSummary(lead){
   const c=lead.client||{}, filing=lead.filing||{}, q=lead.quickEstimateInputs||{}, ext=lead.extension, am=lead.amendedReturn, aw=lead.adminWorkflow||{}, est=lead.estimate||{};
@@ -1006,7 +1017,19 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   const priorRenderCompletedReturnWorkspace=renderCompletedReturnWorkspace;
   renderCompletedReturnWorkspace=function(lead){priorRenderCompletedReturnWorkspace(lead);const host=document.getElementById('completedReturnWorkspace');if(!host||!currentCompletedReturn)return;const box=document.createElement('div');box.innerHTML=returnReviewFoundationHtml(lead,currentCompletedReturn);host.insertBefore(box,host.firstChild);const summary=currentCompletedReturn.feeSummary||{};[['packetBaseFee',summary.baselinePreparationFee],['packetAdditionalFee',summary.additionalFeesTotal],['packetTotalFee',summary.finalPreparationFee]].forEach(([id,value])=>{const field=document.getElementById(id);if(field){field.value=Number(value||0).toFixed(2);field.readOnly=true;field.title='Calculated from the locked PCT Return Review pricing.'}});const discount=document.getElementById('packetDiscount');if(discount){discount.readOnly=true;discount.title='Agent discounts are not part of Phase 1 Return Review.'}};
   const priorLoadCompletedReturnsForLead=loadCompletedReturnsForLead;
-  loadCompletedReturnsForLead=async function(lead){await priorLoadCompletedReturnsForLead(lead);if(!fb.functions)return;try{const data=(await fb.functions.httpsCallable('getAgentReturnReview')({leadId:lead.id})).data;if(data?.returnData){if(!currentCompletedReturn){currentCompletedReturn={...data.returnData,id:data.returnId};currentCompletedReturns=[currentCompletedReturn]}else{Object.assign(currentCompletedReturn,data.returnData,{id:currentCompletedReturn.id||data.returnId})}renderCompletedReturnWorkspace(lead)}}catch(e){reviewStatus('Could not refresh central pricing — Retry','error')}};
+  loadCompletedReturnsForLead=async function(lead){
+    await priorLoadCompletedReturnsForLead(lead);if(!fb.functions||String(selectedLeadId)!==String(lead.id))return;
+    try{
+      const data=(await fb.functions.httpsCallable('getAgentReturnReview')({leadId:lead.id})).data;
+      if(String(selectedLeadId)!==String(lead.id))return;
+      if(data?.returnData){
+        const responseId=String(data.returnId||data.returnData.returnId||''),matchIndex=currentCompletedReturns.findIndex(item=>String(item.returnId||item.id||'')===responseId);
+        if(matchIndex>=0){currentCompletedReturns[matchIndex]={...currentCompletedReturns[matchIndex],...data.returnData,id:currentCompletedReturns[matchIndex].id||responseId};currentCompletedReturn=currentCompletedReturns[matchIndex]}
+        else{currentCompletedReturn={...data.returnData,id:responseId};currentCompletedReturns=[currentCompletedReturn,...currentCompletedReturns]}
+        currentCompletedReturnLeadId=lead.id;renderCompletedReturnWorkspace(lead);
+      }
+    }catch(e){if(String(selectedLeadId)===String(lead.id))reviewStatus('Could not refresh central pricing — Retry','error')}
+  };
   window.saveAgentReturnResult=async function(){const lead=selectedLead(),type=document.querySelector('input[name="pctReturnResult"]:checked')?.value,amount=Number(document.getElementById('pctReturnResultAmount')?.value);if(!lead||!type||!Number.isFinite(amount)||amount<0){reviewStatus('Choose Refund or Amount Due and enter a valid amount.','error');return}reviewStatus('Saving…');try{await fb.functions.httpsCallable('saveAgentReturnResult')({leadId:lead.id,resultType:type,amountCents:Math.round(amount*100)});reviewStatus('Saved ✓','success');await loadCompletedReturnsForLead(lead)}catch(e){reviewStatus('Error — Retry: '+pctFriendlyError(e),'error')}};
   let addingPhase1AdditionalFee=false;
   window.addReturnAdditionalFeeFromReview=async function(){if(addingPhase1AdditionalFee)return;const lead=selectedLead(),description=document.getElementById('pctAdditionalFeeDescription')?.value.trim(),amount=Number(document.getElementById('pctAdditionalFeeAmount')?.value);if(!lead||!description||!Number.isFinite(amount)||amount<=0){reviewStatus('Enter an additional-fee description and amount.','error');return}addingPhase1AdditionalFee=true;const button=document.getElementById('pctAdditionalFeeAdd');if(button)button.disabled=true;reviewStatus('Saving…');try{await fb.functions.httpsCallable('addReturnAdditionalFee')({leadId:lead.id,description,amount});reviewStatus('Saved ✓','success');await loadCompletedReturnsForLead(lead)}catch(e){reviewStatus('Error — Retry: '+pctFriendlyError(e),'error')}finally{addingPhase1AdditionalFee=false;if(button)button.disabled=false}};
@@ -2972,6 +2995,91 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   function renderNotifications(){const button=byId('pctAgentNotificationsButton');if(!button)return;closeNotifications();notificationPanel=document.createElement('section');notificationPanel.className='pct-notification-panel';notificationPanel.setAttribute('role','dialog');notificationPanel.setAttribute('aria-label','Notifications');notificationPanel.innerHTML='<div class="pct-notification-head"><strong>NOTIFICATIONS</strong><button type="button" class="btn btn-ghost btn-sm" id="pctNotificationClose">×</button></div>'+(notifications.length?notifications.map((item,index)=>'<button type="button" class="pct-notification-item" data-pct-notification="'+index+'"><strong>'+esc(item.type)+'</strong><span>'+esc(item.title)+'</span><span>'+esc(item.action)+'</span></button>').join(''):'<div class="securebox"><strong>You’re all caught up.</strong><p class="small">No new Agent actions right now.</p></div>');button.parentElement?.append(notificationPanel);button.setAttribute('aria-expanded','true');byId('pctNotificationClose').onclick=closeNotifications;notificationPanel.querySelectorAll('[data-pct-notification]').forEach(control=>control.onclick=()=>activate(notifications[Number(control.dataset.pctNotification)]));}
   const button=byId('pctAgentNotificationsButton');if(button)button.onclick=async()=>{await refreshNotifications();renderNotifications();};
   window.pctRefreshAgentNotifications=refreshNotifications;
+})();
+</script>
+<script>
+/* Phase 3: read-only Schedule C interview detail for the selected return. */
+(function(){
+  'use strict';
+  const INTERVIEW_VERSION='pct-schedule-c-interview-2026-v1';
+  const incomeFields=[
+    ['cash','Cash'],['zelle','Zelle'],['cashApp','Cash App'],['venmo','Venmo'],
+    ['payPal','PayPal'],['checks','Checks'],['cardProcessorReceipts','Card / payment processor receipts'],
+    ['otherIncome','Other income']
+  ];
+  const expenseFields=[
+    ['advertising','Advertising'],['supplies','Supplies'],['contractLabor','Contract labor'],
+    ['commissionsFees','Commissions / fees'],['insurance','Insurance'],
+    ['legalProfessional','Legal / professional'],['office','Office'],['rentLease','Rent / lease'],
+    ['repairs','Repairs'],['taxesLicenses','Taxes / licenses'],['travel','Travel'],['meals','Meals'],
+    ['utilities','Utilities'],['softwareSubscriptions','Software / subscriptions'],['other','Other']
+  ];
+  const record=value=>Boolean(value&&typeof value==='object'&&!Array.isArray(value));
+  const esc=value=>escapeHtml(String(value??''));
+  const amount=value=>{const number=Number(value);return Number.isFinite(number)?number:0;};
+  const currency=value=>'$'+amount(value).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const answer=value=>value===true?'Yes':value===false?'No':'Not answered';
+  const taxYear=lead=>String(lead?.filing?.taxYear||lead?.amendedReturn?.taxYear||lead?.extension?.taxYear||lead?.taxYear||'').trim();
+  const returnId=value=>String(value?.returnId||value?.id||'').trim();
+
+  function validInterview(value){
+    return record(value)&&value.interviewVersion===INTERVIEW_VERSION&&record(value.income)&&record(value.expenses)&&record(value.vehicle)&&record(value.homeOffice)&&record(value.equipment)&&record(value.helpers)&&value.income.form1099KIsReferenceOnly===true;
+  }
+  function interviewForReturn(lead,reviewedReturn){
+    if(!record(lead)||!record(reviewedReturn))return null;
+    const leadId=String(lead.id||lead.leadId||'').trim(),reviewLeadId=String(reviewedReturn.leadId||'').trim();
+    const reviewedReturnId=returnId(reviewedReturn),leadReturnId=String(lead.currentReturnId||lead.completedReturnSummary?.returnId||'').trim();
+    const leadTaxYear=taxYear(lead),returnTaxYear=String(reviewedReturn.taxYear||'').trim();
+    if(!leadId||!reviewedReturnId||(reviewLeadId&&reviewLeadId!==leadId))return null;
+    if(leadReturnId?reviewedReturnId!==leadReturnId:reviewedReturn.currentReturn!==true)return null;
+    if(!leadTaxYear||!returnTaxYear||leadTaxYear!==returnTaxYear)return null;
+    if(validInterview(reviewedReturn.scheduleCInterview))return {interview:reviewedReturn.scheduleCInterview,source:'return'};
+    return validInterview(lead.scheduleCInterview)?{interview:lead.scheduleCInterview,source:'lead'}:null;
+  }
+  function moneyRows(fields,values){
+    const rows=fields.filter(([key])=>amount(values?.[key])>0).map(([key,label])=>'<div class="info"><div class="k">'+esc(label)+'</div><div class="v">'+currency(values[key])+'</div></div>');
+    return rows.length?rows.join(''):'<div class="info"><div class="k">Reported amounts</div><div class="v">No nonzero amounts reported</div></div>';
+  }
+  function detailsCard(title,label,value,extra){
+    return '<div class="info"><div class="k">'+esc(title)+'</div><div class="v">'+esc(label)+((value&&extra)?'<br>'+extra:'')+'</div></div>';
+  }
+  function renderInterview(interview,source){
+    const income=interview.income,expenses=interview.expenses,vehicle=interview.vehicle,homeOffice=interview.homeOffice,equipment=interview.equipment,helpers=interview.helpers;
+    const status=interview.completedAt?'COMPLETED':'PARTIAL / INCOMPLETE',statusClass=interview.completedAt?'green':'gold';
+    const otherExplanation=String(income.otherIncomeExplanation||'').trim();
+    const vehicleExtra=vehicle.used===true?'<span class="small">Business miles: '+esc(amount(vehicle.businessMiles).toLocaleString('en-US'))+'<br>Total miles: '+esc(amount(vehicle.totalMiles).toLocaleString('en-US'))+'<br>No mileage deduction is calculated here.</span>':'';
+    const homeExtra=homeOffice.used===true?'<span class="small">Business-use square feet: '+esc(amount(homeOffice.businessUseSquareFeet).toLocaleString('en-US'))+'<br>Total home square feet: '+esc(amount(homeOffice.totalHomeSquareFeet).toLocaleString('en-US'))+'<br>Client answered Yes to regularly using part of the home just for this work. Preparer review required; no deduction is calculated here.</span>':'';
+    const equipmentExtra=equipment.bought===true?'<span class="small">'+esc(String(equipment.details||'No details provided'))+'<br>Depreciation or Section 179 treatment is not determined here.</span>':'';
+    const helpersExtra=helpers.paid===true?'<span class="small">'+esc(String(helpers.details||'No details provided'))+'<br>Worker classification is not determined here.</span>':'';
+    return '<section class="securebox" data-schedule-c-source="'+esc(source)+'">'+
+      '<div class="section-title"><div><div class="eyebrow">CLIENT-REPORTED ORGANIZER DETAIL</div><h3>SCHEDULE C GUIDED INTERVIEW</h3></div><span class="tag '+statusClass+'">'+status+'</span></div>'+
+      '<div class="info-grid"><div class="info"><div class="k">What they did</div><div class="v">'+esc(interview.businessDescription||'Not provided')+'</div></div><div class="info"><div class="k">Interview status</div><div class="v">'+esc(status==='COMPLETED'?'Completed':'Partial / incomplete')+'</div></div><div class="info"><div class="k">Interview version</div><div class="v">'+esc(interview.interviewVersion)+'</div></div></div>'+
+      '<div style="margin-top:18px"><div class="eyebrow">MONEY IN</div><div class="info-grid">'+moneyRows(incomeFields,income)+'</div></div>'+
+      (otherExplanation?'<div class="infobox"><strong>Other income explanation:</strong> '+esc(otherExplanation)+'</div>':'')+
+      '<div class="info-grid" style="margin-top:12px"><div class="info"><div class="k">Total once-counted gross receipts</div><div class="v money">'+currency(income.onceCountedGrossReceipts)+'</div></div><div class="info"><div class="k">1099-K reported / reference amount</div><div class="v">'+currency(income.form1099KReportedAmount)+'</div></div></div>'+
+      '<div class="infobox"><strong>1099-K reference only:</strong> This amount may already be included in the payment receipts above and is not automatically additional gross receipts.</div>'+
+      '<div style="margin-top:18px"><div class="eyebrow">EXPENSES</div><div class="info-grid">'+moneyRows(expenseFields,expenses)+'</div><div class="small" style="margin-top:9px">Client-reported organizer expense — preparer review required.</div></div>'+
+      '<div class="info-grid" style="margin-top:12px"><div class="info"><div class="k">Total client-reported expenses</div><div class="v">'+currency(expenses.totalExpenses)+'</div></div></div>'+
+      '<div class="eyebrow" style="margin-top:18px">BUSINESS-USE DETAILS</div><div class="info-grid">'+
+        detailsCard('Vehicle used for business',answer(vehicle.used),vehicle.used,vehicleExtra)+
+        detailsCard('Home office reported',answer(homeOffice.used),homeOffice.used,homeExtra)+
+        detailsCard('Equipment / tools purchased',answer(equipment.bought),equipment.bought,equipmentExtra)+
+        detailsCard('Paid helpers / contractors',answer(helpers.paid),helpers.paid,helpersExtra)+
+      '</div>'+
+      '<div class="eyebrow" style="margin-top:18px">ORGANIZER TOTALS</div><div class="info-grid"><div class="info"><div class="k">Gross receipts</div><div class="v">'+currency(income.onceCountedGrossReceipts)+'</div></div><div class="info"><div class="k">Total expenses</div><div class="v">'+currency(expenses.totalExpenses)+'</div></div><div class="info"><div class="k">Preliminary organizer profit</div><div class="v money">'+currency(interview.preliminaryOrganizerNetProfit)+'</div></div></div>'+
+      '<div class="warnbox"><strong>Client-reported preliminary organizer figure — preparer review required.</strong> This is not a final taxable profit determination.</div>'+
+    '</section>';
+  }
+  function install(lead,reviewedReturn){
+    const activeLead=typeof selectedLead==='function'?selectedLead():null;
+    if(!activeLead||String(activeLead.id)!==String(lead?.id)||String(currentCompletedReturnLeadId)!==String(lead?.id))return;
+    const host=document.getElementById('pctScheduleCInterviewHost');if(!host)return;
+    host.replaceChildren();
+    const selected=interviewForReturn(lead,reviewedReturn);if(selected)host.innerHTML=renderInterview(selected.interview,selected.source);
+  }
+  window.PCTScheduleCInterviewDashboard={validInterview,interviewForReturn,renderInterview};
+  const prior=window.renderCompletedReturnWorkspace;
+  if(typeof prior==='function')window.renderCompletedReturnWorkspace=function(lead){const result=prior.apply(this,arguments);try{install(lead,currentCompletedReturn);}catch(_){document.getElementById('pctScheduleCInterviewHost')?.replaceChildren();}return result;};
 })();
 </script>
 </body>
