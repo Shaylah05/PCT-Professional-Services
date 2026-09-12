@@ -906,7 +906,7 @@ async function saveNotes(){const aw={...(selectedLead()?.adminWorkflow||{})}; if
     if(!filteredLeads.length){$('leadList').innerHTML='<div class="loading"><strong>No clients match this view.</strong><br>Share your personalized Client Intake Link from Profile Setup, or choose + Add Client to begin with a client now.</div>';return}
     $('leadList').innerHTML=filteredLeads.map(l=>{const docs=Array.isArray(l.documents)?l.documents:[],entered=docs.filter(d=>['entered','verified'].includes(normalizedDocumentStatus(d))).length,year=l.filing?.taxYear||l.amendedReturn?.taxYear||l.extension?.taxYear||'Tax year?';return '<div class="lead-card '+(selectedLeadId===l.id?'active':'')+'"><div class="lead-top"><div><div class="lead-name">'+escapeHtml(clientName(l))+'</div><div class="lead-meta">'+escapeHtml(year)+' · '+escapeHtml(statusLabel(workflowStatus(l)))+'</div></div><span class="tag '+tagClass(workflowStatus(l))+'">'+escapeHtml(statusLabel(workflowStatus(l)))+'</span></div><div class="lead-row"><span class="tag gray">'+docs.length+' documents</span><span class="tag blue">'+entered+'/'+docs.length+' entered</span><button class="btn btn-gold btn-sm" onclick="openReturnWorkspace('+escapeHtml(JSON.stringify(l.id))+')">OPEN RETURN</button></div></div>'}).join('');
   };
-  window.openReturnWorkspace=function(id){const lead=leads.find(l=>l.id===id);if(!lead)return;selectedLeadId=id;renderLeadList();$('appScreen').classList.add('workspace-mode');$('detailEmpty').classList.add('hidden');$('detailView').classList.remove('hidden');$('detailView').innerHTML='<div class="return-workspace-head"><div><button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3);margin-bottom:10px" onclick="backToClientDashboard()">← BACK TO CLIENT DASHBOARD</button><h2>'+escapeHtml(clientName(lead))+' — '+escapeHtml(currentTaxYearForLead(lead))+' RETURN</h2><p>Client details · Taxpayer Setup · Documents · Preparation progress</p></div><span class="tag '+tagClass(workflowStatus(lead))+'">'+escapeHtml(statusLabel(workflowStatus(lead)))+'</span></div><div class="return-workspace-body"><div id="documentsPanel-'+escapeHtml(lead.id)+'"><div class="loading">Loading secure return workspace…</div></div></div>';loadDocumentsForLead(lead)};
+  window.openReturnWorkspace=function(id){const lead=leads.find(l=>l.id===id);if(!lead)return;selectedLeadId=id;renderLeadList();$('appScreen').classList.add('workspace-mode');$('detailEmpty').classList.add('hidden');$('detailView').classList.remove('hidden');$('detailView').innerHTML='<div class="return-workspace-head"><div><button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3);margin-bottom:10px" onclick="backToClientDashboard()">← BACK TO CLIENT DASHBOARD</button><h2>'+escapeHtml(clientName(lead))+' — '+escapeHtml(currentTaxYearForLead(lead))+' RETURN</h2><p>Client details · Taxpayer Setup · Documents · Preparation progress</p></div><span class="tag '+tagClass(workflowStatus(lead))+'">'+escapeHtml(statusLabel(workflowStatus(lead)))+'</span></div><div class="return-workspace-body"><div id="documentsPanel-'+escapeHtml(lead.id)+'"><div class="loading">Loading secure return workspace…</div></div><div id="pctDueDiligenceWorkspace"></div></div>';loadDocumentsForLead(lead)};
   window.backToClientDashboard=function(){$('appScreen').classList.remove('workspace-mode');$('detailView').classList.add('hidden');$('detailEmpty').classList.remove('hidden');renderLeadList()};
   selectLead=function(id){openReturnWorkspace(id)};
   renderDetail=function(){const lead=selectedLead();if(lead)openReturnWorkspace(lead.id)};
@@ -3080,6 +3080,58 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   window.PCTScheduleCInterviewDashboard={validInterview,interviewForReturn,renderInterview};
   const prior=window.renderCompletedReturnWorkspace;
   if(typeof prior==='function')window.renderCompletedReturnWorkspace=function(lead){const result=prior.apply(this,arguments);try{install(lead,currentCompletedReturn);}catch(_){document.getElementById('pctScheduleCInterviewHost')?.replaceChildren();}return result;};
+})();
+</script>
+<script>
+/* Phase 3.4C: mount the shared Due Diligence workspace beneath the assigned
+   return's existing documents area using the existing exact-return state. */
+(function(){
+  'use strict';
+  const record=value=>Boolean(value&&typeof value==='object'&&!Array.isArray(value));
+  const taxYear=lead=>String(lead?.filing?.taxYear||lead?.amendedReturn?.taxYear||lead?.extension?.taxYear||lead?.taxYear||'').trim();
+  const returnId=value=>String(value?.returnId||value?.id||'').trim();
+  let requestSequence=0;
+
+  function returnMatchesLead(lead,reviewedReturn){
+    if(!record(lead)||!record(reviewedReturn))return false;
+    const leadId=String(lead.id||lead.leadId||'').trim(),reviewLeadId=String(reviewedReturn.leadId||'').trim();
+    const reviewedReturnId=returnId(reviewedReturn),leadReturnId=String(lead.currentReturnId||lead.completedReturnSummary?.returnId||'').trim();
+    const leadTaxYear=taxYear(lead),returnTaxYear=String(reviewedReturn.taxYear||'').trim();
+    if(!leadId||!reviewedReturnId||(reviewLeadId&&reviewLeadId!==leadId))return false;
+    if(leadReturnId?reviewedReturnId!==leadReturnId:reviewedReturn.currentReturn!==true)return false;
+    return Boolean(leadTaxYear&&returnTaxYear&&leadTaxYear===returnTaxYear);
+  }
+  function selectedLeadStillMatches(lead,sequence){
+    return sequence===requestSequence&&String(selectedLeadId||'')===String(lead?.id||'');
+  }
+  function clearReturnContext(){
+    currentCompletedReturns=[];
+    currentCompletedReturn=null;
+    currentCompletedReturnLeadId=null;
+    document.getElementById('pctDueDiligenceWorkspace')?.replaceChildren();
+  }
+  async function mountDueDiligence(lead,sequence){
+    const host=document.getElementById('pctDueDiligenceWorkspace');if(!host||!fb?.db)return;
+    try{
+      const snap=await fb.db.collection(PCT_DASHBOARD_CONFIG.collectionName).doc(lead.id).collection('completedReturns').orderBy('createdAt','desc').get();
+      if(!selectedLeadStillMatches(lead,sequence)||!host.isConnected)return;
+      const returns=snap.docs.map(document=>({id:document.id,...document.data()}));
+      const expectedReturnId=String(lead.currentReturnId||lead.completedReturnSummary?.returnId||'').trim();
+      const reviewedReturn=expectedReturnId?returns.find(item=>returnId(item)===expectedReturnId):returns.find(item=>item.currentReturn===true);
+      if(!returnMatchesLead(lead,reviewedReturn))return;
+      currentCompletedReturns=returns;
+      currentCompletedReturn=reviewedReturn;
+      currentCompletedReturnLeadId=lead.id;
+      if(typeof window.pctP17RenderWorkspace==='function')await window.pctP17RenderWorkspace(lead);
+    }catch(_){if(selectedLeadStillMatches(lead,sequence)&&host.isConnected)clearReturnContext();}
+  }
+  const priorOpenReturnWorkspace=window.openReturnWorkspace;
+  if(typeof priorOpenReturnWorkspace==='function')window.openReturnWorkspace=function(){
+    const result=priorOpenReturnWorkspace.apply(this,arguments),lead=leads.find(item=>String(item.id)===String(arguments[0]));
+    const sequence=++requestSequence;
+    if(lead){clearReturnContext();mountDueDiligence(lead,sequence);}
+    return result;
+  };
 })();
 </script>
 </body>
