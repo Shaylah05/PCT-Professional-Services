@@ -72,7 +72,7 @@
     if (stage === 4) window.renderReturnDependentDetails?.();
     if (stage === 5) window.phase17RenderScheduleCInterview?.();
     if (stage === 6) window.phase17RenderBankConsent?.();
-    if (stage === 7) { state.expectedChecklistOpened = true; window.renderExpectedChecklist?.(); }
+    if (stage === 7) { state.expectedChecklistOpened = true; one('#expectedChecklist')?.classList.add('show'); window.renderExpectedChecklist?.(); }
     const card = screen.querySelector('.organizer-card'), row = card?.querySelector(':scope > .btn-row'), back = row?.querySelector('.btn-ghost'), next = row?.querySelector('.btn-primary');
     if (back) back.textContent = stage === 1 ? '← Back to start' : '← Back';
     if (next) next.textContent = stage === 7 ? 'REVIEW YOUR INTAKE' : 'Continue';
