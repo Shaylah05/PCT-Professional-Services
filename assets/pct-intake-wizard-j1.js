@@ -59,12 +59,6 @@
     if (!screen || !state) return;
     state.intakeWizardStep = stage;
     all('#screen-organizer .organizer-question').forEach(node => setHidden(node, Number(node.dataset.organizerStep) !== stage));
-    const business = one('#businessOrganizer');
-    setHidden(business, !(stage === 3 && state.organizerFlags?.business));
-    if (stage === 3 && state.organizerFlags?.business) {
-      state.businessOrganizerOpened = true;
-      business?.classList.add('show');
-    }
     setHidden(one('#returnIdentityDetails'), stage !== 4);
     setHidden(one('#expectedChecklist'), stage !== 7);
     const interview = one('#phase17Interview'), consent = one('#phase17ConsentSteps');
@@ -76,6 +70,7 @@
     setHidden(consent, stage !== 6);
     if (stage <= 3) window.organizerSetStep?.(stage);
     if (stage === 4) window.renderReturnDependentDetails?.();
+    if (stage === 5) window.phase17RenderScheduleCInterview?.();
     if (stage === 6) window.phase17RenderBankConsent?.();
     if (stage === 7) { state.expectedChecklistOpened = true; window.renderExpectedChecklist?.(); }
     const card = screen.querySelector('.organizer-card'), row = card?.querySelector(':scope > .btn-row'), back = row?.querySelector('.btn-ghost'), next = row?.querySelector('.btn-primary');
@@ -90,6 +85,7 @@
     if (stage === 4) return window.validateIdentityDetails?.() !== false;
     if (stage === 5) {
       if (!state.phase17Proceed) { window.toast?.('Choose “Yes, I’m ready to continue” when you are ready for the next step.'); return false; }
+      if (!state.phase17SelfEmploymentInterest) { window.toast?.('Please answer whether you had any income outside a W-2 job before continuing.'); return false; }
       if (!state.phase17ClientAttestation) { window.toast?.('Please confirm that the information you shared is complete to the best of your knowledge.'); return false; }
     }
     if (stage === 6) return window.validatePhase17FilingIntake?.() !== false;

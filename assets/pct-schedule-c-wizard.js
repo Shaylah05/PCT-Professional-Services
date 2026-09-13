@@ -300,6 +300,7 @@
       '</div>' +
       '<p class="small">This is your organized starting point \u2014 not your final tax number. Your preparer reviews everything before anything is filed.</p>' +
       '<div class="pct-scw-actions"><button type="button" class="btn btn-primary" id="pctScwFinish">Save My Numbers to My Return \u2713</button> <button type="button" class="btn btn-ghost" id="pctScwDownload">Download My Free Copy \u2193</button></div>' +
+      '<p class="small" style="margin-top:10px"><strong>Keep a copy of this summary.</strong> After you download it, please upload it along with your other documents in the document upload step.</p>' +
       this.navRow(true) +
       '</div>';
   };
