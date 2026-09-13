@@ -3537,7 +3537,7 @@ window.addEventListener('DOMContentLoaded',()=>{init(); initFirebaseIfReady(); l
 <script src="assets/pct-taxslayer-bank-product-disclosure.js"></script>
 <script src="assets/pct-schedule-c-wizard.js"></script>
 <script>var pctScwDraftTimer=0;function pctScwPersist(interview){if(typeof state==='undefined'||!interview)return;state.scheduleCInterview=interview;clearTimeout(pctScwDraftTimer);pctScwDraftTimer=setTimeout(function(){if(typeof pctV2AgentDraftSave==='function')pctV2AgentDraftSave();},600);}function pctScwLaunch(){var l=document.getElementById('pctScwLauncher');if(l)l.style.display='none';var m=document.getElementById('pctScwMount');if(m){m.style.display='block';if(window.PCTScheduleCWizard)window.PCTScheduleCWizard.mount(m,{initialInterview:state.scheduleCInterview,onChange:pctScwPersist});}}</script>
-<script src="assets/pct-intake-wizard-j1.js"></script>
+<script src="assets/pct-intake-wizard-j1.js?v=f5fa36d"></script>
 <script>
 /* J2B.2 keeps the existing wizard intact while separating its two authorization pages. */
 (function(){
