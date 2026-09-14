@@ -2209,12 +2209,11 @@ function renderReturnDependentDetails(){
   if(window.PCT_INTAKE_NARRATIVE_V2?.enabled())window.PCT_INTAKE_NARRATIVE_V2.renderDependents(state);
 }
 function pctV2InstallNarrativeFoundation(){if(!window.PCT_INTAKE_NARRATIVE_V2?.enabled())return;window.PCT_INTAKE_DEPENDENTS_V2?.prepareCountControls?.();window.PCT_INTAKE_NARRATIVE_V2.install(state);if(!state.v2NarrativeDraftListener){state.v2NarrativeDraftListener=true;document.addEventListener('change',event=>{if(event.target?.closest?.('.pct-v2-narrative'))pctV2AgentDraftSave();});}}
-function pctV2PrepareNarrativePayload(){const foundation=window.PCT_INTAKE_NARRATIVE_V2;if(!foundation?.enabled())return {ok:true,payload:null};const prepared=foundation.prepareSubmission(state);if(!prepared.ok){toast(prepared.message||'Please complete the requested tax-situation details.');document.querySelector('[data-pct-v2-key="'+String(prepared.focusKey||'').replace(/"/g,'')+'"] textarea')?.focus();}return prepared;}
+function pctV2PrepareNarrativePayload(){const foundation=window.PCT_INTAKE_NARRATIVE_V2;if(!foundation?.enabled())return {ok:true,payload:null};const prepared=foundation.prepareSubmission(state)||{};return {ok:true,payload:prepared.payload||null};}
 function pctV2OpenReview(){return window.PCT_INTAKE_REVIEW_V2?.open(state,{showScreen,edit:pctV2ReviewEdit,submitIntake});}
 async function submitIntake(){
   if(state.intakeFinalSubmitted){showIntakeConfirmation();return {ok:true};}
   if(state.intakeFinalSubmissionInFlight)return {ok:false,message:'Your intake is already being submitted. Please wait.'};
-  if(!state.documents?.length)return {ok:false,message:'Add at least one document before submitting your intake.'};
   state.intakeFinalSubmissionInFlight=true;
   try{
     if(state.uploadStartPersist)await state.uploadStartPersist;
@@ -2626,7 +2625,6 @@ function validatePhase17FilingIntake(){
 }
 function buildLeadPayload(){
   const v2Narrative=pctV2PrepareNarrativePayload();
-  if(!v2Narrative.ok)return null;
   const e=state.estimate || null;
   const emailNormalized=normalizeEmailForLookup(state.email);
   const lastNameNormalized=normalizeLastNameForLookup(state.lastName);
@@ -2823,7 +2821,7 @@ async function persistLead(reason){
   if(state.backendSaved){
     if(reason==='native_documents_ready'){
       const payload=buildLeadPayload();
-      if(!payload)return {ok:false,mode:'v2_narrative_validation',message:'Complete the requested tax-situation details before submitting.'};
+      if(!payload)return {ok:false,mode:'payload_unavailable',message:'The intake could not be prepared. Please try again.'};
       if(!initFirebaseIfReady())return {ok:false,mode:'not_ready',message:pctFirebase.error};
       try{
         const refresh={leadId:state.leadId,payload}, resume=state.agentIntakeRefresh, agentPublicId=publicAgentIdFromUrl();
@@ -2851,7 +2849,7 @@ async function persistLead(reason){
     return {ok:true,mode:'already_saved',leadId:state.leadId};
   }
   const payload=buildLeadPayload();
-  if(!payload)return {ok:false,mode:'v2_narrative_validation',message:'Complete the requested tax-situation details before submitting.'};
+  if(!payload)return {ok:false,mode:'payload_unavailable',message:'The intake could not be prepared. Please try again.'};
   state.lastPayload=payload;
   if(!PCT_BACKEND_CONFIG.enableFirebase){
     console.info('Firebase disabled. Lead kept in session only:', reason, payload);
@@ -3049,6 +3047,8 @@ function goUpload(source){
 const MAX_DOCUMENT_BYTES=25*1024*1024;
 const ALLOWED_DOCUMENT_TYPES=['application/pdf','image/jpeg','image/png','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','text/csv','text/plain','application/octet-stream'];
 const ALLOWED_DOCUMENT_EXTENSIONS=['pdf','jpg','jpeg','png','xls','xlsx','csv','txt'];
+const DOCUMENT_CONTENT_TYPE_BY_EXTENSION=Object.freeze({pdf:'application/pdf',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',xls:'application/vnd.ms-excel',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',csv:'text/csv',txt:'text/plain'});
+function normalizedDocumentContentType(file){const declared=String(file?.type||'').trim().toLowerCase(),extension=String(file?.name||'').toLowerCase().split('.').pop()||'';return ALLOWED_DOCUMENT_TYPES.includes(declared)?declared:(DOCUMENT_CONTENT_TYPE_BY_EXTENSION[extension]||'');}
 function uploadText(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function newDocumentId(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():'doc-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);}
 function formatDocumentSize(bytes){return bytes<1024*1024?Math.max(1,Math.round(bytes/1024))+' KB':(bytes/(1024*1024)).toFixed(1)+' MB';}
@@ -3059,7 +3059,7 @@ function renderUploadSectionGuidance(){const reminder=$('#photoIdSpouseReminder'
 function handleDocumentSelected(file,uploadSection){handleDocumentsSelected(file?[file]:[],uploadSection);}
 function handleDocumentsSelected(files,uploadSection){
   const selected=Array.from(files||[]),section=documentUploadSection(uploadSection);if(!selected.length)return;
-  for(const file of selected){const ext=String(file.name||'').toLowerCase().split('.').pop();if(!ALLOWED_DOCUMENT_TYPES.includes(file.type)&&!ALLOWED_DOCUMENT_EXTENSIONS.includes(ext)){toast('Please choose a PDF, JPG/JPEG, PNG, XLS/XLSX, CSV, or TXT file.');return;}if(file.size>MAX_DOCUMENT_BYTES){toast('That file is larger than 25 MB. Please choose a smaller file.');return;}}
+  for(const file of selected){if(!normalizedDocumentContentType(file)){toast('Please choose a PDF, JPG/JPEG, PNG, XLS/XLSX, CSV, or TXT file.');return;}if(file.size>MAX_DOCUMENT_BYTES){toast('That file is larger than 25 MB. Please choose a smaller file.');return;}}
   const replacement=state.pendingDocumentReplacement?.uploadSection===section?state.pendingDocumentReplacement:null;
   state.pendingDocumentReplacement=null;
   cancelPendingDocument();
@@ -3073,23 +3073,25 @@ function replacePendingDocument(){const p=state.pendingDocument,section=document
 function confirmPendingDocument(){
   const p=state.pendingDocument;if(!p)return;
   const section=documentUploadSection(p.uploadSection),existing=p.existingIndex===undefined?null:state.documents[p.existingIndex],expectedItem=expectedInformation().find(item=>item.id===state.activeExpectedItemId),files=p.files||[p.file],urls=p.previewUrls||[p.previewUrl];
-  files.forEach((file,i)=>{const replacement={documentId:existing?.documentId||newDocumentId(),file,previewUrl:urls[i],originalFileName:file.name,contentType:file.type,size:file.size,taxYear:existing?.taxYear||state.taxYear||'',uploadedAtClient:new Date().toISOString(),uploadedBy:'client_intake',clientLegibilityConfirmed:true,expectedItemId:existing?existing.expectedItemId||'':state.activeExpectedItemId||'',documentType:existing?existing.documentType||'unclassified':expectedItem?.label||'unclassified',reviewStatus:'received',uploadSection:section};if(!existing)state.documents.push(replacement);else if(i===0){if(existing.previewUrl&&existing.previewUrl!==urls[i])URL.revokeObjectURL(existing.previewUrl);state.documents[p.existingIndex]=replacement;}});
+  files.forEach((file,i)=>{const replacement={documentId:existing?.documentId||newDocumentId(),file,previewUrl:urls[i],originalFileName:file.name,contentType:normalizedDocumentContentType(file),size:file.size,taxYear:existing?.taxYear||state.taxYear||'',uploadedAtClient:new Date().toISOString(),uploadedBy:'client_intake',clientLegibilityConfirmed:true,expectedItemId:existing?existing.expectedItemId||'':state.activeExpectedItemId||'',documentType:existing?existing.documentType||'unclassified':expectedItem?.label||'unclassified',storageStatus:'SELECTED',metadataStatus:'PENDING',uploadError:'',persisted:false,reviewStatus:'received',uploadSection:section};if(!existing)state.documents.push(replacement);else if(i===0){if(existing.previewUrl&&existing.previewUrl!==urls[i])URL.revokeObjectURL(existing.previewUrl);state.documents[p.existingIndex]=replacement;}});
   state.pendingDocument=null;
   renderDocumentPreview(section);renderDocumentList();
   toast(existing?'Document replaced for secure upload':'Document added for secure upload');
 }
 function inspectDocument(index){const d=state.documents[index];if(!d)return;cancelPendingDocument();const section=documentUploadSection(d.uploadSection);state.pendingDocument={files:[d.file],file:d.file,previewUrls:[d.previewUrl],previewUrl:d.previewUrl,legibilityConfirmed:true,ownsPreviewUrls:false,existingIndex:index,uploadSection:section};renderDocumentPreview(section);}
 function removeDocument(index){const d=state.documents[index];if(!d)return;if(state.pendingDocument?.existingIndex===index)cancelPendingDocument();if(d.previewUrl)URL.revokeObjectURL(d.previewUrl);state.documents.splice(index,1);renderDocumentList();toast('Document removed');}
+function documentUploadStatusText(document){if(document.persisted||document.metadataStatus==='METADATA_SAVED')return 'securely saved';if(document.storageStatus==='STORED'&&document.metadataStatus==='FAILED')return 'stored — metadata retry required';if(document.storageStatus==='FAILED')return 'upload failed — retry available';if(document.storageStatus==='UPLOADING'||document.metadataStatus==='SAVING')return 'uploading securely';return 'ready to send';}
 function renderDocumentList(){
   renderUploadSectionGuidance();
   const btn=$('#sendDocumentsBtn');
-  Object.entries(UPLOAD_SECTION_CONFIG).forEach(([section,config])=>{const list=$('#'+config.listId);if(!list)return;const documents=state.documents.map((document,index)=>({document,index})).filter(({document})=>documentUploadSection(document.uploadSection)===section);list.innerHTML=documents.length?documents.map(({document,index})=>'<div class="document-row"><div class="document-row-main"><div class="document-row-name">'+uploadText(document.originalFileName)+'</div><div class="document-row-meta">'+uploadText(document.documentType==='unclassified'?'Document':document.documentType)+' · '+uploadText(document.taxYear||'Tax year')+' · ready to send</div></div><div class="preview-actions"><button type="button" class="btn btn-soft btn-sm" onclick="inspectDocument('+index+')">Inspect</button><button type="button" class="btn btn-ghost btn-sm" onclick="removeDocument('+index+')">Remove</button></div></div>').join(''):'<div class="small">No documents added in this section yet.</div>';});
+  Object.entries(UPLOAD_SECTION_CONFIG).forEach(([section,config])=>{const list=$('#'+config.listId);if(!list)return;const documents=state.documents.map((document,index)=>({document,index})).filter(({document})=>documentUploadSection(document.uploadSection)===section);list.innerHTML=documents.length?documents.map(({document,index})=>'<div class="document-row"><div class="document-row-main"><div class="document-row-name">'+uploadText(document.originalFileName)+'</div><div class="document-row-meta">'+uploadText(document.documentType==='unclassified'?'Document':document.documentType)+' · '+uploadText(document.taxYear||'Tax year')+' · '+uploadText(documentUploadStatusText(document))+'</div></div><div class="preview-actions"><button type="button" class="btn btn-soft btn-sm" onclick="inspectDocument('+index+')">Inspect</button><button type="button" class="btn btn-ghost btn-sm" onclick="removeDocument('+index+')">Remove</button></div></div>').join(''):'<div class="small">No documents added in this section yet.</div>';});
   if(btn)btn.disabled=!state.documents.length;
 }
 function safeStorageName(name){return String(name||'document').normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,120)||'document';}
 async function sendDocumentsToPCT(){
   if(state.duplicateTaxYear){renderTaxYearIntegrityPanel('duplicate',state.duplicateTaxYear.taxYear);return {ok:false,message:state.backendSaveMessage||'This tax-year intake cannot be submitted.'};}
-  if(!state.documents.length){toast('Add at least one document first.');return {ok:false,message:'Add at least one document before submitting your intake.'};}
+  const pending=state.documents.filter(document=>!document.persisted);
+  if(!pending.length)return {ok:true};
   const progress=$('#uploadProgress'), btn=$('#sendDocumentsBtn');
   if(progress){progress.className='upload-progress show';progress.textContent='Preparing your secure upload…';}
   if(btn)btn.disabled=true;
@@ -3097,12 +3099,35 @@ async function sendDocumentsToPCT(){
     const saved=await persistLead('native_documents_ready');
     if(!saved.ok){if(progress)progress.textContent=state.backendSaveMessage||'Use your existing Client Portal for this return.';if(btn)btn.disabled=false;return {ok:false,message:state.backendSaveMessage||'Your intake could not be saved. Please try again.'};}
     if(!pctFirebase.ready||!pctFirebase.storage||!pctFirebase.db)throw new Error('Secure upload is not ready. Please try again in a moment.');
-    const leadId=currentLeadId(), taxYear=state.taxYear||'unknown';
-    for(let i=0;i<state.documents.length;i++){
-      const d=state.documents[i], path='taxDocuments/'+leadId+'/'+taxYear+'/'+d.documentId+'-'+safeStorageName(d.originalFileName);
-      if(progress)progress.textContent='Securely uploading document '+(i+1)+' of '+state.documents.length+'…';
-      await pctFirebase.storage.ref().child(path).put(d.file,{contentType:d.contentType,customMetadata:{leadId,taxYear,documentId:d.documentId,originalFileName:d.originalFileName,expectedItemId:d.expectedItemId||'',uploadSource:'client'}});
-      await pctFirebase.functions.httpsCallable('savePublicIntakeDocumentMetadata')({leadId,document:{documentId:d.documentId,taxYear,originalFileName:d.originalFileName,storagePath:path,contentType:d.contentType,uploadedAtClient:d.uploadedAtClient,expectedItemId:d.expectedItemId||'',documentType:d.documentType}});
+    if(state.workspaceAccess?.accessCode)await pctWorkspaceAuthorizeUploads();
+    const leadId=currentLeadId(), returnId=String(state.workspaceAccess?.returnId||''), taxYear=state.taxYear||'unknown';
+    const failed=[];
+    for(let i=0;i<pending.length;i++){
+      const d=pending[i], path='taxDocuments/'+leadId+'/'+taxYear+'/'+d.documentId+'-'+safeStorageName(d.originalFileName);
+      if(!d.file){d.storageStatus='FAILED';d.metadataStatus='FAILED';d.uploadError='Select this document again before retrying.';failed.push(d);renderDocumentList();continue;}
+      try{
+        if(d.storageStatus!=='STORED'){
+          d.storageStatus='UPLOADING';d.metadataStatus='PENDING';d.uploadError='';renderDocumentList();
+          if(progress)progress.textContent='Securely uploading document '+(i+1)+' of '+pending.length+'…';
+          await pctFirebase.storage.ref().child(path).put(d.file,{contentType:d.contentType,customMetadata:{leadId,returnId,taxYear,documentId:d.documentId,originalFileName:d.originalFileName,expectedItemId:d.expectedItemId||'',uploadSource:'client'}});
+          d.storageStatus='STORED';
+        }
+        d.metadataStatus='SAVING';renderDocumentList();
+        if(progress)progress.textContent='Saving document '+(i+1)+' of '+pending.length+' to your Return Workspace…';
+        await pctFirebase.functions.httpsCallable('savePublicIntakeDocumentMetadata')({leadId,accessCode:state.workspaceAccess?.accessCode||'',agentPublicId:pctWorkspaceAgentId(),document:{documentId:d.documentId,returnId,taxYear,originalFileName:d.originalFileName,storagePath:path,contentType:d.contentType,size:d.size,uploadedAtClient:d.uploadedAtClient,expectedItemId:d.expectedItemId||'',documentType:d.documentType}});
+        d.storageStatus='STORED';d.metadataStatus='METADATA_SAVED';d.persisted=true;d.uploadError='';
+      }catch(error){
+        if(d.storageStatus!=='STORED')d.storageStatus='FAILED';
+        d.metadataStatus='FAILED';d.uploadError=phase19PublicError(error,'This document could not be saved. Please retry it.');failed.push(d);
+      }
+      renderDocumentList();
+    }
+    if(failed.length){
+      const message=failed.length===1?'One document needs retry. Your intake and any other saved documents are still available.':failed.length+' documents need retry. Your intake and any other saved documents are still available.';
+      state.uploadStatus='Documents need retry';
+      if(progress){progress.textContent=message;progress.style.background='var(--red-soft)';progress.style.color='var(--red)';}
+      if(btn)btn.disabled=false;
+      return {ok:false,message};
     }
     state.uploadStatus='Documents received — pending review';
     if(progress){progress.textContent='Your documents were securely sent to '+(agentClientBrand(state.agentProfile)||'your tax professional')+'. You can add more documents if needed.';progress.style.background='var(--green-soft)';progress.style.color='var(--green)';}
@@ -3614,6 +3639,221 @@ function copySummary(){
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 $('#adminMask')&&$('#adminMask').addEventListener('click',e=>{if(e.target.id==='adminMask')closeAdmin();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAdmin();});
+
+/* =================== RETURN WORKSPACE — PHASE 2 ===================
+   The access code lives only in this page's memory.  The server persists
+   its one-way hash, the non-sensitive draft, and protected identity data
+   separately.  Neither browser storage nor URLs carry workspace credentials. */
+const pctWorkspaceDraftFields=['leadType','taxYear','state','filingStatus','over65','blind','claimedDependent','incomeSource','wages','fedWithholding','stateWithholding','numW2','yearJobCount','allTaxDocsConfirmed','missingTaxDocNotes','marketplaceAwareness','marketplaceLookupPlan','numDeps','depsLived','childcare','childcarePaid','seIncome','seExpenses','otherIncomeAmt','itemizedTotal','refundProduct','contactMethod','consentContact','consentPromo','firstName','lastName','email','phone','estimateDependentsUnder17','estimateDependents17Plus','wantEstimate','readyUpload','hasNewDocs','organizerStep','businessOrganizerOpened','organizerEmployerCount','organizerEmployerNames','organizerNotes','taxpayerMiddleName','taxpayerSuffix','taxpayerOccupation','taxpayerStreet','taxpayerCity','taxpayerZip','spouseFullName','spouseOccupation','businessOwner','businessName','businessAddress','businessDescription','businessActivityCode','businessGrossReceipts','businessCashIncome','business1099Income','businessOtherIncome','businessVehicleMiles','businessTotalVehicleMiles','businessHomeOfficeDetails','businessAssetsDetails','businessContractorDetails','businessEstimatedTaxPayments','businessExpense_advertising','businessExpense_commissionsFees','businessExpense_contractLabor','businessExpense_insurance','businessExpense_legalProfessional','businessExpense_office','businessExpense_rentLease','businessExpense_repairs','businessExpense_supplies','businessExpense_taxesLicenses','businessExpense_travel','businessExpense_meals','businessExpense_utilities','businessExpense_software','businessExpense_vehicleMileage','businessExpense_other','completenessConfirmed','completenessConfirmedAt','phase17Proceed','phase17ClientAttestation','phase17PctAuthorizationAccepted','phase17RefundAdvanceInterest','phase17RefundTransferInterest','phase17BankConsentDecision','phase17SelfEmploymentInterest','amendNeed','amendYear','amendScope','amendState','amendPreparedByPct','amendHasFiledReturn','amendNotes','amendFee','extEntity','extScope','extYear','extState','extStatus','extFiledLast','extOwe','extWantEstimate','extMissedDeadline','extWages','extFedWH','extSEIncome','extExpenses','extOtherIncome','extEstPayments','extFee','extCustom'];
+const pctWorkspaceDraftObjects=['flags','changes','organizerFlags','checklistResponses','phase17General','phase17Credits','phase17ScheduleC','fastTrackConfirm','scheduleCInterview','v2Draft','v2NarrativeAnswers'];
+const pctWorkspaceDraftArrays=['depAges','amendFeeBreakdown','extFeeBreakdown'];
+const pctWorkspaceDependentFields=['v2SubjectId','fullName','relationship','monthsLived','supportDetails','temporaryAbsence','student','disability','marriedJointReturn','competingClaimant','custodyDetails'];
+let pctWorkspaceAutosaveTimer=null;
+let pctWorkspaceSaveRunner=null;
+let pctWorkspaceQueuedSave=null;
+let pctWorkspaceUploadAuthPromise=null;
+let pctWorkspaceUploadAuthKey='';
+function pctWorkspaceAgentId(){return PCT_BACKEND_CONFIG.intakeMode==='agent'?publicAgentIdFromUrl():'';}
+function pctWorkspaceSourceLink(){const url=new URL(location.href);['resumeLeadId','resumeCode','accessCode'].forEach(key=>url.searchParams.delete(key));return url.toString();}
+function pctWorkspaceError(error,fallback){return phase19PublicError(error,fallback||'Your workspace is still open here. Please try again.');}
+function pctWorkspaceMaskedEmail(email){const value=String(email||'').trim(),at=value.indexOf('@');if(at<1)return 'your email on file';return value.slice(0,1)+'•••••@'+value.slice(at+1);}
+function pctWorkspaceUploadClaimsMatch(claims,scope){return claims?.pctWorkspaceUploader===true&&String(claims.workspaceLeadId||'')===scope.leadId&&String(claims.workspaceReturnId||'')===scope.returnId&&String(claims.workspaceTaxYear||'')===scope.taxYear&&String(claims.workspaceWorkflowType||'')===scope.workflowType;}
+async function pctWorkspaceAuthorizeUploads(){
+  const access=state.workspaceAccess;
+  if(!access?.leadId||!access?.returnId||!access?.accessCode)throw new Error('Valid Return Workspace access is required before uploading documents.');
+  if(!initFirebaseIfReady()||!pctFirebase.auth||!pctFirebase.functions)throw new Error('Secure upload authorization is temporarily unavailable. Please try again.');
+  const requestedKey=access.leadId+'|'+access.returnId;
+  const expected={leadId:String(access.leadId),returnId:String(access.returnId),taxYear:String(access.taxYear||state.taxYear||''),workflowType:String(access.workflowType||'')};
+  const currentUser=pctFirebase.auth.currentUser;
+  if(currentUser&&expected.taxYear&&expected.workflowType){const tokenResult=await currentUser.getIdTokenResult();if(currentUser.uid.startsWith('pctws_')&&pctWorkspaceUploadClaimsMatch(tokenResult.claims,expected))return {ok:true,...expected};}
+  if(pctWorkspaceUploadAuthPromise&&pctWorkspaceUploadAuthKey===requestedKey)return pctWorkspaceUploadAuthPromise;
+  pctWorkspaceUploadAuthKey=requestedKey;
+  const authorizationPromise=(async()=>{
+    await pctFirebase.auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+    const authorization=(await pctFirebase.functions.httpsCallable('authorizePublicTaxIntakeWorkspaceUpload')({leadId:access.leadId,accessCode:access.accessCode,agentPublicId:pctWorkspaceAgentId()})).data||{};
+    const scope={leadId:String(authorization.leadId||''),returnId:String(authorization.returnId||''),taxYear:String(authorization.taxYear||''),workflowType:String(authorization.workflowType||'')};
+    if(!authorization.ok||!authorization.customToken||scope.leadId!==String(access.leadId)||scope.returnId!==String(access.returnId)||!/^(19|20)\d{2}$/.test(scope.taxYear)||!scope.workflowType)throw new Error('The secure upload authorization did not match this Return Workspace.');
+    const credential=await pctFirebase.auth.signInWithCustomToken(String(authorization.customToken));
+    authorization.customToken='';
+    const tokenResult=await credential.user.getIdTokenResult(true);
+    if(!credential.user.uid.startsWith('pctws_')||!pctWorkspaceUploadClaimsMatch(tokenResult.claims,scope)){await pctFirebase.auth.signOut().catch(()=>{});throw new Error('The secure upload authorization could not be verified.');}
+    access.taxYear=scope.taxYear;access.workflowType=scope.workflowType;state.taxYear=scope.taxYear;syncMirror('taxYear',scope.taxYear);setSeg('taxYear',scope.taxYear);
+    return {ok:true,...scope};
+  })();
+  pctWorkspaceUploadAuthPromise=authorizationPromise;
+  try{return await authorizationPromise;}finally{if(pctWorkspaceUploadAuthPromise===authorizationPromise)pctWorkspaceUploadAuthPromise=null;}
+}
+function pctWorkspaceValue(value,depth){
+  if(value===null||value===undefined||typeof value==='string'||typeof value==='boolean'||typeof value==='number')return value;
+  if((depth||0)>4||Array.isArray(value))return Array.isArray(value)?value.map(item=>pctWorkspaceValue(item,(depth||0)+1)):null;
+  if(typeof value!=='object')return null;
+  const out={};Object.keys(value).slice(0,80).forEach(key=>{if(/(ssn|itin|idnumber|identificationnumber|dob|signature|accesscode|token|password|routing|account)/i.test(key))return;out[key]=pctWorkspaceValue(value[key],(depth||0)+1);});return out;
+}
+function pctWorkspaceDraft(){
+  const draft={workspaceDraftVersion:1};
+  pctWorkspaceDraftFields.forEach(key=>{if(Object.prototype.hasOwnProperty.call(state,key))draft[key]=pctWorkspaceValue(state[key],0);});
+  pctWorkspaceDraftObjects.forEach(key=>{if(state[key]&&typeof state[key]==='object'&&!Array.isArray(state[key]))draft[key]=pctWorkspaceValue(state[key],0);});
+  pctWorkspaceDraftArrays.forEach(key=>{if(Array.isArray(state[key]))draft[key]=pctWorkspaceValue(state[key],0);});
+  draft.dependentDetails=(state.dependentDetails||[]).slice(0,20).map(item=>{const dependent={};pctWorkspaceDependentFields.forEach(key=>{if(Object.prototype.hasOwnProperty.call(item||{},key))dependent[key]=pctWorkspaceValue(item[key],0);});return dependent;});
+  draft.workspaceCurrentScreen=document.querySelector('.screen.active')?.id||'screen-new';
+  draft.workspaceCurrentStep=draft.workspaceCurrentScreen==='screen-estimate'?String(estStep||''):draft.workspaceCurrentScreen==='screen-organizer'?String(state.organizerStep||''):'';
+  draft.workspaceCompletedSections=Array.from(new Set([...(state.workspaceCompletedSections||[]),draft.workspaceCurrentScreen])).slice(-40);
+  return draft;
+}
+function pctWorkspaceProtectedIdentity(){
+  const person=(type,number,dob)=>({identificationType:String(type||''),identificationNumber:String(number||''),dob:String(dob||'')});
+  return {clientDob:String(state.taxpayerDob||''),taxpayer:person(state.taxpayerIdType,state.taxpayerIdNumber,state.taxpayerDob),spouse:person(state.spouseIdType,state.spouseIdNumber,state.spouseDob),dependents:(state.dependentDetails||[]).slice(0,20).map(item=>person(item?.idType,item?.idNumber,item?.dob)),businessEin:String(state.businessEin||'')};
+}
+function pctWorkspaceWorkflow(){
+  if(state.leadType==='Extension Request')return 'EXTENSION';
+  if(state.leadType==='Amended Return Review')return 'AMENDED_RETURN';
+  return 'NEW_RETURN';
+}
+function pctWorkspaceCreationPayload(){
+  const workflowType=pctWorkspaceWorkflow(),taxYear=String(workflowType==='EXTENSION'?state.extYear:workflowType==='AMENDED_RETURN'?state.amendYear:state.taxYear||'');
+  return {workflowType,taxYear,client:{firstName:String(state.firstName||''),lastName:String(state.lastName||''),email:String(state.email||''),phone:String(state.phone||'')},filing:{taxYear},extension:{taxYear},amendedReturn:{taxYear}};
+}
+function pctWorkspaceSaveRequest(){
+  const access=state.workspaceAccess;if(!access?.leadId||!access?.accessCode)return null;
+  return {leadId:access.leadId,accessCode:access.accessCode,agentPublicId:pctWorkspaceAgentId(),expectedRevision:Number(state.workspaceDraftRevision||0),workspaceDraft:pctWorkspaceDraft(),protectedIdentity:pctWorkspaceProtectedIdentity()};
+}
+async function pctWorkspaceDrainSaves(){
+  let result={ok:true};
+  while(pctWorkspaceQueuedSave){
+    const request=pctWorkspaceQueuedSave;pctWorkspaceQueuedSave=null;
+    request.expectedRevision=Number(state.workspaceDraftRevision||0);
+    try{
+      const saved=(await pctFirebase.functions.httpsCallable('savePublicTaxIntakeWorkspaceDraft')(request)).data||{};
+      if(!saved.ok)throw new Error('The workspace draft was not saved.');
+      state.workspaceDraftRevision=Number(saved.workspaceDraftRevision||state.workspaceDraftRevision||0);
+      state.backendSaveMessage='Progress saved securely.';
+      result={ok:true};
+    }catch(error){
+      state.backendSaveMessage=pctWorkspaceError(error,'Your progress could not be saved yet. Please try again.');
+      result={ok:false,message:state.backendSaveMessage};
+    }
+  }
+  return result;
+}
+function pctWorkspaceSaveDraft(){
+  if(!state.workspaceAccess?.leadId||!state.workspaceAccess?.accessCode)return Promise.resolve({ok:false,message:'Workspace access is not available in this browser.'});
+  if(!initFirebaseIfReady()||!pctFirebase.functions)return Promise.resolve({ok:false,message:'Secure saving is temporarily unavailable. Your information remains on this screen.'});
+  pctWorkspaceQueuedSave=pctWorkspaceSaveRequest();
+  if(!pctWorkspaceSaveRunner){
+    pctWorkspaceSaveRunner=pctWorkspaceDrainSaves().finally(()=>{pctWorkspaceSaveRunner=null;});
+  }
+  return pctWorkspaceSaveRunner;
+}
+function pctWorkspaceQueueSave(){
+  if(!state.workspaceAccess?.accessCode||state.intakeFinalSubmitted)return;
+  window.clearTimeout(pctWorkspaceAutosaveTimer);
+  pctWorkspaceAutosaveTimer=window.setTimeout(()=>{pctWorkspaceSaveDraft();},900);
+}
+function pctWorkspaceDetails(parent,access){
+  const grid=document.createElement('div');grid.className='info-grid';grid.style.margin='20px 0';
+  [['Case ID',access.leadId],['Access Code',access.accessCode]].forEach(([label,value])=>{const item=document.createElement('div'),key=document.createElement('div'),val=document.createElement('div');item.className='info';key.className='k';val.className='v';key.textContent=label;val.textContent=value;item.append(key,val);grid.append(item);});
+  parent.append(grid);
+}
+async function pctWorkspaceCopyDetails(status){
+  const access=state.workspaceAccess;if(!access)return;
+  const text='PCT Return Workspace\\nCase ID: '+access.leadId+'\\nAccess Code: '+access.accessCode;
+  try{await navigator.clipboard.writeText(text);if(status)status.textContent='Access details copied ✓';}catch(_){if(status)status.textContent='Select and save the Case ID and Access Code shown above.';}
+}
+function pctWorkspacePanel(id,kicker,title,message){
+  let screen=document.getElementById(id);if(!screen){screen=document.createElement('section');screen.id=id;screen.className='screen';document.body.append(screen);}
+  screen.replaceChildren();
+  const card=document.createElement('div'),top=document.createElement('div'),heading=document.createElement('h2'),body=document.createElement('p');
+  card.className='section-card';card.style.cssText='max-width:760px;margin:36px auto;text-align:center';top.className='kicker';top.textContent=kicker;heading.textContent=title;body.className='lead';body.textContent=message;card.append(top,heading,body);screen.append(card);return {screen,card};
+}
+function pctWorkspaceShowReady(continueIntake){
+  const access=state.workspaceAccess,{card}=pctWorkspacePanel('screen-workspace-ready','RETURN WORKSPACE READY','Your Return Workspace is ready.','Save these details before continuing. You will use the same Case ID and Access Code to resume unfinished intake and for later PCT return steps.');
+  pctWorkspaceDetails(card,access);
+  const actions=document.createElement('div'),copy=document.createElement('button'),continueButton=document.createElement('button'),status=document.createElement('p');
+  actions.className='actions';copy.type='button';copy.className='btn btn-soft';copy.textContent='COPY ACCESS DETAILS';copy.onclick=()=>pctWorkspaceCopyDetails(status);continueButton.type='button';continueButton.className='btn btn-gold';continueButton.textContent='CONTINUE MY INTAKE';continueButton.onclick=()=>{continueIntake?.();pctWorkspaceSetSaveButton();};status.className='small';actions.append(copy,continueButton);card.append(actions,status);showScreen('screen-workspace-ready');
+}
+function pctWorkspaceShowSaved(){
+  const access=state.workspaceAccess,{card}=pctWorkspacePanel('screen-save-finish-later','PROGRESS SAVED ✓','Your progress is saved.','You can come back anytime and continue where you left off.');
+  pctWorkspaceDetails(card,access);
+  const emailNote=document.createElement('p');emailNote.textContent='Want us to email these access details to you? We’ll send them to '+pctWorkspaceMaskedEmail(state.email)+'.';card.append(emailNote);
+  const actions=document.createElement('div'),copy=document.createElement('button'),saveMyself=document.createElement('button'),email=document.createElement('button'),done=document.createElement('button'),status=document.createElement('p');
+  actions.className='actions';copy.type='button';copy.className='btn btn-soft';copy.textContent='COPY ACCESS DETAILS';copy.onclick=()=>pctWorkspaceCopyDetails(status);
+  saveMyself.type='button';saveMyself.className='btn btn-ghost';saveMyself.textContent="I'LL SAVE THEM MYSELF";saveMyself.onclick=()=>{status.textContent='Keep your Case ID and Access Code private. Your workspace remains available whenever you are ready to continue.';};
+  email.type='button';email.className='btn btn-gold';email.textContent='EMAIL MY ACCESS DETAILS';email.onclick=async()=>{email.disabled=true;status.textContent='Sending access details…';try{const result=(await pctFirebase.functions.httpsCallable('emailPublicTaxIntakeWorkspaceAccess')({leadId:access.leadId,accessCode:access.accessCode,agentPublicId:pctWorkspaceAgentId()})).data||{};if(!result.ok)throw new Error('Email was not sent.');status.textContent='Access details sent ✓';}catch(error){status.textContent=pctWorkspaceError(error,'Your workspace remains saved. Email could not be sent; please retry.');email.disabled=false;}};
+  done.type='button';done.className='btn btn-ghost';done.textContent="I'VE SAVED MY ACCESS DETAILS / DONE";done.onclick=()=>{status.textContent='Your workspace remains available whenever you are ready to continue.';done.disabled=true;};
+  status.className='small';status.style.marginTop='12px';actions.append(copy,email,saveMyself,done);card.append(actions,status);showScreen('screen-save-finish-later');
+}
+async function pctWorkspaceSaveAndFinish(){
+  const saved=await pctWorkspaceSaveDraft();if(!saved.ok){toast(saved.message||'Your progress could not be saved yet.');return;}
+  pctWorkspaceShowSaved();
+}
+function pctWorkspaceSetSaveButton(){
+  let button=document.getElementById('pctWorkspaceSaveFinishButton');if(!button){button=document.createElement('button');button.id='pctWorkspaceSaveFinishButton';button.type='button';button.className='btn btn-soft';button.style.cssText='display:none;position:fixed;right:18px;bottom:18px;z-index:1200;box-shadow:0 8px 24px rgba(0,0,0,.16)';button.textContent='SAVE & FINISH LATER';button.onclick=pctWorkspaceSaveAndFinish;document.body.append(button);}
+  const active=document.querySelector('.screen.active')?.id||'';button.style.display=state.workspaceAccess?.accessCode&&!/^screen-(workspace-ready|save-finish-later|intake-confirmation)$/.test(active)?'block':'none';
+}
+async function pctWorkspaceCreate(){
+  if(state.workspaceAccess?.accessCode)return {ok:true,created:false};
+  if(state.workspaceCreatePromise)return state.workspaceCreatePromise;
+  state.workspaceCreatePromise=(async()=>{
+    if(!initFirebaseIfReady()||!pctFirebase.functions)return {ok:false,message:'Secure workspace creation is temporarily unavailable. Please try again.'};
+    try{
+      const saved=(await pctFirebase.functions.httpsCallable('createOrResumePublicTaxIntakeWorkspace')({workspace:pctWorkspaceCreationPayload(),submissionToken:publicIntakeSubmissionToken(),sourceLink:pctWorkspaceSourceLink(),agentPublicId:pctWorkspaceAgentId()})).data||{};
+      if(saved.duplicateTaxYear){state.duplicateTaxYear={taxYear:String(saved.taxYear||state.taxYear)};renderTaxYearIntegrityPanel('duplicate',state.duplicateTaxYear.taxYear);return {ok:false,message:'Use your existing workspace for this tax year.'};}
+      if(!saved.leadId||!(saved.accessCode||saved.resumeCode))throw new Error('The secure workspace could not be created.');
+      state.leadId=String(saved.leadId);state.workspaceAccess={leadId:String(saved.leadId),returnId:String(saved.returnId||''),accessCode:String(saved.accessCode||saved.resumeCode),taxYear:String(saved.taxYear||''),workflowType:String(saved.workflowType||'')};state.taxYear=String(saved.taxYear||pctWorkspaceCreationPayload().taxYear);syncMirror('taxYear',state.taxYear);setSeg('taxYear',state.taxYear);state.workspaceStatus='INTAKE_IN_PROGRESS';state.intakeProgress='IN_PROGRESS';
+      const firstSave=await pctWorkspaceSaveDraft();if(!firstSave.ok)return firstSave;
+      try{await pctWorkspaceAuthorizeUploads();}catch(error){state.workspaceUploadAuthorizationMessage=pctWorkspaceError(error,'Your workspace is saved. Secure document upload authorization will retry when you upload.');}
+      return {ok:true,created:true};
+    }catch(error){return {ok:false,message:pctWorkspaceError(error,'Your Return Workspace could not be created. Please try again.')};}
+  })();
+  try{return await state.workspaceCreatePromise;}finally{state.workspaceCreatePromise=null;}
+}
+async function pctWorkspaceBegin(continueIntake){
+  const result=await pctWorkspaceCreate();if(!result.ok){toast(result.message||'Your Return Workspace could not be created.');return;}
+  if(result.created)pctWorkspaceShowReady(continueIntake);else continueIntake?.();
+}
+function pctWorkspaceRestore(draft,identity,documents){
+  const restored=draft&&typeof draft==='object'?draft:{};Object.keys(restored).forEach(key=>{if(key!=='workspaceDraftVersion'&&key!=='workspaceCurrentScreen'&&key!=='workspaceCurrentStep'&&key!=='workspaceCompletedSections')state[key]=restored[key];});
+  const protectedIdentity=identity&&typeof identity==='object'?identity:{},taxpayer=protectedIdentity.taxpayer||{},spouse=protectedIdentity.spouse||{};
+  state.taxpayerIdType=String(taxpayer.identificationType||state.taxpayerIdType||'');state.taxpayerIdNumber=String(taxpayer.identificationNumber||taxpayer.ssn||taxpayer.itin||'');state.taxpayerDob=String(taxpayer.dob||state.taxpayerDob||'');
+  state.spouseIdType=String(spouse.identificationType||state.spouseIdType||'');state.spouseIdNumber=String(spouse.identificationNumber||spouse.ssn||spouse.itin||'');state.spouseDob=String(spouse.dob||state.spouseDob||'');
+  const protectedDependents=Array.isArray(protectedIdentity.dependents)?protectedIdentity.dependents:[];state.dependentDetails=(state.dependentDetails||[]).map((dependent,index)=>({...dependent,idType:String(protectedDependents[index]?.identificationType||dependent.idType||''),idNumber:String(protectedDependents[index]?.identificationNumber||protectedDependents[index]?.ssn||protectedDependents[index]?.itin||dependent.idNumber||''),dob:String(protectedDependents[index]?.dob||dependent.dob||'')}));
+  state.businessEin=String(protectedIdentity.businessEin||state.businessEin||'');state.documents=(documents||[]).map(item=>({...item,persisted:true,uploadSection:item.uploadSection||'tax',file:null}));
+  $$('[data-bind]').forEach(el=>{const key=el.getAttribute('data-bind');if(!Object.prototype.hasOwnProperty.call(state,key))return;if(el.type==='checkbox')el.checked=!!state[key];else el.value=state[key]??'';});$$('[data-consent]').forEach(el=>{const key=el.getAttribute('data-consent')==='contact'?'consentContact':'consentPromo';el.checked=!!state[key];});$$('[data-seg]').forEach(seg=>{const key=seg.getAttribute('data-seg');if(Object.prototype.hasOwnProperty.call(state,key))syncSeg(key,state[key]);});$$('.choice[data-flag]').forEach(choice=>{const flag=choice.getAttribute('data-flag'),source=choice.closest('#screen-returning')?state.changes:state.flags;choice.classList.toggle('sel',!!source?.[flag]);});if($('#completenessConfirm'))$('#completenessConfirm').checked=!!state.completenessConfirmed;['firstName','lastName','email','phone'].forEach(key=>syncMirror(key,state[key]||''));onFlagChange();refreshExtension();refreshAmended();renderReturnDependentDetails?.();setUploadContext?.();renderDocumentList?.();
+  const target=String(restored.workspaceCurrentScreen||'screen-new'),screenId=document.getElementById(target)?target:'screen-new';showScreen(screenId);if(screenId==='screen-estimate')showEstep(Number(restored.workspaceCurrentStep)||1);if(screenId==='screen-organizer')organizerSetStep(Number(restored.workspaceCurrentStep||state.organizerStep)||1);
+}
+function pctWorkspaceInstallResume(){
+  if(document.getElementById('pctWorkspaceResumeLauncher'))return;
+  const home=document.getElementById('screen-home');if(!home)return;
+  const host=document.createElement('div'),title=document.createElement('h3'),copy=document.createElement('p'),caseInput=document.createElement('input'),codeInput=document.createElement('input'),button=document.createElement('button'),status=document.createElement('p');
+  host.id='pctWorkspaceResumeLauncher';host.className='section-card';host.style.cssText='max-width:760px;margin:22px auto';title.textContent='Already started?';copy.textContent='Resume your saved PCT Return Workspace with your Case ID and Access Code.';caseInput.placeholder='Case ID';caseInput.autocomplete='off';codeInput.placeholder='Access Code';codeInput.autocomplete='one-time-code';button.type='button';button.className='btn btn-soft';button.textContent='RESUME SAVED WORKSPACE';status.className='small';
+  button.onclick=async()=>{const leadId=caseInput.value.trim(),accessCode=codeInput.value.trim();if(!leadId||!accessCode){status.textContent='Enter both your Case ID and Access Code.';return;}if(!initFirebaseIfReady()||!pctFirebase.functions){status.textContent='Secure resume is temporarily unavailable. Please try again.';return;}button.disabled=true;status.textContent='Opening your saved workspace…';try{const result=(await pctFirebase.functions.httpsCallable('loadPublicTaxIntakeWorkspace')({leadId,accessCode,agentPublicId:pctWorkspaceAgentId()})).data||{};if(!result.ok)throw new Error('Workspace unavailable.');state.leadId=String(result.leadId);state.workspaceAccess={leadId:String(result.leadId),returnId:String(result.returnId||''),accessCode,taxYear:String(result.taxYear||''),workflowType:String(result.workflowType||'')};state.taxYear=String(result.taxYear||state.taxYear||'');state.workspaceStatus='INTAKE_IN_PROGRESS';state.intakeProgress='IN_PROGRESS';state.workspaceDraftRevision=Number(result.workspaceDraftRevision||0);pctWorkspaceRestore(result.workspaceDraft,result.workspaceProtectedIdentity,result.workspaceDocuments);try{await pctWorkspaceAuthorizeUploads();}catch(authError){state.workspaceUploadAuthorizationMessage=pctWorkspaceError(authError,'Secure document upload authorization will retry when you upload.');}toast('Your saved workspace is ready to continue.');pctWorkspaceSetSaveButton();}catch(error){status.textContent=pctWorkspaceError(error,'That Case ID or Access Code is not valid.');button.disabled=false;}};
+  host.append(title,copy,caseInput,codeInput,button,status);home.append(host);
+}
+const pctWorkspaceOriginalShowScreen=showScreen;
+showScreen=function(id){pctWorkspaceOriginalShowScreen(id);pctWorkspaceSetSaveButton();pctWorkspaceQueueSave();};
+const pctWorkspaceOriginalGoUpload=goUpload;
+goUpload=function(source){if(state.workspaceAccess?.accessCode)return pctWorkspaceOriginalGoUpload(source);return pctWorkspaceBegin(()=>pctWorkspaceOriginalGoUpload(source));};
+const pctWorkspaceOriginalGoEstimate=goEstimate;
+goEstimate=function(){if(state.workspaceAccess?.accessCode)return pctWorkspaceOriginalGoEstimate();return pctWorkspaceBegin(pctWorkspaceOriginalGoEstimate);};
+const pctWorkspaceOriginalPersistLead=persistLead;
+persistLead=async function(reason){if(state.workspaceAccess?.accessCode){const saved=await pctWorkspaceSaveDraft();if(reason==='native_documents_uploaded'&&saved.ok)renderTaxYearIntegrityPanel('additional',state.taxYear);return saved;}return pctWorkspaceOriginalPersistLead(reason);};
+const pctWorkspaceOriginalSubmitIntake=submitIntake;
+submitIntake=async function(){
+  if(!state.workspaceAccess?.accessCode)return pctWorkspaceOriginalSubmitIntake();
+  if(state.intakeFinalSubmitted){showIntakeConfirmation();return {ok:true};}
+  if(state.intakeFinalSubmissionInFlight)return {ok:false,message:'Your intake is already being submitted. Please wait.'};
+  state.intakeFinalSubmissionInFlight=true;
+  try{if(state.uploadStartPersist)await state.uploadStartPersist;const uploaded=await sendDocumentsToPCT();if(!uploaded?.ok)return {ok:false,message:uploaded?.message||'Your intake could not be submitted. Please try again.'};const payload=buildLeadPayload();if(!payload)throw new Error('The intake payload could not be prepared.');const result=(await pctFirebase.functions.httpsCallable('completePublicTaxIntakeWorkspace')({leadId:state.workspaceAccess.leadId,accessCode:state.workspaceAccess.accessCode,agentPublicId:pctWorkspaceAgentId(),payload})).data||{};if(!result.ok||result.workspaceStatus!=='INTAKE_SUBMITTED')throw new Error('The intake was not submitted.');await persistStatusMirror(payload,'native_documents_uploaded');state.intakeFinalSubmitted=true;state.workspaceStatus='INTAKE_SUBMITTED';state.intakeProgress='SUBMITTED';showIntakeConfirmation();return {ok:true};}catch(error){return {ok:false,message:pctWorkspaceError(error,'Your intake could not be submitted. Your workspace remains saved; please try again.')};}finally{state.intakeFinalSubmissionInFlight=false;}
+};
+const pctWorkspaceOriginalSendDocuments=sendDocumentsToPCT;
+sendDocumentsToPCT=async function(){
+  const pending=(state.documents||[]).filter(document=>!document.persisted);if(!pending.length)return {ok:true};
+  if(pending.length===(state.documents||[]).length){const result=await pctWorkspaceOriginalSendDocuments();if(result?.ok)pending.forEach(document=>{document.persisted=true;});return result;}
+  const original=state.documents;state.documents=pending;try{const result=await pctWorkspaceOriginalSendDocuments();if(result?.ok)pending.forEach(document=>{document.persisted=true;});return result;}finally{state.documents=original;};
+};
+document.addEventListener('input',pctWorkspaceQueueSave,true);
+document.addEventListener('change',pctWorkspaceQueueSave,true);
+window.addEventListener('DOMContentLoaded',()=>window.setTimeout(()=>{pctWorkspaceInstallResume();pctWorkspaceSetSaveButton();},0));
 
 window.addEventListener('DOMContentLoaded',()=>{init(); initFirebaseIfReady(); loadVerifiedAgentProfile().then(profile=>profile?loadAgentIntakeResume():null);});
 </script>
