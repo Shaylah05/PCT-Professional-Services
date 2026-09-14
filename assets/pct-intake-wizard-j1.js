@@ -75,7 +75,7 @@
     if (stage === 7) { state.expectedChecklistOpened = true; one('#expectedChecklist')?.classList.add('show'); window.renderExpectedChecklist?.(); }
     const card = screen.querySelector('.organizer-card'), row = card?.querySelector(':scope > .btn-row'), back = row?.querySelector('.btn-ghost'), next = row?.querySelector('.btn-primary');
     if (back) back.textContent = stage === 1 ? '← Back to start' : '← Back';
-    if (next) next.textContent = stage === 7 ? 'REVIEW YOUR INTAKE' : 'Continue';
+    if (next) next.textContent = stage === 7 ? 'CONTINUE TO DOCUMENT UPLOAD' : 'Continue';
     setHidden(screen.querySelector('.back-link'), true);
     renderProgress(stage);
     if (options.focus !== false) focusStage(stage);
@@ -101,8 +101,6 @@
     const stage = stageNumber();
     if (!currentSectionReady(stage)) return;
     if (stage < stages.length) { showStage(stage + 1); return; }
-    window.renderReturnDependentDetails?.();
-    if (window.PCT_INTAKE_REVIEW_V2?.enabled?.()) { window.pctV2OpenReview?.(); return; }
     window.goUpload?.(state.documentSource || 'organizer');
   }
 

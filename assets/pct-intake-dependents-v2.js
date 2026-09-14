@@ -4,13 +4,21 @@
   'use strict';
   // PCT's V2 online intake capacity. This is not a tax-law eligibility limit.
   const MAX_DEPENDENTS = 10;
-  const COPYABLE_FACT_KEYS = Object.freeze([
-    'relationship', 'monthsLived', 'temporaryAbsence', 'supportDetails',
-    'competingClaimant', 'custodyDetails', 'student', 'disability', 'marriedJointReturn'
-  ]);
+  const COPYABLE_WRITTEN_DETAIL_KEYS = Object.freeze(['custodyDetails']);
   const COPYABLE_NARRATIVE_IDS = new Set([
     'dependent_relationship_context', 'dependent_residency', 'dependent_temporary_absence',
-    'dependent_possible_claimant', 'dependent_custody_arrangement'
+    'dependent_support_context', 'dependent_possible_claimant', 'dependent_custody_arrangement'
+  ]);
+  const RELATIONSHIP_OPTIONS = Object.freeze([
+    'Son', 'Daughter', 'Adopted son', 'Adopted daughter', 'Stepson', 'Stepdaughter',
+    'Foster son', 'Foster daughter', 'Grandson', 'Granddaughter',
+    'Great-grandchild / other descendant', 'Brother', 'Sister', 'Half brother',
+    'Half sister', 'Stepbrother', 'Stepsister', 'Nephew', 'Niece',
+    'Other descendant of brother/sister', 'Father', 'Mother', 'Grandfather',
+    'Grandmother', 'Other direct ancestor', 'Stepfather', 'Stepmother', 'Uncle',
+    'Aunt', 'Son-in-law', 'Daughter-in-law', 'Father-in-law', 'Mother-in-law',
+    'Brother-in-law', 'Sister-in-law', 'Other person who lived with me all year',
+    'Other / Not sure'
   ]);
   const enabled = () => window.PCT_INTAKE_V2_CONFIG?.enabled === true && !!window.PCT_INTAKE_INTERVIEW_V2;
   const text = value => String(value ?? '').trim();
@@ -27,14 +35,18 @@
       .pct-v2-dependent-card legend{padding:0 8px;font-weight:800;letter-spacing:.06em;font-size:15px;color:#3b2b13}.pct-v2-dependent-section{margin:20px 0 0}.pct-v2-dependent-section h4{margin:0 0 12px;font-size:13px;letter-spacing:.12em;color:#765a23}.pct-v2-dependent-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.pct-v2-dependent-grid .field{margin:0}.pct-v2-dependent-wide{grid-column:1/-1}.pct-v2-dependent-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}.pct-v2-dependent-add{grid-column:1/-1;margin:8px 0 2px}.pct-v2-dependent-card textarea{min-height:150px;resize:vertical}.pct-v2-dependent-card :focus-visible{outline:3px solid #b18a25;outline-offset:2px}@media(max-width:680px){.pct-v2-dependent-card{padding:22px 16px}.pct-v2-dependent-grid{grid-template-columns:1fr}.pct-v2-dependent-wide{grid-column:auto}.pct-v2-dependent-actions .btn{width:100%;min-height:44px}}
     `; document.head.appendChild(node);
   }
-  function option(value, label, selected) { return `<option value="${value}"${selected === value ? ' selected' : ''}>${label}</option>`; }
+  function option(value, label, selected) { return `<option value="${esc(value)}"${selected === value ? ' selected' : ''}>${esc(label)}</option>`; }
+  function relationshipOptions(selected) {
+    const saved = text(selected), hasApprovedValue = RELATIONSHIP_OPTIONS.includes(saved);
+    return `${option('', 'Select relationship', saved)}${saved && !hasApprovedValue ? option(saved, `Saved relationship: ${saved}`, saved) : ''}${RELATIONSHIP_OPTIONS.map(value => option(value, value, saved)).join('')}`;
+  }
   function yesNo(label, key, dependent, id) { return `<div class="field"><label for="${id}-${key}">${label}</label><select id="${id}-${key}" data-pct-v2-dependent-key="${key}">${option('','Select',dependent[key])}${option('YES','Yes',dependent[key])}${option('NO','No',dependent[key])}${option('UNSURE','Not sure',dependent[key])}</select></div>`; }
   function cardMarkup(dependent, index) {
     const id = `pct-v2-dep-${safeId(ensureSubject(dependent))}`, name = text(dependent.fullName) || 'NEW DEPENDENT';
     return `<fieldset class="pct-v2-dependent-card" data-pct-v2-dependent-subject="${esc(dependent.v2SubjectId)}" data-pct-v2-dependent-index="${index}"><legend>DEPENDENT — <span data-pct-v2-dependent-name>${esc(name)}</span></legend>
       <section class="pct-v2-dependent-section"><h4>BASIC INFORMATION</h4><div class="pct-v2-dependent-grid">
         <div class="field"><label for="${id}-fullName">Full legal name</label><input id="${id}-fullName" data-pct-v2-dependent-key="fullName" value="${esc(dependent.fullName)}" autocomplete="off"></div>
-        <div class="field"><label for="${id}-relationship">Relationship to taxpayer</label><input id="${id}-relationship" data-pct-v2-dependent-key="relationship" value="${esc(dependent.relationship)}" placeholder="Child, parent, other"></div>
+        <div class="field"><label for="${id}-relationship">Relationship to taxpayer</label><select id="${id}-relationship" data-pct-v2-dependent-key="relationship">${relationshipOptions(dependent.relationship)}</select></div>
         <div class="field"><label for="${id}-idType">SSN / ITIN status</label><select id="${id}-idType" data-pct-v2-dependent-key="idType">${option('','Select',dependent.idType)}${option('ssn','SSN',dependent.idType)}${option('itin','ITIN',dependent.idType)}${option('none','No SSN / ITIN yet',dependent.idType)}</select></div>
         <div class="field"><label for="${id}-idNumber">Full number</label><input id="${id}-idNumber" type="password" inputmode="numeric" maxlength="11" data-pct-v2-dependent-key="idNumber" value="${esc(dependent.idNumber)}" autocomplete="off"></div>
         <div class="field"><label for="${id}-dob">Date of birth</label><input id="${id}-dob" type="date" data-pct-v2-dependent-key="dob" value="${esc(dependent.dob)}" autocomplete="bday"></div>
@@ -47,7 +59,7 @@
       <section class="pct-v2-dependent-section"><h4>SUPPORT</h4><div class="pct-v2-dependent-grid"><div class="field pct-v2-dependent-wide"><label for="${id}-supportDetails">Who provided most support?</label><input id="${id}-supportDetails" data-pct-v2-dependent-key="supportDetails" value="${esc(dependent.supportDetails)}" placeholder="Taxpayer, spouse, other"></div></div></section>
       <section class="pct-v2-dependent-section"><h4>OTHER POSSIBLE CLAIMANT</h4><div class="pct-v2-dependent-grid">${yesNo('Could another person claim this dependent?', 'competingClaimant', dependent, id)}<div class="field pct-v2-dependent-wide"><label for="${id}-custodyDetails">Custody, shared living, or competing-claim facts</label><textarea id="${id}-custodyDetails" data-pct-v2-dependent-key="custodyDetails" placeholder="Facts only. Leave blank if none.">${esc(dependent.custodyDetails)}</textarea></div><div data-pct-v2-narrative-slot="claimant" class="pct-v2-dependent-wide"></div></div></section>
       <section class="pct-v2-dependent-section"><h4>ADDITIONAL DETAILS</h4><div class="pct-v2-dependent-grid">${yesNo('Full-time student, if applicable?', 'student', dependent, id)}${yesNo('Permanent disability, if applicable?', 'disability', dependent, id)}${yesNo('Married / filing a joint return?', 'marriedJointReturn', dependent, id)}<div data-pct-v2-narrative-slot="additional" class="pct-v2-dependent-wide"></div></div></section>
-      <div class="pct-v2-dependent-actions">${index > 0 ? '<div class="pct-v2-dependent-wide"><p class="small">If the household details are the same, you can reuse the previous dependent\'s answers and change anything that is different.</p><button type="button" class="btn btn-soft" data-pct-v2-copy-previous="'+index+'">COPY PREVIOUS DEPENDENT DETAILS</button></div>' : ''}<button type="button" class="btn btn-ghost" data-pct-v2-remove-dependent="${index}">REMOVE DEPENDENT</button></div>
+      <div class="pct-v2-dependent-actions">${index > 0 ? '<div class="pct-v2-dependent-wide"><p class="small">Copies written explanations only. You’ll still answer each dependent’s individual questions separately.</p><button type="button" class="btn btn-soft" data-pct-v2-copy-previous="'+index+'">COPY WRITTEN DETAILS FROM PREVIOUS DEPENDENT</button></div>' : ''}<button type="button" class="btn btn-ghost" data-pct-v2-remove-dependent="${index}">REMOVE DEPENDENT</button></div>
     </fieldset>`;
   }
   function prepareCountControls() {
@@ -78,7 +90,7 @@
     const prior = state.dependentDetails?.[index - 1], current = state.dependentDetails?.[index];
     if (!prior || !current) return false;
     const newSubjectId = ensureSubject(current);
-    COPYABLE_FACT_KEYS.forEach(key => { if (prior[key] !== undefined) current[key] = prior[key]; });
+    COPYABLE_WRITTEN_DETAIL_KEYS.forEach(key => { if (prior[key] !== undefined) current[key] = prior[key]; });
     const answers = state.v2NarrativeAnswers || {}, active = new Set((narrative()?.getVisibleQuestions?.(state) || [])
       .filter(item => item.subject?.subjectId === newSubjectId)
       .map(item => item.question?.questionId));

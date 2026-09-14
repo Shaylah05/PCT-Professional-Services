@@ -89,12 +89,23 @@
       card({title:'Other Tax Situations',section:'other',attention:issue?.section === 'other',summary:flagNames.length ? `Selected items: ${esc(flagNames.join(', '))}` : 'No additional organizer items are selected for this review.',body:narrativeMarkup(groups.other)}),
       card({title:'Documents',section:'documents',attention:docs.length === 0 || missing > 0,summary:docs.length ? `${docs.length} document${docs.length === 1 ? '' : 's'} added for secure upload.` : 'No documents have been added yet.',body:`${docs.length ? `<ul class="pct-v2-review-list">${docs.map(doc => `<li>${esc(doc.originalFileName || 'Document')} ${doc.documentType ? `— ${esc(doc.documentType)}` : ''}</li>`).join('')}</ul>` : ''}${missing > 0 ? `<div class="pct-v2-review-empty">${missing} checklist item${missing === 1 ? '' : 's'} may still need attention.</div>` : ''}`})
     ];
-    screen.innerHTML = `<div class="pct-v2-review"><header class="pct-v2-review-head"><div class="kicker">PCT PRO SERVICES</div><h1>REVIEW YOUR INTAKE</h1><p>Please review your information before submitting it to your preparer. You can go back and make changes to any section.</p><p>Your tax preparer may contact you if additional information or documentation is needed.</p></header>${sections.join('')}<section class="pct-v2-review-submit"><h2>READY TO SEND TO YOUR PREPARER?</h2><p>By submitting your intake, you’re sending the information and documents you provided to your tax preparer for review. Your preparer may contact you if additional information is needed before your return can be completed.</p><button type="button" class="btn btn-gold" data-pct-v2-review-submit>SUBMIT MY INTAKE</button><div class="pct-v2-review-message" aria-live="polite"></div></section></div>`;
+    screen.innerHTML = `<div class="pct-v2-review"><header class="pct-v2-review-head"><div class="kicker">PCT PRO SERVICES</div><h1>REVIEW YOUR INTAKE</h1><p>Please review your information before submitting it to your preparer. You can go back and make changes to any section.</p><p>Your tax preparer may contact you if additional information or documentation is needed.</p></header>${sections.join('')}<section class="pct-v2-review-submit"><h2>READY TO SEND TO YOUR PREPARER?</h2><p>By submitting your intake, you’re sending the information and documents you provided to your tax preparer for review. Your preparer may contact you if additional information is needed before your return can be completed.</p><button type="button" class="btn btn-gold" data-pct-v2-review-submit>SUBMIT TO MY TAX PRO</button><div class="pct-v2-review-message" aria-live="polite"></div></section></div>`;
     screen.querySelectorAll('[data-pct-v2-review-edit]').forEach(button => button.addEventListener('click', () => hooks.edit(button.dataset.pctV2ReviewEdit)));
-    screen.querySelector('[data-pct-v2-review-submit]').addEventListener('click', () => {
+    screen.querySelector('[data-pct-v2-review-submit]').addEventListener('click', async event => {
       const currentIssue = requiredIssue(state), message = screen.querySelector('.pct-v2-review-message');
       if (currentIssue) { message.textContent = `Please complete the additional details requested in the ${({filing:'Filing Status + Household',dependents:'Dependents',income:'Income',business:'Self-Employment / Business',education:'Education / Credits',other:'Other Tax Situations'})[currentIssue.section] || 'intake'} section before submitting your intake.`; hooks.edit(currentIssue.section, currentIssue.focusKey); return; }
-      hooks.continueToUpload();
+      const button = event.currentTarget;
+      button.disabled = true;
+      message.textContent = 'Submitting your intake securely…';
+      try {
+        const result = await hooks.submitIntake();
+        if (result?.ok) return;
+        message.textContent = result?.message || 'Your intake could not be submitted. Please try again.';
+        button.disabled = false;
+      } catch (error) {
+        message.textContent = 'Your intake could not be submitted. Please try again.';
+        button.disabled = false;
+      }
     });
     return screen;
   }

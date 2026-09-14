@@ -1668,7 +1668,7 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
         </div>
       </div>
       <div id="expectedChecklist" class="organizer-followup">
-        <div class="kicker">Your tax checklist</div><h3 style="font-size:22px">Here’s what to gather.</h3><p>Choose the answer that fits today. Let us know about anything you are still waiting for so your tax professional has the full picture.</p>
+        <div class="kicker">Your tax checklist</div><h3 style="font-size:22px">HERE'S WHAT TO GATHER</h3><div id="checklistInstructions" class="checklist-wrap" aria-live="polite"></div>
         <div id="checklistBody" class="checklist-wrap"></div>
         <div class="completion-box"><label><input id="completenessConfirm" type="checkbox" onchange="state.completenessConfirmed=this.checked;state.completenessConfirmedAt=this.checked?new Date().toISOString():''"> <span>I reviewed the information and document list above. To the best of my knowledge, I provided everything I currently have and identified anything I&rsquo;m still waiting on or do not expect to receive.</span></label><div class="small" style="margin-top:9px">This confirms your intake is ready for PCT review. It does not mean your return is complete or filed.</div></div>
       </div>
@@ -1742,7 +1742,7 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
         <div class="section-head" style="margin-top:24px"><div class="kicker">Your Uploaded Documents</div><p class="lead" style="font-size:13.5px">You&rsquo;ll be able to see exactly what PCT is receiving.</p></div>
         <div id="documentList" class="document-list"><div class="small">No documents added yet.</div></div>
         <div id="uploadProgress" class="upload-progress" role="status"></div>
-        <button type="button" id="sendDocumentsBtn" class="btn btn-dark btn-block" style="margin-top:16px" onclick="sendDocumentsToPCT()" disabled>Send Documents to PCT</button>
+        <button type="button" id="sendDocumentsBtn" class="btn btn-dark btn-block" style="margin-top:16px" onclick="pctV2OpenReview()" disabled>REVIEW MY INTAKE</button>
         <button type="button" class="back-link" onclick="state.expectedChecklistOpened=true;showScreen('screen-organizer');organizerSetStep(3);renderExpectedChecklist()">&larr; Back to checklist</button>
       </div>
 
@@ -1803,8 +1803,8 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
 <script src="assets/pct-intake-interview-v2.js"></script>
 <script src="assets/pct-intake-education-v2.js"></script>
 <script src="assets/pct-intake-narrative-v2.js"></script>
-<script src="assets/pct-intake-dependents-v2.js"></script>
-<script src="assets/pct-intake-review-v2.js"></script>
+<script src="assets/pct-intake-dependents-v2.js?v=20260913-intake-final"></script>
+<script src="assets/pct-intake-review-v2.js?v=20260913-intake-final"></script>
 
 <script>/* =================== i18n =================== */
 var LANG='en';
@@ -2216,7 +2216,31 @@ function renderReturnDependentDetails(){
 }
 function pctV2InstallNarrativeFoundation(){if(!window.PCT_INTAKE_NARRATIVE_V2?.enabled())return;window.PCT_INTAKE_DEPENDENTS_V2?.prepareCountControls?.();window.PCT_INTAKE_NARRATIVE_V2.install(state);if(!state.v2NarrativeDraftListener){state.v2NarrativeDraftListener=true;document.addEventListener('change',event=>{if(event.target?.closest?.('.pct-v2-narrative'))pctV2AgentDraftSave();});}}
 function pctV2PrepareNarrativePayload(){const foundation=window.PCT_INTAKE_NARRATIVE_V2;if(!foundation?.enabled())return {ok:true,payload:null};const prepared=foundation.prepareSubmission(state);if(!prepared.ok){toast(prepared.message||'Please complete the requested tax-situation details.');document.querySelector('[data-pct-v2-key="'+String(prepared.focusKey||'').replace(/"/g,'')+'"] textarea')?.focus();}return prepared;}
-function pctV2OpenReview(){return window.PCT_INTAKE_REVIEW_V2?.open(state,{showScreen,edit:pctV2ReviewEdit,continueToUpload:()=>goUpload(state.documentSource||'organizer')});}
+function pctV2OpenReview(){return window.PCT_INTAKE_REVIEW_V2?.open(state,{showScreen,edit:pctV2ReviewEdit,submitIntake});}
+async function submitIntake(){
+  if(state.intakeFinalSubmitted){showIntakeConfirmation();return {ok:true};}
+  if(state.intakeFinalSubmissionInFlight)return {ok:false,message:'Your intake is already being submitted. Please wait.'};
+  if(!state.documents?.length)return {ok:false,message:'Add at least one document before submitting your intake.'};
+  state.intakeFinalSubmissionInFlight=true;
+  try{
+    if(state.uploadStartPersist)await state.uploadStartPersist;
+    const uploaded=await sendDocumentsToPCT();
+    if(!uploaded?.ok)return {ok:false,message:uploaded?.message||'Your intake could not be submitted. Please try again.'};
+    state.intakeFinalSubmitted=true;
+    showIntakeConfirmation();
+    return {ok:true};
+  }catch(err){
+    return {ok:false,message:phase19PublicError(err,'Your intake could not be submitted. Please try again.')};
+  }finally{
+    state.intakeFinalSubmissionInFlight=false;
+  }
+}
+function showIntakeConfirmation(){
+  let screen=$('#screen-intake-confirmation');
+  if(!screen){screen=document.createElement('section');screen.id='screen-intake-confirmation';screen.className='screen';document.body.appendChild(screen);}
+  screen.innerHTML='<div class="section-card" style="max-width:760px;margin:36px auto;text-align:center"><div class="kicker">INTAKE RECEIVED ✓</div><h2>Your intake has been sent to PCT Pro Services.</h2><p class="lead">Give PCT Pro Services some time to review the information and documents you submitted. If anything else is needed, they’ll contact you.</p><p>Nothing has been filed yet.</p><div class="callout gold" style="margin-top:24px;text-align:left"><div><strong>WHAT HAPPENS NEXT</strong><p style="margin:8px 0 0">Keep an eye on your email. Once your return is ready, you’ll receive the next steps from your tax professional, including your Permission to File request and an invitation to review and sign your official tax return.</p><p style="margin:10px 0 0">Your return will not be transmitted until the required review, signatures, and filing authorization are complete.</p></div></div><p style="margin-top:24px"><strong>You’re all done for now.</strong></p></div>';
+  showScreen('screen-intake-confirmation');
+}
 function pctV2ReviewEdit(section,focusKey){
   const target=({personal:'screen-new',filing:'screen-estimate',income:'screen-estimate',education:'screen-estimate',dependents:'screen-organizer',business:'screen-organizer',other:'screen-organizer',documents:'screen-upload'})[section]||'screen-organizer';
   showScreen(target);
@@ -2232,7 +2256,7 @@ function validIdChoice(type,value){if(type==='none')return true;return (type==='
 function validateIdentityDetails(){
   if(!validIdChoice(state.taxpayerIdType,state.taxpayerIdNumber)){toast('Enter the taxpayer full 9-digit SSN/ITIN, or choose No SSN / ITIN yet.');return false;}
   const married=/married|joint/i.test(String(state.filingStatus||'')); if(married&&!validIdChoice(state.spouseIdType,state.spouseIdNumber)){toast('Enter the spouse full 9-digit SSN/ITIN, or choose No SSN / ITIN yet.');return false;}
-  for(let i=0;i<pctCommittedDependentCount();i++){const d=state.dependentDetails[i]||{};if(!d.fullName||!validIdChoice(d.idType,d.idNumber)||!d.dob){toast('Complete the full identity details for every dependent, or mark missing SSN / ITIN.');return false;}}
+  for(let i=0;i<pctCommittedDependentCount();i++){const d=state.dependentDetails[i]||{};if(!d.fullName||!d.relationship||!validIdChoice(d.idType,d.idNumber)||!d.dob){toast('Complete each dependent’s full name, relationship, SSN/ITIN information, and date of birth before continuing.');return false;}}
   return true;
 }
 
@@ -2941,7 +2965,13 @@ function checklistStatus(id){return state.checklistResponses?.[id]?.status||''}
 function setChecklistStatus(id,status){state.checklistResponses[id]={...(state.checklistResponses[id]||{}),status};renderExpectedChecklist();}
 function uploadChecklistNow(itemId){state.activeExpectedItemId=itemId||'';state.documentSource='checklist';setUploadContext();renderDocumentList();showScreen('screen-upload');}
 function setChecklistNote(id,value){state.checklistResponses[id]={...(state.checklistResponses[id]||{}),note:value};}
+function renderChecklistInstructions(){
+  const host=$('#checklistInstructions');if(!host)return;
+  const filingStatus=String(state.filingStatus||'').toLowerCase(),spouseApplies=filingStatus==='mfj'||/married filing jointly/.test(filingStatus)||!!state.spouseFullName,hasDependents=Math.max(0,Number(state.numDeps)||0)>0;
+  host.innerHTML='<p>Please upload the required identification and all tax documents you received for this tax year. We’ll also show anything else your answers specifically flagged for your preparer.</p><div class="checklist-group"><h4>REQUIRED IDENTIFICATION</h4><p><strong>Primary taxpayer:</strong></p><ul><li>Government-issued photo ID</li><li>Driver\'s license or state ID is acceptable</li></ul>' +(spouseApplies?'<p><strong>If spouse applies / Married Filing Jointly:</strong></p><ul><li>Government-issued photo ID for spouse</li><li>Driver\'s license or state ID is acceptable</li></ul>':'')+'</div>' +(hasDependents?'<div class="checklist-group"><h4>DEPENDENTS</h4><p>For child dependents included on the return:</p><ul><li>Social Security card</li><li>Birth certificate</li></ul></div>':'')+'<div class="checklist-group"><h4>TAX DOCUMENTS</h4><p>Upload ALL current-year tax documents received by:</p><ul><li>primary taxpayer</li><li>spouse, when applicable</li></ul><p>W-2<br>1099<br>1098<br>1095-A<br>SSA-1099<br>K-1<br>and any other tax forms received</p></div><div class="checklist-group"><h4>SUPPORTING DOCUMENTS</h4><p>Also upload supporting records that apply to something reported in the intake, such as:</p><ul><li>receipts</li><li>statements</li><li>childcare records</li><li>education records</li><li>business records</li><li>mileage records</li><li>rental records</li><li>other applicable proof</li></ul></div><div class="checklist-group"><h4>ADDITIONAL REQUIREMENTS</h4><p>The existing document requirements flagged by your answers are listed below.</p></div>';
+}
 function renderExpectedChecklist(){
+  renderChecklistInstructions();
   const body=$('#checklistBody');if(!body)return;const items=expectedInformation();state.expectedInformationSnapshot=items;
   if(!items.length){body.innerHTML='<div class="checklist-group"><strong>No special document expectations yet.</strong><div class="small" style="margin-top:5px">You can still upload anything you want Shaylah to review.</div></div>';return;}
   const itemHtml=item=>{const st=checklistStatus(item.id);const note=state.checklistResponses?.[item.id]?.note||'';return '<div class="checklist-group"><div class="checklist-item"><div><strong>'+uploadText(item.label)+'</strong><small>'+uploadText(item.detail)+'</small></div><div class="checklist-actions"><button onclick="uploadChecklistNow(\''+item.id+'\')">UPLOAD NOW</button><button class="'+(st==='provided'?'selected':'')+'" onclick="setChecklistStatus(\''+item.id+'\',\'provided\')">READY / PROVIDED</button><button class="'+(st==='waiting'?'selected':'')+'" onclick="setChecklistStatus(\''+item.id+'\',\'waiting\')">I&rsquo;M WAITING</button><button class="'+(st==='not_expected'?'selected':'')+'" onclick="setChecklistStatus(\''+item.id+'\',\'not_expected\')">DON&rsquo;T EXPECT</button><button class="'+(st==='unsure'?'selected':'')+'" onclick="setChecklistStatus(\''+item.id+'\',\'unsure\')">NOT SURE</button><button class="'+(st==='add_information'?'selected':'')+'" onclick="setChecklistStatus(\''+item.id+'\',\'add_information\')">ADD INFO</button></div></div>'+(st==='not_expected'||st==='add_information'||st==='unsure'?'<textarea class="note-input show" placeholder="Optional note for Shaylah" oninput="setChecklistNote(\''+item.id+'\',this.value)">'+uploadText(note)+'</textarea>':'')+'</div>';};
@@ -2957,7 +2987,6 @@ function organizerNext(){
   if(!validatePhase17FilingIntake())return;
   if(!$('#completenessConfirm')?.checked){toast('Please review your checklist and confirm it before uploading.');return;}
   state.completenessConfirmed=true;state.completenessConfirmedAt=state.completenessConfirmedAt||new Date().toISOString();
-  if(window.PCT_INTAKE_REVIEW_V2?.enabled()){pctV2OpenReview();return;}
   goUpload(state.documentSource||'organizer');
 }
 function goUpload(source){
@@ -2967,7 +2996,7 @@ function goUpload(source){
   renderDocumentList();
   if(!state.completenessConfirmed){state.documentSource=source||'upload';showScreen('screen-organizer');organizerSetStep(1);renderExpectedChecklist();return;}
   showScreen('screen-upload');
-  persistLead('secure_upload_started_'+(source||'upload'));
+  state.uploadStartPersist=persistLead('secure_upload_started_'+(source||'upload'));
 }
 
 const MAX_DOCUMENT_BYTES=25*1024*1024;
@@ -3007,14 +3036,14 @@ function renderDocumentList(){
 }
 function safeStorageName(name){return String(name||'document').normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,120)||'document';}
 async function sendDocumentsToPCT(){
-  if(state.duplicateTaxYear){renderTaxYearIntegrityPanel('duplicate',state.duplicateTaxYear.taxYear);return;}
-  if(!state.documents.length){toast('Add at least one document first.');return;}
+  if(state.duplicateTaxYear){renderTaxYearIntegrityPanel('duplicate',state.duplicateTaxYear.taxYear);return {ok:false,message:state.backendSaveMessage||'This tax-year intake cannot be submitted.'};}
+  if(!state.documents.length){toast('Add at least one document first.');return {ok:false,message:'Add at least one document before submitting your intake.'};}
   const progress=$('#uploadProgress'), btn=$('#sendDocumentsBtn');
   if(progress){progress.className='upload-progress show';progress.textContent='Preparing your secure upload…';}
   if(btn)btn.disabled=true;
   try{
     const saved=await persistLead('native_documents_ready');
-    if(!saved.ok){if(progress)progress.textContent=state.backendSaveMessage||'Use your existing Client Portal for this return.';if(btn)btn.disabled=false;return;}
+    if(!saved.ok){if(progress)progress.textContent=state.backendSaveMessage||'Use your existing Client Portal for this return.';if(btn)btn.disabled=false;return {ok:false,message:state.backendSaveMessage||'Your intake could not be saved. Please try again.'};}
     if(!pctFirebase.ready||!pctFirebase.storage||!pctFirebase.db)throw new Error('Secure upload is not ready. Please try again in a moment.');
     const leadId=currentLeadId(), taxYear=state.taxYear||'unknown';
     for(let i=0;i<state.documents.length;i++){
@@ -3027,10 +3056,13 @@ async function sendDocumentsToPCT(){
     if(progress){progress.textContent='Your documents were securely sent to PCT. You can add more documents if needed.';progress.style.background='var(--green-soft)';progress.style.color='var(--green)';}
     await persistLead('native_documents_uploaded');
     toast('Documents sent securely');
+    return {ok:true};
   }catch(err){
-    if(progress){progress.textContent=phase19PublicError(err,'Upload could not be completed. Your information is still here; please try again.');progress.style.background='var(--red-soft)';progress.style.color='var(--red)';}
+    const message=phase19PublicError(err,'Upload could not be completed. Your information is still here; please try again.');
+    if(progress){progress.textContent=message;progress.style.background='var(--red-soft)';progress.style.color='var(--red)';}
     if(btn)btn.disabled=false;
     console.error('Native document upload failed',err);
+    return {ok:false,message};
   }
 }
 function setUploadContext(){
@@ -3537,7 +3569,7 @@ window.addEventListener('DOMContentLoaded',()=>{init(); initFirebaseIfReady(); l
 <script src="assets/pct-taxslayer-bank-product-disclosure.js"></script>
 <script src="assets/pct-schedule-c-wizard.js"></script>
 <script>var pctScwDraftTimer=0;function pctScwPersist(interview){if(typeof state==='undefined'||!interview)return;state.scheduleCInterview=interview;clearTimeout(pctScwDraftTimer);pctScwDraftTimer=setTimeout(function(){if(typeof pctV2AgentDraftSave==='function')pctV2AgentDraftSave();},600);}function pctScwLaunch(){var l=document.getElementById('pctScwLauncher');if(l)l.style.display='none';var m=document.getElementById('pctScwMount');if(m){m.style.display='block';if(window.PCTScheduleCWizard)window.PCTScheduleCWizard.mount(m,{initialInterview:state.scheduleCInterview,onChange:pctScwPersist});}}</script>
-<script src="assets/pct-intake-wizard-j1.js?v=f5fa36d"></script>
+<script src="assets/pct-intake-wizard-j1.js?v=20260913-intake-final"></script>
 <script>
 /* J2B.2 keeps the existing wizard intact while separating its two authorization pages. */
 (function(){
