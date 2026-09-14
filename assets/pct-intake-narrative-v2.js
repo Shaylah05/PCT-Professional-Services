@@ -155,9 +155,7 @@
     if (!enabled()) return {ok:true, payload:null};
     const items = visibleQuestions(state), answers = currentAnswers(state), responses = [];
     for (const item of items) {
-      const key = keyFor(item), saved = answers[key] || {}, answer = text(saved.answer);
-      if (item.question.requiredWhenShown && !answer) return {ok:false, message:'Please complete each requested tax-situation detail before submitting.', focusKey:key};
-      if (answer.length > MAX()) return {ok:false, message:`Please shorten your answer to ${MAX().toLocaleString()} characters or fewer.`, focusKey:key};
+      const key = keyFor(item), saved = answers[key] || {}, answer = text(saved.answer).slice(0, MAX());
       if (!answer) continue;
       responses.push({questionId:item.question.questionId,questionVersion:item.question.questionVersion,displayedQuestionText:item.question.questionText,answer,category:item.question.category,subject:item.subject,createdAtClient:saved.createdAtClient || new Date().toISOString()});
     }
