@@ -509,7 +509,12 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
 .admin-pill strong{display:block;color:var(--black);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
 .copy-stack{display:grid;gap:9px;margin-top:14px}
 .security-note{background:linear-gradient(120deg,#fff8ea,#fbf3df);border:1px solid var(--gold-soft);border-radius:var(--r-sm);padding:12px 14px;font-size:12.3px;color:#6b5320;line-height:1.45;margin-top:12px}
-.native-upload{max-width:620px;margin:22px auto 0;text-align:left}
+.native-upload{max-width:760px;margin:22px auto 0;text-align:left}
+.upload-section{margin-top:18px;padding:20px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--cream-2)}
+.upload-section.identity{border-color:var(--gold-soft);background:#fffaf0}
+.upload-section h3{margin:4px 0 8px;font-size:20px}.upload-section h4{margin:16px 0 8px;font-size:12px;letter-spacing:.1em;color:var(--gold-deep)}
+.upload-section ul{margin:8px 0 0;padding-left:20px;columns:2;column-gap:28px}.upload-section li{break-inside:avoid;margin:3px 0}
+.upload-section .upload-preview{margin-top:14px}.upload-ready{margin-top:22px;padding:18px;border:1px solid var(--gold-soft);border-radius:var(--r-sm);background:#fff8e8}
 .native-upload-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 .native-upload-actions .btn{width:100%}
 .native-upload-input{display:none}
@@ -529,7 +534,7 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
 .document-row .btn{flex:none}
 .upload-progress{display:none;margin-top:14px;padding:11px 12px;border-radius:12px;background:var(--blue-soft);color:var(--blue);font-size:12px;font-weight:800}
 .upload-progress.show{display:block}
-@media(max-width:560px){.native-upload-actions{grid-template-columns:1fr}.document-row{align-items:flex-start;flex-direction:column}.document-row .btn{width:100%}}
+@media(max-width:560px){.native-upload-actions{grid-template-columns:1fr}.document-row{align-items:flex-start;flex-direction:column}.document-row .btn{width:100%}.upload-section ul{columns:1}}
 .organizer-progress{display:flex;gap:7px;margin:18px 0 22px}.organizer-progress span{height:5px;flex:1;border-radius:999px;background:var(--line)}.organizer-progress span.active{background:var(--gold)}
 .organizer-card{max-width:720px;margin:22px auto 0}.organizer-question{display:none;animation:fade .25s ease both}.organizer-question.active{display:block}.organizer-question h3{font-size:23px;margin-bottom:8px}.organizer-question p{color:var(--muted);font-size:13.5px;margin-bottom:16px}.organizer-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}.organizer-option{border:1px solid var(--line);background:var(--cream-2);border-radius:14px;padding:13px;text-align:left;font-weight:800;color:var(--ink);cursor:pointer}.organizer-option.selected{background:#fff6df;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,164,92,.12)}.organizer-option small{display:block;margin-top:4px;color:var(--muted);font-weight:500}.organizer-followup{display:none;margin-top:16px;padding:15px;border:1px dashed var(--gold-soft);border-radius:14px;background:#fffaf0}.organizer-followup.show{display:block}.business-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.business-expenses{display:grid;grid-template-columns:1fr 1fr;gap:8px}.business-expenses .field{margin-bottom:3px}.checklist-wrap{display:grid;gap:10px;margin-top:14px}.checklist-group{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--cream-2)}.checklist-group h4{font-family:var(--body);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:9px}.checklist-item{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;border-top:1px solid var(--line2);padding:10px 0}.checklist-item:first-of-type{border-top:0;padding-top:0}.checklist-item strong{font-size:13px}.checklist-item small{display:block;color:var(--muted);margin-top:3px;font-size:11.5px}.checklist-actions{display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end}.checklist-actions button{border:1px solid var(--line);border-radius:999px;background:#fff;padding:6px 8px;font-size:10.5px;font-weight:800;cursor:pointer}.checklist-actions button.selected{background:var(--black);color:var(--gold-soft);border-color:var(--black)}.completion-box{margin-top:18px;padding:15px;border:1px solid var(--gold-soft);border-radius:14px;background:#fff8e8}.completion-box label{display:flex;gap:10px;align-items:flex-start;font-size:13px;font-weight:700}.completion-box input{width:18px;height:18px;flex:none}.note-input{margin-top:8px;display:none}.note-input.show{display:block}.pct-scw-screen{margin-top:10px}.pct-scw-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.pct-scw-yn{display:flex;gap:8px;margin-top:6px}.pct-scw-yn .btn.selected{background:var(--gold);color:var(--black);border-color:var(--gold)}.pct-scw-summary{margin-top:14px;padding:16px;border:1px solid var(--gold-soft);border-radius:14px;background:#fff8e8}.pct-scw-line{display:flex;justify-content:space-between;padding:6px 0;font-size:14px}.pct-scw-net{border-top:2px solid var(--gold-soft);margin-top:6px;padding-top:10px;font-size:17px;font-weight:800}
 @media(max-width:560px){.organizer-options,.business-grid,.business-expenses{grid-template-columns:1fr}.checklist-item{flex-direction:column}.checklist-actions{justify-content:flex-start}}
@@ -1689,16 +1694,48 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
       </div>
 
       <div class="native-upload" id="nativeUpload">
-        <div class="section-head"><div class="kicker">Secure Document Upload</div><h3 style="font-size:22px">Let&rsquo;s get your tax documents together.</h3><p class="lead" style="font-size:13.5px">Upload your documents or take a clear photo. You&rsquo;ll review each one before sending it to your tax professional.</p></div>
-        <input id="documentFileInput" class="native-upload-input" type="file" multiple accept="application/pdf,image/jpeg,image/png,.xls,.xlsx,.csv,.txt" onchange="handleDocumentsSelected(this.files)">
-        <input id="documentCameraInput" class="native-upload-input" type="file" accept="image/jpeg,image/png" capture="environment" onchange="handleDocumentsSelected(this.files)">
-        <div class="native-upload-actions">
-          <button type="button" class="btn btn-primary" onclick="document.getElementById('documentCameraInput').click()">TAKE PHOTO</button>
-          <button type="button" class="btn btn-gold" onclick="document.getElementById('documentFileInput').click()">UPLOAD FILE</button>
-        </div>
-        <div id="documentPreview" class="upload-preview"></div>
-        <div class="section-head" style="margin-top:24px"><div class="kicker">Your Uploaded Documents</div><p class="lead" style="font-size:13.5px">You&rsquo;ll be able to see exactly what your tax professional is receiving.</p></div>
-        <div id="documentList" class="document-list"><div class="small">No documents added yet.</div></div>
+        <div class="section-head"><div class="kicker">Secure document upload</div><h3 style="font-size:22px">Add your documents by section.</h3><p class="lead" style="font-size:13.5px">Review each file before sending everything together to your tax professional.</p></div>
+
+        <section class="upload-section identity" aria-labelledby="photoIdUploadHeading">
+          <div class="kicker">1. PHOTO IDENTIFICATION</div>
+          <h3 id="photoIdUploadHeading">Photo identification</h3>
+          <p>Please upload a clear photo or copy of the primary filer&rsquo;s current government-issued photo ID.</p>
+          <p id="photoIdSpouseReminder" class="small" hidden>If you are filing jointly, please also upload your spouse&rsquo;s current government-issued photo ID.</p>
+          <h4>Acceptable photo ID</h4>
+          <ul class="small"><li>Driver&rsquo;s license</li><li>State-issued photo ID</li><li>U.S. passport</li><li>U.S. passport card</li><li>Military ID</li><li>Permanent Resident Card</li><li>Tribal government photo ID</li><li>Other current government-issued photo ID</li></ul>
+          <p class="small">Only one current government-issued photo ID per filer is needed.</p>
+          <input id="identityDocumentFileInput" class="native-upload-input" type="file" multiple accept="application/pdf,image/jpeg,image/png,.xls,.xlsx,.csv,.txt" onchange="handleDocumentsSelected(this.files,'identity');this.value=''">
+          <div class="native-upload-actions"><button type="button" class="btn btn-gold" onclick="document.getElementById('identityDocumentFileInput').click()">UPLOAD PHOTO ID</button></div>
+          <p class="small">Accepted formats: PDF, JPG/JPEG, PNG, XLS/XLSX, CSV and TXT. Maximum 25 MB per file.</p>
+          <div id="identityDocumentPreview" class="upload-preview"></div>
+          <div id="identityDocumentList" class="document-list"><div class="small">No photo identification added yet.</div></div>
+        </section>
+
+        <section class="upload-section" aria-labelledby="taxDocumentsUploadHeading">
+          <div class="kicker">2. TAX DOCUMENTS</div>
+          <h3 id="taxDocumentsUploadHeading">Tax documents</h3>
+          <p>Upload all tax forms and income documents you received for this tax year. Add as many documents as you need.</p>
+          <ul class="small"><li>W-2</li><li>1099-NEC</li><li>1099-MISC</li><li>1099-K</li><li>1099-G</li><li>1099-R</li><li>1099-INT</li><li>1099-DIV</li><li>1099-B</li><li>SSA-1099</li><li>1098</li><li>1098-T</li><li>1098-E</li><li>1095-A</li><li>Schedule K-1</li><li>Brokerage statements</li><li>Any other tax forms received</li></ul>
+          <input id="taxDocumentFileInput" class="native-upload-input" type="file" multiple accept="application/pdf,image/jpeg,image/png,.xls,.xlsx,.csv,.txt" onchange="handleDocumentsSelected(this.files,'tax');this.value=''">
+          <div class="native-upload-actions"><button type="button" class="btn btn-gold" onclick="document.getElementById('taxDocumentFileInput').click()">UPLOAD TAX DOCUMENTS</button></div>
+          <p class="small">Accepted formats: PDF, JPG/JPEG, PNG, XLS/XLSX, CSV and TXT. Maximum 25 MB per file.</p>
+          <div id="taxDocumentPreview" class="upload-preview"></div>
+          <div id="taxDocumentList" class="document-list"><div class="small">No tax documents added yet.</div></div>
+        </section>
+
+        <section class="upload-section" aria-labelledby="supportingDocumentsUploadHeading">
+          <div class="kicker">3. SUPPORTING TAX DOCUMENTS</div>
+          <h3 id="supportingDocumentsUploadHeading">Supporting tax documents</h3>
+          <p>Upload supporting records that apply to your return. Add what you have available &mdash; your tax professional will follow up if anything else is needed.</p>
+          <ul class="small"><li>Social Security cards</li><li>Dependent birth certificates</li><li>Custody or residency documents</li><li>Childcare records</li><li>Education records</li><li>Business receipts</li><li>Business income or expense records</li><li>Mileage logs</li><li>Rental-property records</li><li>Estimated-tax payment records</li><li>IRS notices</li><li>State tax notices</li><li>Other supporting documents</li></ul>
+          <input id="supportingDocumentFileInput" class="native-upload-input" type="file" multiple accept="application/pdf,image/jpeg,image/png,.xls,.xlsx,.csv,.txt" onchange="handleDocumentsSelected(this.files,'supporting');this.value=''">
+          <div class="native-upload-actions"><button type="button" class="btn btn-gold" onclick="document.getElementById('supportingDocumentFileInput').click()">UPLOAD SUPPORTING DOCUMENTS</button></div>
+          <p class="small">Accepted formats: PDF, JPG/JPEG, PNG, XLS/XLSX, CSV and TXT. Maximum 25 MB per file.</p>
+          <div id="supportingDocumentPreview" class="upload-preview"></div>
+          <div id="supportingDocumentList" class="document-list"><div class="small">No supporting documents added yet.</div></div>
+        </section>
+
+        <section class="upload-ready"><div class="kicker">Ready to review?</div><p>Make sure you&rsquo;ve added your photo ID, tax forms, and any supporting documents you currently have.</p></section>
         <div id="uploadProgress" class="upload-progress" role="status"></div>
         <button type="button" id="sendDocumentsBtn" class="btn btn-dark btn-block" style="margin-top:16px" onclick="pctV2OpenReview()" disabled>REVIEW MY INTAKE</button>
         <button type="button" class="back-link" onclick="state.expectedChecklistOpened=true;showScreen('screen-organizer');organizerSetStep(3);renderExpectedChecklist()">&larr; Back to checklist</button>
@@ -2414,6 +2451,13 @@ function currentLeadId(){
   }
   return state.leadId;
 }
+function publicIntakeSubmissionToken(){
+  if(state.publicIntakeSubmissionToken)return state.publicIntakeSubmissionToken;
+  if(!window.crypto?.getRandomValues)throw new Error('Secure submission is unavailable in this browser.');
+  const bytes=new Uint8Array(24);window.crypto.getRandomValues(bytes);
+  state.publicIntakeSubmissionToken=Array.from(bytes,byte=>byte.toString(16).padStart(2,'0')).join('');
+  return state.publicIntakeSubmissionToken;
+}
 function firebaseLooksConfigured(){
   const c=PCT_BACKEND_CONFIG.firebaseConfig||{};
   return !!(c.apiKey && c.projectId && !String(c.apiKey).includes('PASTE_') && !String(c.projectId).includes('PASTE_'));
@@ -2633,6 +2677,7 @@ function buildLeadPayload(){
     },
     spouse: {fullName:safeTrim(state.spouseFullName), identificationType:state.spouseIdType||'', identificationNumber:safeTrim(state.spouseIdNumber), ssn:state.spouseIdType==='ssn'?safeTrim(state.spouseIdNumber):'', itin:state.spouseIdType==='itin'?safeTrim(state.spouseIdNumber):'', dob:state.spouseDob||'', occupation:safeTrim(state.spouseOccupation)},
     dependents: (state.dependentDetails||[]).slice(0,pctCommittedDependentCount()).map(d=>({...((window.PCT_INTAKE_V2_CONFIG?.enabled===true&&d.v2SubjectId)?{v2SubjectId:String(d.v2SubjectId).trim()}:{}),fullName:safeTrim(d.fullName),relationship:safeTrim(d.relationship),monthsLived:safeTrim(d.monthsLived),supportDetails:safeTrim(d.supportDetails),identificationType:d.idType||'',identificationNumber:safeTrim(d.idNumber),ssn:d.idType==='ssn'?safeTrim(d.idNumber):'',itin:d.idType==='itin'?safeTrim(d.idNumber):'',dob:d.dob||''})),
+    documents: (state.documents||[]).map(d=>({documentId:d.documentId||'',taxYear:d.taxYear||state.taxYear||'',originalFileName:d.originalFileName||'',contentType:d.contentType||'',size:Number(d.size)||0,uploadedAtClient:d.uploadedAtClient||'',uploadedBy:d.uploadedBy||'',clientLegibilityConfirmed:!!d.clientLegibilityConfirmed,expectedItemId:d.expectedItemId||'',documentType:d.documentType||'',reviewStatus:d.reviewStatus||''})),
     quickEstimateInputs: {
       incomeSource: state.incomeSource || '',
       wages: num(state.wages),
@@ -2716,7 +2761,7 @@ function buildLeadPayload(){
       ssnCollectedInThisForm:!!(state.taxpayerIdType&&state.taxpayerIdType!=='none'),
       dobCollectedInThisForm:!!state.taxpayerDob,
       bankingCollectedInThisForm:false,
-      documentsCollectedInThisForm:false,
+      documentsCollectedInThisForm:(state.documents||[]).length>0,
       documentsRoute:'Firebase Storage native upload with Firestore metadata',
       sensitiveDocsRoute:'Firebase Storage native upload / authenticated dashboard review'
     },
@@ -2776,6 +2821,30 @@ async function persistStatusMirror(payload, reason){
 async function persistLead(reason){
   if(state.duplicateTaxYear)return {ok:false,mode:'duplicate_tax_year',taxYear:state.duplicateTaxYear.taxYear};
   if(state.backendSaved){
+    if(reason==='native_documents_ready'){
+      const payload=buildLeadPayload();
+      if(!payload)return {ok:false,mode:'v2_narrative_validation',message:'Complete the requested tax-situation details before submitting.'};
+      if(!initFirebaseIfReady())return {ok:false,mode:'not_ready',message:pctFirebase.error};
+      try{
+        const refresh={leadId:state.leadId,payload}, resume=state.agentIntakeRefresh, agentPublicId=publicAgentIdFromUrl();
+        if(resume?.leadId&&resume?.resumeCode){
+          if(!agentPublicId)throw new Error('This personalized link is unavailable.');
+          refresh.resumeCode=resume.resumeCode;refresh.agentPublicId=agentPublicId;
+        }else{
+          if(!state.publicIntakeSubmissionToken)throw new Error('This intake cannot be refreshed securely. Please try again.');
+          refresh.submissionToken=state.publicIntakeSubmissionToken;
+          if(agentPublicId)refresh.agentPublicId=agentPublicId;
+        }
+        const saved=(await pctFirebase.functions.httpsCallable('refreshPublicTaxIntakeLead')(refresh)).data||{};
+        if(!saved.ok||saved.leadId!==state.leadId)throw new Error('The secure intake could not be refreshed.');
+        state.lastPayload=payload;state.backendSaveMessage='Saved securely: '+state.leadId;
+        return {ok:true,mode:'same_lead_refresh',leadId:state.leadId};
+      }catch(err){
+        console.error('Same-lead refresh failed',err);
+        state.backendSaveMessage=phase19PublicError(err,'Your information could not be refreshed. Please try again.');
+        return {ok:false,mode:'refresh_error',message:state.backendSaveMessage};
+      }
+    }
     console.info('Lead already saved for this session; skipping duplicate public write:', state.leadId, reason);
     if(!state.statusMirrorSaved && state.lastPayload && pctFirebase.db) await persistStatusMirror(state.lastPayload, reason);
     if(reason==='native_documents_uploaded')renderTaxYearIntegrityPanel('additional',state.taxYear);
@@ -2802,7 +2871,7 @@ async function persistLead(reason){
     const resume=state.agentIntakeResume;
     const result=resume
       ? await pctFirebase.functions.httpsCallable('completeAgentIntakeDraft')({leadId:resume.leadId,resumeCode:resume.resumeCode,payload,agentPublicId,sourceLink:location.href})
-      : await pctFirebase.functions.httpsCallable('createPublicTaxIntakeLead')({payload,agentPublicId,sourceLink:location.href,submissionToken:payload.leadId});
+      : await pctFirebase.functions.httpsCallable('createPublicTaxIntakeLead')({payload,agentPublicId,sourceLink:location.href,submissionToken:publicIntakeSubmissionToken()});
     const saved=result.data||{};
     if(saved.duplicateTaxYear){
       state.duplicateTaxYear={taxYear:String(saved.taxYear||state.taxYear)};
@@ -2820,7 +2889,7 @@ async function persistLead(reason){
     payload.agentPublicId=saved.agentPublicId;
     payload.sourceLink=location.href;
     payload.assignmentStatus=saved.assignmentStatus;
-    state.backendSaved=true; state.agentIntakeResume=null;
+    state.backendSaved=true;if(resume)state.agentIntakeRefresh={leadId:resume.leadId,resumeCode:resume.resumeCode};state.agentIntakeResume=null;
     await persistStatusMirror(payload, reason);
     state.backendSaveMessage='Saved securely: '+payload.leadId;
     toast('Lead saved securely');
@@ -2983,34 +3052,39 @@ const ALLOWED_DOCUMENT_EXTENSIONS=['pdf','jpg','jpeg','png','xls','xlsx','csv','
 function uploadText(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function newDocumentId(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():'doc-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);}
 function formatDocumentSize(bytes){return bytes<1024*1024?Math.max(1,Math.round(bytes/1024))+' KB':(bytes/(1024*1024)).toFixed(1)+' MB';}
-function handleDocumentSelected(file){handleDocumentsSelected(file?[file]:[]);}
-function handleDocumentsSelected(files){
-  const selected=Array.from(files||[]);if(!selected.length)return;
+const UPLOAD_SECTION_CONFIG=Object.freeze({identity:{inputId:'identityDocumentFileInput',previewId:'identityDocumentPreview',listId:'identityDocumentList'},tax:{inputId:'taxDocumentFileInput',previewId:'taxDocumentPreview',listId:'taxDocumentList'},supporting:{inputId:'supportingDocumentFileInput',previewId:'supportingDocumentPreview',listId:'supportingDocumentList'}});
+function documentUploadSection(value){return Object.prototype.hasOwnProperty.call(UPLOAD_SECTION_CONFIG,value)?value:'tax';}
+function documentSectionConfig(value){return UPLOAD_SECTION_CONFIG[documentUploadSection(value)];}
+function renderUploadSectionGuidance(){const reminder=$('#photoIdSpouseReminder');if(!reminder)return;const filingStatus=String(state.filingStatus||'').toLowerCase();reminder.hidden=!(filingStatus==='mfj'||/married filing jointly/.test(filingStatus)||!!state.spouseFullName);}
+function handleDocumentSelected(file,uploadSection){handleDocumentsSelected(file?[file]:[],uploadSection);}
+function handleDocumentsSelected(files,uploadSection){
+  const selected=Array.from(files||[]),section=documentUploadSection(uploadSection);if(!selected.length)return;
   for(const file of selected){const ext=String(file.name||'').toLowerCase().split('.').pop();if(!ALLOWED_DOCUMENT_TYPES.includes(file.type)&&!ALLOWED_DOCUMENT_EXTENSIONS.includes(ext)){toast('Please choose a PDF, JPG/JPEG, PNG, XLS/XLSX, CSV, or TXT file.');return;}if(file.size>MAX_DOCUMENT_BYTES){toast('That file is larger than 25 MB. Please choose a smaller file.');return;}}
+  const replacement=state.pendingDocumentReplacement?.uploadSection===section?state.pendingDocumentReplacement:null;
+  state.pendingDocumentReplacement=null;
   cancelPendingDocument();
   const previewUrls=selected.map(file=>URL.createObjectURL(file));
-  state.pendingDocument={files:selected,file:selected[0],previewUrls,previewUrl:previewUrls[0],legibilityConfirmed:false};
-  renderDocumentPreview();
+  state.pendingDocument={files:selected,file:selected[0],previewUrls,previewUrl:previewUrls[0],legibilityConfirmed:false,ownsPreviewUrls:true,uploadSection:section,...(replacement||{})};
+  renderDocumentPreview(section);
 }
-function renderDocumentPreview(){const box=$('#documentPreview'),p=state.pendingDocument;if(!box)return;if(!p){box.className='upload-preview';box.innerHTML='';return}const files=p.files||[p.file],urls=p.previewUrls||[p.previewUrl];box.className='upload-preview show';box.innerHTML='<div class="upload-preview-head"><div><div class="kicker">Review before sending</div><div class="upload-preview-name">'+uploadText(files.length>1?files.length+' photos selected':files[0].name)+'</div><div class="upload-preview-meta">'+uploadText(files[0].type||'document')+' · '+formatDocumentSize(files.reduce((sum,f)=>sum+f.size,0))+'</div></div><button type="button" class="btn btn-ghost btn-sm" onclick="cancelPendingDocument()">Cancel</button></div><p class="small">Review every page or photo. Make sure the entire document is visible, readable, not blurry, and no information is cut off.</p><div id="clientUniversalViewer"></div>';if(window.PCTUniversalDocumentViewer)PCTUniversalDocumentViewer.mount($('#clientUniversalViewer'),null,{sources:files.map((file,i)=>({source:urls[i],name:file.name,type:file.type})),requireAllSources:files.length>1,name:files[0].name,type:files[0].type,confirmLabel:'YES, DOCUMENT IS CLEAR',reuploadLabel:'REUPLOAD',onConfirm:confirmPendingDocument,onReupload:replacePendingDocument})}
-function cancelPendingDocument(){const p=state.pendingDocument;if(p){(p.previewUrls||[p.previewUrl]).forEach(url=>{if(url)URL.revokeObjectURL(url);});}state.pendingDocument=null;renderDocumentPreview();}
-function replacePendingDocument(){cancelPendingDocument();$('#documentFileInput')?.click();}
+function renderDocumentPreview(uploadSection){const p=state.pendingDocument,section=documentUploadSection(uploadSection||p?.uploadSection),box=$('#'+documentSectionConfig(section).previewId);if(!box)return;if(!p){box.className='upload-preview';box.innerHTML='';return}const files=p.files||[p.file],urls=p.previewUrls||[p.previewUrl];box.className='upload-preview show';box.innerHTML='<div class="upload-preview-head"><div><div class="kicker">Review before sending</div><div class="upload-preview-name">'+uploadText(files.length>1?files.length+' files selected':files[0].name)+'</div><div class="upload-preview-meta">'+uploadText(files[0].type||'document')+' · '+formatDocumentSize(files.reduce((sum,f)=>sum+f.size,0))+'</div></div><button type="button" class="btn btn-ghost btn-sm" onclick="cancelPendingDocument()">Cancel</button></div><p class="small">Review every page or photo. Make sure the entire document is visible, readable, not blurry, and no information is cut off.</p><div id="clientUniversalViewer"></div>';if(window.PCTUniversalDocumentViewer)PCTUniversalDocumentViewer.mount($('#clientUniversalViewer'),null,{sources:files.map((file,i)=>({source:urls[i],name:file.name,type:file.type})),requireAllSources:files.length>1,name:files[0].name,type:files[0].type,confirmLabel:'YES, DOCUMENT IS CLEAR',reuploadLabel:'REUPLOAD',onConfirm:confirmPendingDocument,onReupload:replacePendingDocument})}
+function cancelPendingDocument(){const p=state.pendingDocument,section=documentUploadSection(p?.uploadSection);if(p?.ownsPreviewUrls!==false)(p?.previewUrls||[p?.previewUrl]).forEach(url=>{if(url)URL.revokeObjectURL(url);});state.pendingDocument=null;renderDocumentPreview(section);}
+function replacePendingDocument(){const p=state.pendingDocument,section=documentUploadSection(p?.uploadSection),existing=p?.existingIndex===undefined?null:state.documents[p.existingIndex];if(existing)state.pendingDocumentReplacement={existingIndex:p.existingIndex,documentId:existing.documentId,expectedItemId:existing.expectedItemId||'',documentType:existing.documentType||'unclassified',taxYear:existing.taxYear||'',uploadSection:section};cancelPendingDocument();$('#'+documentSectionConfig(section).inputId)?.click();}
 function confirmPendingDocument(){
-  const p=state.pendingDocument;
-  if(!p)return;
-  const expectedItem=expectedInformation().find(item=>item.id===state.activeExpectedItemId),files=p.files||[p.file],urls=p.previewUrls||[p.previewUrl];
-  files.forEach((file,i)=>{const replacement={documentId:p.existingIndex===undefined?newDocumentId():state.documents[p.existingIndex].documentId,file,previewUrl:urls[i],originalFileName:file.name,contentType:file.type,size:file.size,taxYear:state.taxYear||'',uploadedAtClient:new Date().toISOString(),uploadedBy:'client_intake',clientLegibilityConfirmed:true,expectedItemId:state.activeExpectedItemId||'',documentType:expectedItem?.label||'unclassified',reviewStatus:'received'};if(p.existingIndex===undefined)state.documents.push(replacement);else if(i===0)state.documents[p.existingIndex]=replacement;});
+  const p=state.pendingDocument;if(!p)return;
+  const section=documentUploadSection(p.uploadSection),existing=p.existingIndex===undefined?null:state.documents[p.existingIndex],expectedItem=expectedInformation().find(item=>item.id===state.activeExpectedItemId),files=p.files||[p.file],urls=p.previewUrls||[p.previewUrl];
+  files.forEach((file,i)=>{const replacement={documentId:existing?.documentId||newDocumentId(),file,previewUrl:urls[i],originalFileName:file.name,contentType:file.type,size:file.size,taxYear:existing?.taxYear||state.taxYear||'',uploadedAtClient:new Date().toISOString(),uploadedBy:'client_intake',clientLegibilityConfirmed:true,expectedItemId:existing?existing.expectedItemId||'':state.activeExpectedItemId||'',documentType:existing?existing.documentType||'unclassified':expectedItem?.label||'unclassified',reviewStatus:'received',uploadSection:section};if(!existing)state.documents.push(replacement);else if(i===0){if(existing.previewUrl&&existing.previewUrl!==urls[i])URL.revokeObjectURL(existing.previewUrl);state.documents[p.existingIndex]=replacement;}});
   state.pendingDocument=null;
-  renderDocumentPreview();renderDocumentList();
-  toast('Document added for secure upload');
+  renderDocumentPreview(section);renderDocumentList();
+  toast(existing?'Document replaced for secure upload':'Document added for secure upload');
 }
-function inspectDocument(index){const d=state.documents[index];if(!d)return;state.pendingDocument={file:d.file,previewUrl:d.previewUrl,legibilityConfirmed:true,existingIndex:index};renderDocumentPreview();}
-function removeDocument(index){const d=state.documents[index];if(!d)return;if(d.previewUrl)URL.revokeObjectURL(d.previewUrl);state.documents.splice(index,1);renderDocumentList();toast('Document removed');}
+function inspectDocument(index){const d=state.documents[index];if(!d)return;cancelPendingDocument();const section=documentUploadSection(d.uploadSection);state.pendingDocument={files:[d.file],file:d.file,previewUrls:[d.previewUrl],previewUrl:d.previewUrl,legibilityConfirmed:true,ownsPreviewUrls:false,existingIndex:index,uploadSection:section};renderDocumentPreview(section);}
+function removeDocument(index){const d=state.documents[index];if(!d)return;if(state.pendingDocument?.existingIndex===index)cancelPendingDocument();if(d.previewUrl)URL.revokeObjectURL(d.previewUrl);state.documents.splice(index,1);renderDocumentList();toast('Document removed');}
 function renderDocumentList(){
-  const list=$('#documentList'), btn=$('#sendDocumentsBtn');if(!list)return;
-  if(!state.documents.length){list.innerHTML='<div class="small">No documents added yet.</div>';if(btn)btn.disabled=true;return;}
-  list.innerHTML=state.documents.map((d,i)=>'<div class="document-row"><div class="document-row-main"><div class="document-row-name">'+uploadText(d.originalFileName)+'</div><div class="document-row-meta">'+uploadText(d.documentType==='unclassified'?'Document':d.documentType)+' · '+uploadText(d.taxYear||'Tax year')+' · ready to send</div></div><div class="preview-actions"><button type="button" class="btn btn-soft btn-sm" onclick="inspectDocument('+i+')">Inspect</button><button type="button" class="btn btn-ghost btn-sm" onclick="removeDocument('+i+')">Remove</button></div></div>').join('');
-  if(btn)btn.disabled=false;
+  renderUploadSectionGuidance();
+  const btn=$('#sendDocumentsBtn');
+  Object.entries(UPLOAD_SECTION_CONFIG).forEach(([section,config])=>{const list=$('#'+config.listId);if(!list)return;const documents=state.documents.map((document,index)=>({document,index})).filter(({document})=>documentUploadSection(document.uploadSection)===section);list.innerHTML=documents.length?documents.map(({document,index})=>'<div class="document-row"><div class="document-row-main"><div class="document-row-name">'+uploadText(document.originalFileName)+'</div><div class="document-row-meta">'+uploadText(document.documentType==='unclassified'?'Document':document.documentType)+' · '+uploadText(document.taxYear||'Tax year')+' · ready to send</div></div><div class="preview-actions"><button type="button" class="btn btn-soft btn-sm" onclick="inspectDocument('+index+')">Inspect</button><button type="button" class="btn btn-ghost btn-sm" onclick="removeDocument('+index+')">Remove</button></div></div>').join(''):'<div class="small">No documents added in this section yet.</div>';});
+  if(btn)btn.disabled=!state.documents.length;
 }
 function safeStorageName(name){return String(name||'document').normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,120)||'document';}
 async function sendDocumentsToPCT(){
@@ -3044,6 +3118,7 @@ async function sendDocumentsToPCT(){
   }
 }
 function setUploadContext(){
+  renderUploadSectionGuidance();
   const ctx=$('#uploadContext'); if(!ctx) return;
   const I1='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
   const I2='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>';

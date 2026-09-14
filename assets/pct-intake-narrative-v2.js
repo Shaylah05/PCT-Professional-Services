@@ -33,8 +33,9 @@
   const showDependent = (questionId, dependent) => {
     const relationship = text(dependent.relationship).toLowerCase();
     const months = Number(dependent.monthsLived);
-    const absence = upper(dependent.temporaryAbsence);
-    const claimant = upper(dependent.competingClaimant);
+    // Match phase17InterviewPayload(), which submits omitted selections as UNSURE.
+    const absence = upper(dependent.temporaryAbsence || 'UNSURE');
+    const claimant = upper(dependent.competingClaimant || 'UNSURE');
     switch (questionId) {
       case 'dependent_relationship_context': return !!relationship && (!routineRelationship.has(relationship) || ['other','unclear','unsure','unknown'].includes(relationship));
       case 'dependent_residency': return (text(dependent.monthsLived) !== '' && Number.isFinite(months) && months < 12) || ['YES','UNSURE'].includes(absence);
