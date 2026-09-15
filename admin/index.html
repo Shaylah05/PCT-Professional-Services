@@ -347,6 +347,7 @@ function clientName(lead){const c=lead.client||{};return [c.firstName,c.lastName
 function leadTypeSlug(lead){return String(lead.leadType||'').toLowerCase().replace(/\s+/g,'_')}
 function createdSortDate(lead){return lead.createdAt?.toDate?.() || (lead.createdAtClient?new Date(lead.createdAtClient):new Date(0))}
 function followUpCount(lead){return (lead.adminWorkflow?.followUps||lead.followUps||[]).filter(f=>f.completed).length}
+function completedReturnWorkflow(lead){const status=String(lead?.adminWorkflow?.status||lead?.workflow?.status||lead?.workflow?.dashboardStatus||lead?.filingWorkflow?.status||lead?.reviewStatus||'').toLowerCase();return ['filed','completed','accepted'].includes(status)}
 
 function renderFilters(){
   const filters=[['all','All'],['instant','Instant Estimates'],['new','New Clients'],['returning','Returning'],['amended','Amended'],['extension','Extensions'],['review','Needs Review'],['quote_sent','Quote Sent'],['follow','Follow-Up Needed'],['accepted','Accepted'],['not_accepted','Not Accepted'],['completed','Completed']];
@@ -366,7 +367,7 @@ function matchFilter(lead){
   if(currentFilter==='follow') return st==='follow_up_1'||st==='follow_up_2'||st==='follow_up_3'||(au.quoteSent&&!au.quoteAccepted&&!au.quoteDeclined&&!au.quoteNotAccepted);
   if(currentFilter==='accepted') return st==='quote_accepted'||au.quoteAccepted;
   if(currentFilter==='not_accepted') return st==='quote_not_accepted'||au.quoteNotAccepted;
-  if(currentFilter==='completed') return st==='completed'||au.completed||isFinished(lead);
+  if(currentFilter==='completed') return st==='completed'||au.completed||completedReturnWorkflow(lead);
   return true;
 }
 function renderStats(){
@@ -376,7 +377,7 @@ function renderStats(){
     quote: leads.filter(l=>workflowStatus(l)==='quote_sent'||l.adminWorkflow?.quoteSent).length,
     accepted: leads.filter(l=>workflowStatus(l)==='quote_accepted'||l.adminWorkflow?.quoteAccepted).length,
     follow: leads.filter(l=>matchFilterOverride(l,'follow')).length,
-    done: leads.filter(l=>workflowStatus(l)==='completed'||l.adminWorkflow?.completed||isFinished(l)).length
+    done: leads.filter(l=>workflowStatus(l)==='completed'||l.adminWorkflow?.completed||completedReturnWorkflow(l)).length
   };
   $('statsGrid').innerHTML=`<div class="stat"><div class="n">${stat.new}</div><div class="l">New / Estimate</div></div><div class="stat"><div class="n">${stat.review}</div><div class="l">Needs Review</div></div><div class="stat"><div class="n">${stat.quote}</div><div class="l">Quote Sent</div></div><div class="stat"><div class="n">${stat.accepted}</div><div class="l">Accepted</div></div><div class="stat"><div class="n">${stat.follow}</div><div class="l">Follow-Up</div></div><div class="stat"><div class="n">${stat.done}</div><div class="l">Completed</div></div>`;
 }
