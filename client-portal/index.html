@@ -122,6 +122,16 @@
       }
       .next-action { border-color: var(--g); background: #fffaf0; }
       .next-action .who { display:inline-block; margin-bottom:8px; padding:4px 9px; border-radius:999px; background:#f1e4be; color:#5c4718; font-size:12px; font-weight:700; }
+      .return-actions-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+      .return-requirement { display:flex; flex-direction:column; align-items:flex-start; min-height:210px; padding:18px; border:1px solid var(--l); border-radius:14px; background:#fff; }
+      .return-requirement h3 { margin:10px 0 7px; font-size:20px; }
+      .return-requirement p { margin:0 0 12px; color:var(--m); }
+      .return-requirement button { margin:auto 0 0; }
+      .requirement-status { display:inline-block; padding:5px 9px; border-radius:999px; background:#fff0f4; color:#7b1832; font-size:11px; font-weight:800; letter-spacing:.05em; }
+      .requirement-status.complete { background:#e4f2e8; color:#365c43; }
+      .requirement-status.waiting { background:#f1e4be; color:#5c4718; }
+      .quote-row { display:flex; justify-content:space-between; gap:14px; padding:8px 0; border-bottom:1px solid var(--l); }
+      .quote-row.total { margin-top:5px; border-top:2px solid var(--g); border-bottom:0; font-size:18px; font-weight:800; }
       .return-tracker { display:grid; gap:0; }
       .return-tracker-step { position:relative; padding:10px 0 10px 32px; font-weight:700; }
       .return-tracker-step::before { content:""; position:absolute; left:0; top:12px; width:20px; height:20px; border-radius:50%; background:#efe9dc; border:1px solid var(--l); }
@@ -144,6 +154,7 @@
         .row {
           display: block;
         }
+        .return-actions-grid { grid-template-columns:1fr; }
       }
     </style>
   <link rel="stylesheet" href="/legal/legal.css">
@@ -177,6 +188,25 @@
       <section id="work" class="hidden">
         <button id="back" class="plain">← All returns</button>
         <div id="clientNextAction" class="card next-action" aria-live="polite"></div>
+        <div id="returnActionsCard" class="card" aria-live="polite">
+          <span class="small">YOUR RETURN ACTIONS</span>
+          <h2>Two separate requirements</h2>
+          <p class="small">Complete each requirement shown below. PCT Permission to File is separate from the signature invitation provided by the tax software.</p>
+          <div class="return-actions-grid">
+            <section class="return-requirement" aria-labelledby="pctRequirementTitle">
+              <span id="pctRequirementStatus" class="requirement-status waiting">CHECKING STATUS</span>
+              <h3 id="pctRequirementTitle">1. PCT PERMISSION TO FILE</h3>
+              <p id="pctRequirementDetail">Checking your PCT document status…</p>
+              <button id="pctRequirementAction" type="button" class="hidden"></button>
+            </section>
+            <section class="return-requirement" aria-labelledby="taxSignatureRequirementTitle">
+              <span id="taxSignatureRequirementStatus" class="requirement-status waiting">CHECKING STATUS</span>
+              <h3 id="taxSignatureRequirementTitle">2. TAX SOFTWARE RETURN SIGNATURES</h3>
+              <p id="taxSignatureRequirementDetail">Checking your tax-software signature status…</p>
+              <button id="taxSignatureRequirementAction" type="button" class="hidden"></button>
+            </section>
+          </div>
+        </div>
         <div class="card">
           <h2 id="year"></h2>
           <div id="result"></div>
@@ -314,6 +344,7 @@
       }
       function err(e, fallback = "That action could not be completed. Please try again.") {
         const raw=String(e?.message||e||"").replace(/^FirebaseError:\s*/i,"").replace(/functions\/[a-z-]+/gi,"").trim();
+        if(/Permission to File request is no longer current|review access code is not valid|unlock the return|Due Diligence/i.test(raw)) return "RETURN UPDATE IN PROGRESS — Your tax professional is updating your return. If a new authorization is needed, you’ll receive updated instructions.";
         if(!raw||/internal|stack|undefined|null|https?:\/\//i.test(raw)) return fallback;
         return raw.length>220?raw.slice(0,217)+"…":raw;
       }
@@ -370,7 +401,7 @@
         try {
           const [packet,financial,prepayment,priorInfo,documentRequests,partnerProducts,returnCopies,messages]=await Promise.all([c.packet(args()),c.fin(args()),c.prep(args()),c.prior(args()),c.documentRequests(args()),c.partnerProducts(args()),c.returnCopies(args()),c.messages(args())]);
           s.packet=packet.data.packet;s.financial=financial.data.instructions;s.prepayment=prepayment.data.payment;s.priorInfo=priorInfo.data.information;s.documentRequests=documentRequests.data;s.partnerProducts=partnerProducts.data;s.returnCopies=returnCopies.data;s.messages=messages.data;
-          renderDocs();renderExternalSignature();
+          renderDocs();renderReturnActions();renderExternalSignature();
           renderIntakeConsentStatus();
           renderFinancial();renderClientNextAction();
           renderPreparationFees();
@@ -387,7 +418,7 @@
       }
       function renderDocs() {
         let d = $("docs");
-        d.innerHTML = "<h2>PCT Documents</h2>";
+        d.innerHTML = "<h2>PCT Permission to File</h2><p class=\"small\">These PCT documents are separate from your tax-software return signatures.</p>";
         s.packet.documents.forEach((x) => {
           let r = document.createElement("div");
           r.className = "row";
@@ -401,12 +432,21 @@
             "</span>";
           if (x.signatureStatus !== "SIGNED") {
             let b = document.createElement("button");
-            b.textContent = "Review & Sign";
+            const blocked=x.documentId==="permission_to_file"&&s.packet?.clientActions?.pct?.canSignPermissionToFile===false;
+            b.textContent = blocked ? (s.packet?.clientActions?.pct?.state==="PAYMENT_REQUIRED"?"Payment Required":"New Authorization Required") : "Review & Sign";
+            b.disabled=blocked;
             b.onclick = () => doc(x);
             r.append(b);
           }
           d.append(r);
         });
+      }
+      function renderReturnActions(){
+        const view=s.packet?.clientActions||{},pct=view.pct||{},externalView=view.external||{};
+        const setRequirement=(prefix,item)=>{const status=$(prefix+"Status"),detail=$(prefix+"Detail"),action=$(prefix+"Action");status.textContent=item.label||"STATUS PENDING";status.className="requirement-status "+(item.state==="COMPLETE"?"complete":String(item.state||"").includes("WAITING")||["REPORTED_COMPLETE","RETURN_UPDATED"].includes(item.state)?"waiting":"");detail.textContent=item.detail||"Your tax professional will update this requirement.";action.classList.toggle("hidden",!item.action);action.textContent=item.action||"";};
+        setRequirement("pctRequirement",pct);setRequirement("taxSignatureRequirement",externalView);
+        $("pctRequirementAction").onclick=()=>{const target=pct.state==="PAYMENT_REQUIRED"?$("pctP20PrepCard")||$("prepPayment"):$("pctP20ReturnSummary")||$("docs");target?.scrollIntoView({behavior:"smooth",block:"start"});};
+        $("taxSignatureRequirementAction").onclick=()=>$("signatureInvitationCard")?.scrollIntoView({behavior:"smooth",block:"start"});
       }
       const taxSlayerCustomerPortalUrl="https://www.taxofficemanagement.com/customerportal";
       function signatureInvitationIsAvailable(signature){return ["INVITATION_SENT","INVITATION_RESENT","CLIENT_REPORTS_COMPLETE","NEEDS_AGENT_REVIEW","VERIFIED_COMPLETE"].includes(String(signature?.status||""));}
@@ -417,17 +457,17 @@
         if(!signatureInvitationIsAvailable(signature)){card.classList.add("hidden");return;}
         card.classList.remove("hidden");
         const heading=document.createElement("h2"),notice=document.createElement("p");
-        if(signature.clientResponse==="YES"){
-          heading.textContent="YOUR TAX RETURN";
-          notice.textContent="You confirmed the electronic signature invitation. Use the TaxSlayer Customer Portal account you created from your tax preparer’s invitation. The documents available there depend on what has been sent through the tax software.";
+        if(signature.status==="VERIFIED_COMPLETE"||signature.status==="CLIENT_REPORTS_COMPLETE"){
+          heading.textContent="TAX SOFTWARE RETURN SIGNATURES";
+          notice.textContent=signature.status==="VERIFIED_COMPLETE"?"Tax software signatures confirmed ✓ Your tax professional verified this separate requirement.":"Thanks. Your tax professional will verify your signatures. This does not change your separate PCT Permission to File status.";
           const actions=document.createElement("div"),getCopy=document.createElement("a"),requestCopy=document.createElement("button"),copyNote=document.createElement("p");
           actions.className="actions";getCopy.className="btn btn-gold";getCopy.href=taxSlayerCustomerPortalUrl;getCopy.target="_blank";getCopy.rel="noopener noreferrer";getCopy.textContent="GET A COPY OF MY RETURN ↗";
           requestCopy.className="btn btn-soft";requestCopy.type="button";requestCopy.textContent="REQUEST A COPY FROM MY PREPARER";requestCopy.onclick=()=>requestReturnCopy(requestCopy);
           copyNote.className="small";copyNote.textContent="PCT does not store your TaxSlayer username or password. If you need a backup copy, request it from your tax preparer using the existing secure Return Copy workflow.";
           actions.append(getCopy,requestCopy);host.append(heading,notice,actions,copyNote);return;
         }
-        heading.textContent="HAVE YOU COMPLETED THE ELECTRONIC SIGNATURE INVITATION SENT BY YOUR TAX PREPARER?";
-        notice.textContent="Check your inbox, spam/junk, Promotions and other email folders for the invitation from the tax software.";
+        heading.textContent="TAX SOFTWARE RETURN SIGNATURES";
+        notice.textContent="Your official tax return is signed through a separate invitation from the tax software. Check your inbox, spam/junk, Promotions, and other email folders.";
         const actions=document.createElement("div"),yes=document.createElement("button"),no=document.createElement("button"),status=document.createElement("div"),help=document.createElement("div");
         actions.className="actions";yes.type="button";yes.className="btn btn-gold";yes.textContent="YES — COMPLETED";yes.onclick=()=>external("YES",{},yes);no.type="button";no.className="btn btn-soft";no.textContent="NO — I NEED HELP";no.onclick=()=>renderSignatureHelpForm(help,status);status.className="msg";help.className="hidden";actions.append(yes,no);host.append(heading,notice,actions,status,help);
         if(signature.status==="NEEDS_AGENT_REVIEW"){const sent=document.createElement("p");sent.className="small";sent.textContent="UPDATE SENT ✓ Your tax preparer has been notified."+(signatureHelpLabel(signature.helpReason)?" Requested help: "+signatureHelpLabel(signature.helpReason)+".":"");host.insertBefore(sent,actions);}
@@ -442,7 +482,17 @@
         const key=String(value||"").toUpperCase(),labels={SIGNED:"Signed ✓",NOT_APPLICABLE:"Not Applicable",DECLINED:"Declined",YES:"Yes",NO:"No",NOT_ANSWERED:"Not Answered",NOT_REQUIRED_YET:"Not Required Yet"};
         return labels[key]||String(value||"Not answered").replaceAll("_"," ").toLowerCase().replace(/\b\w/g,x=>x.toUpperCase());
       }
-      function renderClientNextAction(){const host=$("clientNextAction");if(!host||!s.item)return;const requests=s.documentRequests?.requests||[],unsigned=s.packet?.documents?.filter(x=>x.signatureStatus!=="SIGNED")||[],payment=s.prepayment?.payment||{},filing=s.item.filingStatus?.key||"";let title="Your tax professional is reviewing your return",detail="No action is needed from you right now. We’ll keep this workspace updated.",who="WAITING ON YOUR TAX PROFESSIONAL";if(requests.some(x=>x.canSubmit)){title="Provide the requested document or information";detail="Open Document Requests below and submit the item your tax professional requested.";who="YOUR ACTION";}else if(unsigned.length){title="Review and sign your PCT documents";detail="Complete the unsigned document shown in PCT Documents below.";who="YOUR ACTION";}else if(s.financial&&!s.financial.transmitted&&((s.financial.branch==="REFUND"&&!s.financial.refundDelivery?.method)||(s.financial.branch==="AMOUNT_DUE"&&!s.financial.taxBalance?.election))){title="Choose your refund or tax-balance instructions";detail="Review Financial Instructions below and save your choice.";who="YOUR ACTION";}else if(payment.paymentStatus!=="PAID"&&!payment.method){title="Choose how to pay your preparation fee";detail="Review Preparation Fees below and select the available method that works for you.";who="YOUR ACTION";}else if(payment.method==="PAY_INVOICE"&&payment.paymentStatus!=="PAID"&&payment.canPay){title="Pay your confirmed preparation-fee invoice";detail="Use Pay Securely Now below. Stripe opens in a new tab.";who="YOUR ACTION";}else if(filing==="REJECTED"){title="Your tax professional is handling a filing update";detail="The return needs a correction before it can be accepted. Your tax professional will update this workspace.";who="WAITING ON YOUR TAX PROFESSIONAL";}else if(["FILED","ACCEPTED"].includes(filing)){title=filing==="ACCEPTED"?"Your return was accepted":"Your return was filed";detail="No action is needed unless your tax professional contacts you.";who="WAITING ON IRS / STATE";}else if(filing==="IRS_FUNDED"){title="Your refund was funded";detail="PCT is confirming final preparation-fee receipt and return completion.";who="WAITING ON BANK / PAYMENT";}host.innerHTML='<span class="who">'+who+'</span><h2>'+title+'</h2><p>'+detail+'</p><p class="small">Tax professional: '+(s.item.assignedAgent?.displayName||"Your assigned tax professional")+(s.item.assignedAgent?.firmName?" · "+s.item.assignedAgent.firmName:"")+'</p>';}
+      function renderClientNextAction(){
+        const host=$("clientNextAction");if(!host||!s.item)return;
+        const requests=s.documentRequests?.requests||[],filing=s.item.filingStatus?.key||"",normalized=s.packet?.clientActions?.nextAction||{};
+        let title=normalized.label||"Your tax professional is reviewing your return",detail=normalized.detail||"No action is needed from you right now. We’ll keep this workspace updated.",who=["CHOOSE_PAYMENT_METHOD","PAY_PREPARATION_FEE","COMPLETE_PERMISSION_TO_FILE","COMPLETE_TAX_SOFTWARE_SIGNATURES"].includes(normalized.code)?"YOUR ACTION":"WAITING ON YOUR TAX PROFESSIONAL";
+        if(requests.some(x=>x.canSubmit)){title="Provide the requested document or information";detail="Open Document Requests below and submit the item your tax professional requested.";who="YOUR ACTION";}
+        else if(s.financial&&!s.financial.transmitted&&((s.financial.branch==="REFUND"&&!s.financial.refundDelivery?.method)||(s.financial.branch==="AMOUNT_DUE"&&!s.financial.taxBalance?.election))){title="Choose your refund or tax-balance instructions";detail="Review Financial Instructions below and save your choice.";who="YOUR ACTION";}
+        else if(filing==="REJECTED"){title="Your tax professional is handling a filing update";detail="The return needs a correction before it can be accepted. Your tax professional will update this workspace.";who="WAITING ON YOUR TAX PROFESSIONAL";}
+        else if(["FILED","ACCEPTED"].includes(filing)){title=filing==="ACCEPTED"?"Your return was accepted":"Your return was filed";detail="No action is needed unless your tax professional contacts you.";who="WAITING ON IRS / STATE";}
+        else if(filing==="IRS_FUNDED"){title="Your refund was funded";detail="PCT is confirming final preparation-fee receipt and return completion.";who="WAITING ON BANK / PAYMENT";}
+        host.replaceChildren();const pill=document.createElement("span"),heading=document.createElement("h2"),copy=document.createElement("p"),professional=document.createElement("p");pill.className="who";pill.textContent=who;heading.textContent=title;copy.textContent=detail;professional.className="small";professional.textContent="Tax professional: "+(s.item.assignedAgent?.displayName||"Your assigned tax professional")+(s.item.assignedAgent?.firmName?" · "+s.item.assignedAgent.firmName:"");host.append(pill,heading,copy,professional);
+      }
       function renderIntakeConsentStatus() {
         const card = $("intakeConsentCard"), host = $("intakeConsentStatus"), consent = s.item?.intakeConsentStatus;
         host.replaceChildren();
@@ -637,7 +687,7 @@
         }
         if (payment.method === "PAY_INVOICE" && payment.invoice) {
           const total = document.createElement("p");
-          total.textContent = "Official Preparation Fee " + money(payment.invoice.grossAmountCents) + (payment.invoice.discountAmountCents ? " · Pay Now Savings −" + money(payment.invoice.discountAmountCents) : "") + " · Total Due Today " + money(payment.invoice.amountCents);
+          total.textContent = "FINAL CLIENT PRICE " + money(payment.invoice.grossAmountCents) + (payment.invoice.discountAmountCents ? " · PAY NOW DISCOUNT −" + money(payment.invoice.discountAmountCents) : "") + " · AMOUNT DUE TODAY " + money(payment.invoice.amountCents);
           host.append(total);
           if (payment.canPay && payment.paymentLink) {
             const link = document.createElement("a");
@@ -660,8 +710,8 @@
           host.append(document.createElement("br"), change);
           return;
         }
-        if (payment.method === "PAY_BY_REFUND") {
-          host.append(document.createTextNode("Pay By Refund ✓ Your preparation fees will be handled through your selected refund-payment process. Funding is pending."));
+        if (["PAY_BY_REFUND","REFUND_TRANSFER","BANK_PRODUCT"].includes(payment.method)) {
+          host.append(document.createTextNode("PAYMENT METHOD: Pay from refund. No payment is due through PCT today. Funding is pending and is not implied by this selection."));
         } else if (payment.method === "REFUND_ADVANCE") {
           host.append(document.createTextNode("Refund Advance ✓ Your preparation fees will be handled through the applicable refund-product process. Funding is pending."));
         } else {
@@ -768,7 +818,8 @@
         try {
           s.prepayment = (await c.saveprep({ ...args(), method })).data.payment;
           s.partnerProducts = (await c.partnerProducts(args())).data;
-          renderPreparationFees();
+          s.packet=(await c.packet(args())).data.packet;
+          renderPreparationFees();renderDocs();renderReturnActions();
           renderPartnerProducts();renderClientNextAction();
           message.textContent = "Saved ✓";
         } catch (e) {
@@ -882,17 +933,17 @@
         $("ptf").classList.toggle("hidden", !p);
         $("signer").textContent = s.packet.primaryFilerName;
         if (p) {
-          $("ptfinfo").textContent =
-            s.packet.permissionToFile.taxYear +
-            " · " +
-            (s.packet.permissionToFile.result?.type === "REFUND"
-              ? "Refund "
-              : "Amount Due ") +
-            money(s.packet.permissionToFile.result?.amountCents);
-          const signature=s.packet.externalTaxSignature||{};
-          $("ptfSignatureGuidance").textContent=signatureInvitationIsAvailable(signature)
-            ? "Complete the external signature invitation section in your Return Workspace before signing Permission to File."
-            : "Your tax preparer must first record that the external signature invitation was sent for this tax-year return.";
+          const quote=s.packet.permissionToFile,info=$("ptfinfo");info.replaceChildren();
+          const addQuoteRow=(label,value,total=false)=>{const row=document.createElement("div"),left=document.createElement("span"),right=document.createElement("strong");row.className="quote-row"+(total?" total":"");left.textContent=label;right.textContent=value;row.append(left,right);info.append(row);};
+          addQuoteRow("Tax year",quote.taxYear);addQuoteRow("Return result",(quote.result?.type==="REFUND"?"Refund ":"Amount Due ")+money(quote.result?.amountCents));
+          (quote.baseFeeLines||[]).forEach(line=>addQuoteRow(line.label,money(line.amountCents)));(quote.additionalFees||[]).forEach(line=>addQuoteRow(line.label,money(line.amountCents)));
+          addQuoteRow("FINAL CLIENT PRICE",money(quote.totalPreparationFeeCents),true);
+          const pctAction=s.packet?.clientActions?.pct||{};
+          $("ptfSignatureGuidance").textContent=pctAction.state==="PAYMENT_REQUIRED"?pctAction.detail:"PCT Permission to File and tax-software return signatures are tracked as separate requirements.";
+          $("sign").disabled=pctAction.canSignPermissionToFile===false;
+          $("sign").textContent=pctAction.state==="PAYMENT_REQUIRED"?"PAYMENT REQUIRED":"SIGN & CONTINUE";
+        } else {
+          $("sign").disabled=false;$("sign").textContent="SIGN & CONTINUE";
         }
         show("docview");
       }
@@ -900,7 +951,7 @@
         const actionButton=button||(document.activeElement instanceof HTMLButtonElement?document.activeElement:null);return once("external-signature-response",actionButton,async()=>{try {
           await c.ext({ ...args(), response, ...details });
           s.packet=(await c.packet(args())).data.packet;
-          renderDocs();renderExternalSignature();renderClientNextAction();
+          renderDocs();renderReturnActions();renderExternalSignature();renderClientNextAction();
           $("docmsg").textContent = response === "YES" ? "Saved ✓" : "UPDATE SENT ✓";
         } catch (e) {
           $("docmsg").textContent = err(e);
@@ -917,7 +968,7 @@
           ).data;
           s.packet = r.packet;
           show("work");
-          renderDocs();renderClientNextAction();
+          renderDocs();renderReturnActions();renderExternalSignature();renderPreparationFees();renderClientNextAction();
         } catch (e) {
           $("docmsg").textContent = err(e);
         }});
@@ -944,6 +995,14 @@
       $("back").onclick = () => show("home");
       $("docback").onclick = () => show("work");
       $("sign").onclick = sign;
+      let paymentReturnRefreshPending=false;
+      function refreshAfterPaymentReturn(){
+        if(paymentReturnRefreshPending||!s.item)return;paymentReturnRefreshPending=true;const target={leadId:s.item.leadId,returnId:s.item.returnId};let attempt=0;
+        const refresh=async()=>{attempt+=1;try{const request={...s.q,targetLeadId:target.leadId,returnId:target.returnId},[packet,prepayment]=await Promise.all([c.packet(request),c.prep(request)]);if(s.item?.leadId!==target.leadId||s.item?.returnId!==target.returnId){paymentReturnRefreshPending=false;return;}s.packet=packet.data.packet;s.prepayment=prepayment.data.payment;renderDocs();renderReturnActions();renderExternalSignature();renderPreparationFees();renderClientNextAction();if(s.prepayment?.payment?.paymentStatus==="PAID"||attempt>=3){paymentReturnRefreshPending=false;return;}}catch(_){if(attempt>=3){paymentReturnRefreshPending=false;return;}}setTimeout(refresh,attempt===1?2500:4500);};
+        setTimeout(refresh,1200);
+      }
+      window.addEventListener("message",event=>{if(event.origin===location.origin&&event.data?.type==="PCT_PAYMENT_RETURNED")refreshAfterPaymentReturn();});
+      if("BroadcastChannel" in window){const paymentReturnChannel=new BroadcastChannel("pct-secure-return-tracker");paymentReturnChannel.onmessage=event=>{if(event.data?.type==="PCT_PAYMENT_RETURNED")refreshAfterPaymentReturn();};window.pctPaymentReturnChannel=paymentReturnChannel;}
     </script>
     <script type="module">
       /* Phase 11: agent-owned resources and accepted-return reviews. The
@@ -1001,7 +1060,7 @@
           const records=section('pctP20Records','STATUS & HISTORY','Return records','View saved consent, client information, filing status, and secure return-copy activity.');
           const complete=document.createElement('details');complete.id='pctP20Complete';complete.className='pct-p20-client-section pct-p20-complete';complete.innerHTML='<summary><span>COMPLETED & OPTIONAL</span><strong>Completed items and more services</strong><small>Open when you want to review finished steps, leave feedback, or explore optional resources.</small></summary>';
           const summaryCard=byId('year')?.closest('.card');if(summaryCard){summaryCard.id='pctP20ReturnSummary';current.append(summaryCard);}
-          move('documentRequestCard',tasks);const financial=byId('financialTitle')?.closest('.card');if(financial){financial.id='pctP20FinancialCard';tasks.append(financial);}const prep=byId('prepPayment')?.closest('.card');if(prep){prep.id='pctP20PrepCard';tasks.append(prep);}move('partnerProductsCard',tasks);
+          move('returnActionsCard',tasks);move('signatureInvitationCard',tasks);move('documentRequestCard',tasks);const financial=byId('financialTitle')?.closest('.card');if(financial){financial.id='pctP20FinancialCard';tasks.append(financial);}const prep=byId('prepPayment')?.closest('.card');if(prep){prep.id='pctP20PrepCard';tasks.append(prep);}move('partnerProductsCard',tasks);
           move('intakeConsentCard',records);move('priorInfoCard',records);move('filingStatusCard',records);move('clientMessagesCard',records);move('returnCopiesCard',records);
           move('growthCompleteCard',complete);move('growthExploreCard',complete);move('acceptedReviewCard',complete);
           work.append(current,tasks,records,complete);

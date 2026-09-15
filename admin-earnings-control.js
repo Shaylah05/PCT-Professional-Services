@@ -28,5 +28,7 @@
       call({pageSize: 50, assignedPreparerId: section.querySelector('#adminAgentFilter').value.trim()}).then(function (response) { var records = response.data.records || []; rows.innerHTML = records.map(function (x) { return '<button type="button" class="btn btn-soft btn-sm" data-ledger="' + esc(x.ledgerId) + '" style="display:block;width:100%;text-align:left;margin:5px 0"><strong>' + esc(x.caseId || x.returnId || x.ledgerId) + '</strong> · ' + esc(x.assignedPreparerId || 'Unassigned') + ' · Original ' + money(x.agentEarnings) + ' · Adjusted ' + money(x.adjustedAgentEarnings) + ' · ' + esc(x.paymentStatus || 'unknown') + '</button>'; }).join('') || 'No compensation records found.'; rows.querySelectorAll('[data-ledger]').forEach(function (button) { button.onclick = function () { section.querySelector('#adminLedgerId').value = button.dataset.ledger; }; }); }).catch(function (error) { rows.textContent = error.message || 'Ledger unavailable.'; });
     };
   }
-  window.addEventListener('DOMContentLoaded', function () { setTimeout(mount, 0); });
+  /* Phase 3B: retained for a future dedicated admin finance surface; it no
+     longer auto-mounts inside a selected return. */
+  window.pctMountAdminEarningsControl = mount;
 }());

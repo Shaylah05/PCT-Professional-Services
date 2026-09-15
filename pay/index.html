@@ -21,11 +21,12 @@ ONE SHARED PAGE ONLY. This page expects ?p={opaquePaymentToken}.
     <h1 id="title">Loading secure payment…</h1>
     <p id="intro">Please wait while we confirm this payment is current.</p>
     <section id="summary" class="summary hidden" aria-label="Preparation fee summary">
-      <div class="row"><span>Official Preparation Fee</span><strong id="official"></strong></div>
-      <div id="discountRow" class="row hidden"><span>Pay Now Savings</span><strong id="discount"></strong></div>
-      <div class="row total"><span>Total Due Today</span><strong id="total"></strong></div>
+      <div class="row"><span>FINAL CLIENT PRICE</span><strong id="official"></strong></div>
+      <div id="discountRow" class="row hidden"><span>PAY NOW DISCOUNT</span><strong id="discount"></strong></div>
+      <div class="row total"><span>AMOUNT DUE TODAY</span><strong id="total"></strong></div>
     </section>
-    <a id="pay" class="btn hidden" target="_blank" rel="noopener noreferrer">PAY SECURELY NOW</a>
+    <a id="pay" class="btn hidden">PAY SECURELY NOW</a>
+    <p>After payment, return to the same secure PCT return tracker to continue your client actions.</p>
     <p id="state" class="state"></p>
     <p class="note">This secure payment link is specific to your current PCT return. Your Client Portal remains available for your return, documents, and status.</p>
   </main>
@@ -36,7 +37,7 @@ ONE SHARED PAGE ONLY. This page expects ?p={opaquePaymentToken}.
     const resolve= httpsCallable(getFunctions(app,'us-central1'),'resolveClientPaymentLink');
     const $=id=>document.getElementById(id), money=cents=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents||0)/100);
     function message(kind,title,intro){$('title').textContent=title;$('intro').textContent=intro;$('summary').classList.add('hidden');$('pay').classList.add('hidden');$('mark').textContent=kind==='paid'?'✓':kind==='stale'?'!':'$';$('mark').parentElement.classList.toggle('success',kind==='paid');$('mark').parentElement.classList.toggle('warn',kind==='stale');}
-    async function load(){const token=new URLSearchParams(location.search).get('p')||'';if(!token){message('stale','Payment link unavailable','This payment link is incomplete. Please return to your Client Portal or contact your tax professional.');return}try{const result=(await resolve({token})).data||{};if(result.state==='PAID'){message('paid','Payment Received ✓','Thank you. No additional payment is due for this return.');return}if(result.state!=='READY'){message('stale','Payment Update In Progress','Your tax professional updated your return pricing. We’ll provide your current payment option shortly.');return}$('title').textContent='Your Preparation Fee Is Ready';$('intro').textContent=(result.agent?.name?'Your tax professional, '+result.agent.name+', ':'')+'completed your current preparation-fee review.';$('official').textContent=money(result.invoice?.grossAmountCents);if(Number(result.invoice?.discountAmountCents||0)>0){$('discountRow').classList.remove('hidden');$('discount').textContent='−'+money(result.invoice.discountAmountCents)}$('total').textContent=money(result.invoice?.amountCents);$('summary').classList.remove('hidden');$('pay').href=String(result.checkoutUrl||'');$('pay').classList.remove('hidden');$('state').textContent='Stripe opens in a new tab when you choose Pay Securely Now.'}catch(_){message('stale','Payment link unavailable','This link is no longer available. Please return to your Client Portal or contact your tax professional.')}}
+    async function load(){const token=new URLSearchParams(location.search).get('p')||'';if(!token){message('stale','Payment link unavailable','This payment link is incomplete. Please return to your Client Portal or contact your tax professional.');return}try{const result=(await resolve({token})).data||{};if(result.state==='PAID'){message('paid','Payment Received ✓','Thank you. No additional payment is due for this return.');return}if(result.state!=='READY'){message('stale','Payment Update In Progress','Your tax professional updated your return pricing. We’ll provide your current payment option shortly.');return}$('title').textContent='Your Preparation Fee Is Ready';$('intro').textContent=(result.agent?.name?'Your tax professional, '+result.agent.name+', ':'')+'completed your current preparation-fee review.';$('official').textContent=money(result.invoice?.grossAmountCents);if(Number(result.invoice?.discountAmountCents||0)>0){$('discountRow').classList.remove('hidden');$('discount').textContent='−'+money(result.invoice.discountAmountCents)}$('total').textContent=money(result.invoice?.amountCents);$('summary').classList.remove('hidden');$('pay').href=String(result.checkoutUrl||'');$('pay').classList.remove('hidden');$('state').textContent='Continue securely to Stripe when you choose Pay Securely Now.'}catch(_){message('stale','Payment link unavailable','This link is no longer available. Please return to your Client Portal or contact your tax professional.')}}
     load();
   </script>
 </body>
