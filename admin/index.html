@@ -1408,12 +1408,14 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     const shell=ensureAgentShell(),show=activeAgent()&&!byId('appScreen')?.classList.contains('hidden');
     shell?.classList.toggle('hidden',!show);
     if(!show)return;
-    const title=document.querySelector('#appScreen .section-title h3');if(title)title.textContent='Client Returns';
+    const title=document.querySelector('#appScreen .section-title h3');if(title&&title.textContent!=='Client Returns')title.textContent='Client Returns';
     const review=leadRows().filter(item=>typeof matchFilterOverride==='function'&&matchFilterOverride(item,'review')).length;
     const follow=leadRows().filter(item=>typeof matchFilterOverride==='function'&&matchFilterOverride(item,'follow')).length;
-    shell.querySelector('.pct-p20-shell-copy p').textContent=leadRows().length
+    const summaryEl=shell.querySelector('.pct-p20-shell-copy p');
+    const summaryText=leadRows().length
       ? review+' need review · '+follow+' need follow-up · '+leadRows().length+' total client returns'
       : 'Start by sharing your personalized Client Intake Link or adding a client while they are with you.';
+    if(summaryEl&&summaryEl.textContent!==summaryText)summaryEl.textContent=summaryText;
   }
   function enhanceLeadDashboard(){
     syncAgentShell();
@@ -1442,7 +1444,7 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     ['filing-status','Filing Status','.pct-phase10, #pctP10Admin']
   ];
   function resolveTarget(selector){return selector.split(',').map(value=>document.querySelector(value.trim())).find(Boolean);}
-  function applySectionGroups(body){groupRules.forEach(([key,label,selector])=>{const nodes=[...body.querySelectorAll(selector)];if(!nodes.length)return;nodes.forEach(node=>{node.classList.add('pct-p20-section','pct-p3b-'+key);node.dataset.pctP3bSection=key;});let heading=body.querySelector('[data-pct-p3b-heading="'+key+'"]');if(!heading){heading=document.createElement('div');heading.className='pct-p3b-group-heading';heading.dataset.pctP3bHeading=key;heading.setAttribute('role','heading');heading.setAttribute('aria-level','2');const text=document.createElement('span');text.textContent=label;heading.append(text);}const first=nodes[0];if(first.previousElementSibling!==heading)first.insertAdjacentElement('beforebegin',heading);});}
+  function applySectionGroups(body){groupRules.forEach(([key,label,selector])=>{const nodes=[...body.querySelectorAll(selector)];if(!nodes.length)return;nodes.forEach(node=>{node.classList.toggle('pct-p20-section',true);node.classList.toggle('pct-p3b-'+key,true);node.dataset.pctP3bSection=key;});let heading=body.querySelector('[data-pct-p3b-heading="'+key+'"]');if(!heading){heading=document.createElement('div');heading.className='pct-p3b-group-heading';heading.dataset.pctP3bHeading=key;heading.setAttribute('role','heading');heading.setAttribute('aria-level','2');const text=document.createElement('span');text.textContent=label;heading.append(text);}const first=nodes[0];if(first.previousElementSibling!==heading)first.insertAdjacentElement('beforebegin',heading);});}
   function ensureReturnNavigation(){
     const body=document.querySelector('.return-workspace-body');if(!body)return;
     let nav=byId('pctP20ReturnNav');
