@@ -865,6 +865,13 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
         </div>
 
         <div class="field">
+          <span class="field-label">State filing</span>
+          <div class="choices" data-multi>
+            <div class="choice" data-flag="additionalState"><span class="box">&#10003;</span><span class="ct">I may need another state return<small>Income earned or residency in more than one state</small></span></div>
+          </div>
+        </div>
+
+        <div class="field">
           <span class="field-label">Health insurance</span>
           <div class="choices" data-multi>
             <div class="choice" data-flag="marketplace"><span class="box">&#10003;</span><span class="ct">Marketplace insurance / 1095-A<small>Healthcare.gov, state Marketplace, or premium tax credit</small></span></div>
@@ -1029,8 +1036,8 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
       <div class="num-card"><div class="nl">Est. State</div><div class="nv" id="resState">$0</div><div class="ns" id="resStateLbl">Refund / balance due</div></div>
     </div>
     <div class="big-num-grid" style="margin-top:14px">
-      <div class="num-card feature"><div class="nl">Estimated Total Preview</div><div class="nv" id="resTotal">$0</div><div class="ns" id="resTotalLbl">Combined refund / balance</div></div>
-      <div class="num-card"><div class="nl">Estimated Preparation Cost</div><div class="nv" id="resPrep">$0</div><div class="ns">Confirmed after review</div></div>
+      <div class="num-card feature"><div class="nl">Estimated Tax Refund / Balance</div><div class="nv" id="resTotal">$0</div><div class="ns" id="resTotalLbl">Combined refund / balance</div></div>
+      <div class="num-card"><div class="nl">Estimated PCT Filing Cost</div><div class="nv" id="resPrep" aria-live="polite">&mdash;</div><div class="ns">Separate from your estimated tax outcome</div></div>
     </div>
 
     <div class="section-card" style="margin-top:18px">
@@ -1042,30 +1049,35 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
     <div class="price-card">
       <div class="pc-top">
         <div>
-          <div class="pc-label">Estimated Preparation Cost</div>
-          <div class="pc-note">Based on the forms &amp; situations you selected.</div>
+          <div class="pc-label">Estimated PCT Filing Cost</div>
+          <div class="pc-note">Based on the tax situations you selected and PCT&rsquo;s current preparation-pricing catalog.</div>
         </div>
-        <div class="pc-amt" id="resPrep2">$0</div>
+        <div class="pc-amt" id="resPrep2" aria-live="polite">&mdash;</div>
       </div>
-      <ul class="incl">
-        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b08938" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> Federal return preparation</li>
-        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b08938" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> State return preparation</li>
-        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b08938" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> Income document review</li>
-        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b08938" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> Credit &amp; dependent review</li>
-        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b08938" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> Business / special form review</li>
-        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b08938" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> Draft return prepared for you</li>
-        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b08938" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> Secure review link before signature</li>
-        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b08938" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> No filing without your approval</li>
-      </ul>
       <details class="breakdown">
-        <summary><span class="tw">&#9656;</span> View estimated pricing breakdown</summary>
+        <summary><span class="tw">&#9656;</span> Filing cost breakdown</summary>
         <div id="resBreakdown" style="margin-top:10px"></div>
       </details>
+      <div id="resPricingStatus" class="small" role="status" aria-live="polite" style="margin-top:12px"></div>
+    </div>
+
+    <div class="section-card" id="pctEstimateFeeValue" style="margin-top:18px">
+      <div class="section-head"><div><div class="kicker">WHAT YOUR PCT PREPARATION FEE INCLUDES</div><h3>Professional support from intake through filing approval</h3></div></div>
+      <div class="grid-2">
+        <div><strong>Secure guided tax intake</strong><p class="small">Guidance through the information needed for your return.</p></div>
+        <div><strong>Document review</strong><p class="small">Review of the tax documents connected to your return.</p></div>
+        <div><strong>Filing status &amp; credit review</strong><p class="small">Review of applicable filing-status, dependent, credit, and deduction considerations.</p></div>
+        <div><strong>Professional preparation &amp; review</strong><p class="small">Your return moves through PCT&rsquo;s preparation and review workflow.</p></div>
+        <div><strong>Secure document handling</strong><p class="small">Documents stay connected to your secure PCT workspace and return.</p></div>
+        <div><strong>Client review before filing</strong><p class="small">You review and approve required filing information before transmission.</p></div>
+        <div><strong>IRS / state notice support</strong><p class="small">Support with qualifying notices related to a PCT-prepared return, subject to applicable service and authorization rules.</p></div>
+        <div><strong>Year-round PCT support</strong><p class="small">Return through the PCT process for applicable filing follow-up after tax season.</p></div>
+      </div>
     </div>
 
     <div class="callout gold" style="margin-top:20px">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      <div>This is a helpful preview based on what you entered today. Your exact refund outcome and official preparation quote will be confirmed after PCT_AGENT_NAME reviews your uploaded documents.</div>
+      <div><strong>Estimate disclaimer:</strong> Your filing cost estimate is based on the tax situations you selected. Your final preparation quote is confirmed after we review your complete intake and documents. The tax outcome and preparation fee are separate; payment method is handled later.</div>
     </div>
 
     <div class="guide" style="margin-top:20px">
@@ -1073,9 +1085,9 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
       <div class="guide-msg"><strong>This is a starting point, not the finish line.</strong><span>Numbers like these often shift once I review your actual documents and catch credits a quick calculator misses. Send them over and let&rsquo;s make it real.</span></div>
     </div>
     <div class="cta-band">
-      <h3>Ready for PCT_AGENT_NAME to review it for real?</h3>
-      <p>Submit your documents securely and PCT_AGENT_NAME will prepare your draft return and official quote &mdash; you review and sign only if you&rsquo;re happy.</p>
-      <button class="btn btn-gold" onclick="goUpload('estimate')">Submit My Documents for My Official Quote &rarr;</button>
+      <h3>Ready to file?</h3>
+      <p>Your estimate is finished. Start your actual secure tax filing intake now; the detailed interview and document checklist come next.</p>
+      <button class="btn btn-gold" onclick="beginFilingFromEstimate()">Start My Secure Tax Intake &rarr;</button>
     </div>
     <button class="back-link" onclick="showScreen('screen-home')">&larr; Back to start</button>
   </section>
@@ -1470,10 +1482,10 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
       <div class="price-card" style="margin-top:8px">
         <div class="pc-top">
           <div>
-            <div class="pc-label">Estimated Amended Return Review Fee</div>
-            <div class="pc-note" id="amendFeeNote">Based on the amendment type and forms likely needed.</div>
+            <div class="pc-label">Amended Return Preparation Quote</div>
+            <div class="pc-note" id="amendFeeNote">Confirmed after review of the original return and correction documents.</div>
           </div>
-          <div class="pc-amt" id="amendFeeDisplay">$349</div>
+          <div class="pc-amt" id="amendFeeDisplay" style="font-size:26px">Review required</div>
         </div>
         <div id="amendFeeBreakdown" style="margin-top:14px"></div>
         <div class="callout gold" style="margin-top:14px;margin-bottom:0">
@@ -1880,47 +1892,7 @@ const PCT_BACKEND_CONFIG = {
 };
 let pctFirebase = { app:null, db:null, storage:null, auth:null, functions:null, appCheck:null, ready:false, error:null };
 
-/* ---- Editable PCT form-based price list ---- */
-const pctPriceList = {
-  form1040:{label:"Federal 1040 preparation",price:189},
-  form1040SR:{label:"Federal 1040-SR preparation",price:189},
-  form1040X:{label:"Amended return - Form 1040-X (PCT return)",price:249},
-  form1040XOther:{label:"Amended return - Form 1040-X (prepared elsewhere)",price:349},
-  amendedStateReturn:{label:"State amended return review",price:99},
-  priorYearComplianceReview:{label:"Prior-year / substitute return compliance review",price:99},
-  stateReturn:{label:"State tax return",price:69},
-  additionalState:{label:"Additional state return",price:59},
-  bankApplication:{label:"Bank application / refund product setup",price:45},
-  refundTransferSetup:{label:"Pay-by-refund / Refund Transfer setup",price:45},
-  scheduleEIC:{label:"Earned Income Credit review - Schedule EIC",price:39},
-  form8812:{label:"Child Tax Credit / Other Dependent Credit review",price:39},
-  headOfHouseholdWorksheet:{label:"Head of Household review",price:35},
-  form2441:{label:"Childcare Credit - Form 2441",price:59},
-  form8863:{label:"Education Credit - Form 8863",price:59},
-  studentLoanInterest:{label:"Student loan interest review",price:25},
-  scheduleA:{label:"Itemized deductions - Schedule A",price:99},
-  scheduleB:{label:"Interest and dividends - Schedule B",price:35},
-  form1099K:{label:"1099-K platform income review",price:59},
-  form1099G:{label:"Unemployment income - Form 1099-G",price:35},
-  form1099R:{label:"Retirement distribution - 1099-R",price:35},
-  ssa1099:{label:"Social Security income review",price:35},
-  w2G:{label:"Gambling winnings - W-2G",price:49},
-  scheduleC:{label:"Business profit/loss - Schedule C",price:199},
-  scheduleF:{label:"Farm income/loss - Schedule F",price:199},
-  scheduleSE:{label:"Self-employment tax - Schedule SE",price:0},
-  businessUseHome:{label:"Business use of home - Form 8829",price:75},
-  form4562:{label:"Depreciation - Form 4562",price:99},
-  form8995:{label:"QBI simplified - Form 8995",price:0},
-  scheduleD:{label:"Capital gains/losses - Schedule D",price:119},
-  form8949:{label:"Sales of capital assets - Form 8949 (starting at)",price:99},
-  scheduleE:{label:"Supplemental income/rental - Schedule E",price:199},
-  scheduleK1:{label:"Schedule K-1",price:99},
-  form8962:{label:"Premium Tax Credit / Marketplace - Form 8962",price:75},
-  form8889:{label:"Health Savings Account - Form 8889",price:49},
-  form5695:{label:"Residential energy credit - Form 5695",price:99},
-  form8936:{label:"Clean vehicle credit - Form 8936",price:99},
-  taxLetterReview:{label:"IRS / state letter review",price:75}
-};
+/* Preparation prices are loaded at runtime from the canonical taxPricingConfig catalog. */
 
 /* ---- Editable tax figures (estimate only) ---- */
 const TAX_CONFIG = {
@@ -1983,7 +1955,7 @@ const state = {
   wantEstimate:"", readyUpload:"", hasNewDocs:"",
   changes:{}, estimate:null, uploadStatus:"Pending", documents:[], pendingDocument:null, documentSource:"",
   organizerFlags:{}, organizerStep:1, businessOrganizerOpened:false, expectedChecklistOpened:false, expectedInformationSnapshot:[], activeExpectedItemId:"", organizerEmployerCount:"", organizerEmployerNames:"", organizerNotes:"", taxpayerMiddleName:"", taxpayerSuffix:"", taxpayerIdType:"", taxpayerIdNumber:"", taxpayerDob:"", taxpayerOccupation:"", taxpayerStreet:"", taxpayerCity:"", taxpayerZip:"", spouseFullName:"", spouseIdType:"", spouseIdNumber:"", spouseDob:"", spouseOccupation:"", dependentDetails:[], businessOwner:"", businessName:"", businessEin:"", businessAddress:"", businessDescription:"", businessActivityCode:"", businessGrossReceipts:"", businessCashIncome:"", business1099Income:"", businessOtherIncome:"", businessVehicleMiles:"", businessTotalVehicleMiles:"", businessHomeOfficeDetails:"", businessAssetsDetails:"", businessContractorDetails:"", businessEstimatedTaxPayments:"", businessExpense_advertising:"", businessExpense_commissionsFees:"", businessExpense_contractLabor:"", businessExpense_insurance:"", businessExpense_legalProfessional:"", businessExpense_office:"", businessExpense_rentLease:"", businessExpense_repairs:"", businessExpense_supplies:"", businessExpense_taxesLicenses:"", businessExpense_travel:"", businessExpense_meals:"", businessExpense_utilities:"", businessExpense_software:"", businessExpense_vehicleMileage:"", businessExpense_other:"", checklistResponses:{}, completenessConfirmed:false, completenessConfirmedAt:"", phase17Proceed:false, phase17ClientAttestation:false, phase17General:{}, phase17Credits:{}, phase17ScheduleC:{}, phase17PctAuthorizationAccepted:false, phase17RefundAdvanceInterest:"", phase17RefundTransferInterest:"", phase17BankConsentDecision:"", phase17SelfEmploymentInterest:"",
-  amendNeed:"", amendYear:"", amendScope:"", amendState:"", amendPreparedByPct:"", amendHasFiledReturn:"", amendNotes:"", amendFee:349, amendFeeBreakdown:[],
+  amendNeed:"", amendYear:"", amendScope:"", amendState:"", amendPreparedByPct:"", amendHasFiledReturn:"", amendNotes:"", amendFee:null, amendFeeBreakdown:[],
   extEntity:"", extScope:"", extYear:"2025", extState:"", extStatus:"", extFiledLast:"", extOwe:"", extWantEstimate:"", extMissedDeadline:"",
   extWages:"", extFedWH:"", extSEIncome:"", extExpenses:"", extOtherIncome:"", extEstPayments:"",
   extFee:49, extFeeBreakdown:[], extPaymentEst:null, extCustom:false,
@@ -2232,7 +2204,10 @@ function showIntakeConfirmation(){
   let screen=$('#screen-intake-confirmation');
   if(!screen){screen=document.createElement('section');screen.id='screen-intake-confirmation';screen.className='screen';document.body.appendChild(screen);}
   const taxProfessional=(typeof agentClientBrand==='function'&&agentClientBrand(state.agentProfile))||'your tax professional';
-  screen.innerHTML='<div class="section-card" style="max-width:760px;margin:36px auto;text-align:center"><div class="kicker">INTAKE RECEIVED ✓</div><h2>Your intake has been sent to '+uploadText(taxProfessional)+'.</h2><p class="lead">Give '+uploadText(taxProfessional)+' some time to review the information and documents you submitted. If anything else is needed, they’ll contact you.</p><p>Nothing has been filed yet.</p><div class="callout gold" style="margin-top:24px;text-align:left"><div><strong>WHAT HAPPENS NEXT</strong><p style="margin:8px 0 0">Keep an eye on your email. Once your return is ready, you’ll receive the next steps from your tax professional, including your Permission to File request and an invitation to review and sign your official tax return.</p><p style="margin:10px 0 0">Your return will not be transmitted until the required review, signatures, and filing authorization are complete.</p></div></div><p style="margin-top:24px"><strong>You’re all done for now.</strong></p></div>';
+  const amended=state.leadType==='Amended Return Review',brand=uploadText(taxProfessional);
+  screen.innerHTML=amended
+    ? '<div class="section-card" style="max-width:760px;margin:36px auto;text-align:center"><div class="kicker">AMENDED RETURN REVIEW RECEIVED ✓</div><h2>Your amended return review has been received.</h2><p class="lead">'+brand+' will review your originally filed return and the supporting documents you submitted before providing your official preparation quote.</p><p>Nothing has been amended or filed yet.</p><div class="callout gold" style="margin-top:24px;text-align:left"><div><strong>WHAT HAPPENS NEXT</strong><p style="margin:8px 0 0">Keep an eye on your email. If anything else is needed, your tax professional will contact you before preparing the amendment.</p><p style="margin:10px 0 0">Nothing will be amended or transmitted until the required review, quote acceptance, signatures, and filing authorization are complete.</p></div></div><p style="margin-top:24px"><strong>You’re all done for now.</strong></p></div>'
+    : '<div class="section-card" style="max-width:760px;margin:36px auto;text-align:center"><div class="kicker">INTAKE RECEIVED ✓</div><h2>Your intake has been sent to '+brand+'.</h2><p class="lead">Give '+brand+' some time to review the information and documents you submitted. If anything else is needed, they’ll contact you.</p><p>Nothing has been filed yet.</p><div class="callout gold" style="margin-top:24px;text-align:left"><div><strong>WHAT HAPPENS NEXT</strong><p style="margin:8px 0 0">Keep an eye on your email. Once your return is ready, you’ll receive the next steps from your tax professional, including your Permission to File request and an invitation to review and sign your official tax return.</p><p style="margin:10px 0 0">Your return will not be transmitted until the required review, signatures, and filing authorization are complete.</p></div></div><p style="margin-top:24px"><strong>You’re all done for now.</strong></p></div>';
   showScreen('screen-intake-confirmation');
 }
 function pctV2ReviewEdit(section,focusKey){
@@ -2374,50 +2349,66 @@ function computeEstimate(){
 }
 
 /* =================== FORM DETECTION =================== */
+const ESTIMATE_CANONICAL_SERVICE_MAP=Object.freeze({
+  form1040:'form1040',form1040SR:'form1040SR',stateReturn:'stateReturn',additionalState:'additionalState',
+  form8812:'hohForm8812',headOfHouseholdWorksheet:'hohForm8812',form2441:'form2441',form8863:'form8863',
+  form8962:'form8962',form8889:'form8889',scheduleC:'scheduleC',businessUseHome:'businessUseHome',
+  form4562:'form4562',scheduleD:'scheduleD',form8949:'form8949',scheduleE:'scheduleE',scheduleK1:'scheduleK1',
+  taxLetterReview:'taxLetterReview'
+});
+const ESTIMATE_UNMAPPED_LEGACY_FORMS=Object.freeze(['scheduleEIC','studentLoanInterest','scheduleA','scheduleB','form1099K','form1099G','form1099R','ssa1099','w2G','scheduleF','scheduleSE','form8995','form5695','form8936','bankApplication','refundTransferSetup']);
+let canonicalPricingCatalog=null;
+let canonicalPricingPromise=null;
+function normalizeCanonicalPricingResponse(response){
+  const data=response?.data||response?.result||response||{};
+  if(Number(data.catalogVersion)!==2||String(data.source||'')!=='taxPricingConfig'||!data.prices||typeof data.prices!=='object')throw new Error('Current PCT preparation pricing is unavailable.');
+  const prices={};
+  Object.entries(data.prices).forEach(([serviceId,record])=>{const amount=Number(record?.basePrice);if(record?.active!==false&&record?.basePrice!==null&&Number.isFinite(amount)&&amount>=0)prices[serviceId]={serviceId,label:String(record.displayName||serviceId),price:amount,version:Number(record.version||1)};});
+  return {source:'taxPricingConfig',catalogVersion:2,filingSeason:String(data.filingSeason||''),prices};
+}
+async function loadCanonicalPricing(force){
+  if(!force&&canonicalPricingCatalog)return canonicalPricingCatalog;
+  if(!force&&canonicalPricingPromise)return canonicalPricingPromise;
+  canonicalPricingPromise=(async()=>{if(!initFirebaseIfReady()||!pctFirebase.functions)throw new Error('Secure pricing service is unavailable.');const result=await pctFirebase.functions.httpsCallable('getTaxPricingConfig')({});return normalizeCanonicalPricingResponse(result);})();
+  try{canonicalPricingCatalog=await canonicalPricingPromise;return canonicalPricingCatalog;}finally{canonicalPricingPromise=null;}
+}
 function detectForms(eitc){
-  eitc = eitc||0;
-  const f=state.flags, keys=[], breakdown=[];
-  const add=k=>{if(pctPriceList[k] && !keys.includes(k)) keys.push(k);};
-  // base
+  eitc=eitc||0;
+  const f=state.flags||{},keys=[],add=k=>{if(!keys.includes(k))keys.push(k);};
   add(state.over65==='yes'?'form1040SR':'form1040');
-  if(state.state && !NO_TAX_STATES.includes(state.state)) add('stateReturn');
-  // family
-  if(+state.numDeps>0) add('form8812');
-  if(eitc>0) add('scheduleEIC'); // only when EIC likely applies
-  if(state.filingStatus==='hoh') add('headOfHouseholdWorksheet');
-  if(state.childcare==='yes') add('form2441');
-  // education
-  if(f.education) add('form8863');
-  if(f.studentLoan) add('studentLoanInterest');
-  // health
-  if(f.marketplace) add('form8962');
-  if(f.hsa) add('form8889');
-  // self employment
+  if(state.state&&!NO_TAX_STATES.includes(state.state))add('stateReturn');
+  if(f.additionalState)add('additionalState');
+  if(+state.numDeps>0)add('form8812');
+  if(eitc>0)add('scheduleEIC');
+  if(state.filingStatus==='hoh')add('headOfHouseholdWorksheet');
+  if(state.childcare==='yes')add('form2441');
+  if(f.education)add('form8863');
+  if(f.studentLoan)add('studentLoanInterest');
+  if(f.marketplace)add('form8962');
+  if(f.hsa)add('form8889');
   if(f.selfEmployment){add('scheduleC');add('scheduleSE');add('form8995');}
-  if(f.homeOffice) add('businessUseHome');
-  if(f.businessAssets) add('form4562');
-  if(f.form1099K) add('form1099K');
-  // other income
-  if(f.unemployment) add('form1099G');
-  if(f.retirement) add('form1099R');
-  if(f.socialSecurity) add('ssa1099');
-  if(f.interestDividends) add('scheduleB');
+  if(f.homeOffice)add('businessUseHome');
+  if(f.businessAssets)add('form4562');
+  if(f.form1099K)add('form1099K');
+  if(f.unemployment)add('form1099G');
+  if(f.retirement)add('form1099R');
+  if(f.socialSecurity)add('ssa1099');
+  if(f.interestDividends)add('scheduleB');
   if(f.stockCrypto){add('scheduleD');add('form8949');}
-  if(f.rental) add('scheduleE');
-  if(f.k1) add('scheduleK1');
-  if(f.gambling) add('w2G');
-  // deductions / situations
-  if(f.itemize) add('scheduleA');
-  if(f.energyCredit) add('form5695');
-  if(f.evCredit) add('form8936');
-  if(f.taxLetter) add('taxLetterReview');
-  // refund product
+  if(f.rental)add('scheduleE');
+  if(f.k1)add('scheduleK1');
+  if(f.gambling)add('w2G');
+  if(f.itemize)add('scheduleA');
+  if(f.energyCredit)add('form5695');
+  if(f.evCredit)add('form8936');
+  if(f.taxLetter)add('taxLetterReview');
   if(state.refundProduct==='yes'){add('bankApplication');add('refundTransferSetup');}
-
-  let total=0;
-  keys.forEach(k=>{const item=pctPriceList[k];total+=item.price;if(item.price>0)breakdown.push({label:item.label,price:item.price});});
-  if(keys.includes('headOfHouseholdWorksheet')&&keys.includes('form8812')){const cap=35+39-59;total-=cap;const family=breakdown.filter(x=>x.label===pctPriceList.headOfHouseholdWorksheet.label||x.label===pctPriceList.form8812.label);if(family.length){family[0].label='Head of Household + Child Tax Credit review (combined cap)';family[0].price=59;breakdown.splice(...[breakdown.indexOf(family[0]),2],family[0]);}}
-  return {keys,breakdown,total};
+  const serviceIds=[];keys.forEach(key=>{const serviceId=ESTIMATE_CANONICAL_SERVICE_MAP[key];if(serviceId&&!serviceIds.includes(serviceId))serviceIds.push(serviceId);});
+  return {keys,serviceIds,unmapped:keys.filter(key=>!ESTIMATE_CANONICAL_SERVICE_MAP[key])};
+}
+function canonicalEstimateCost(forms,catalog){
+  const breakdown=forms.serviceIds.map(serviceId=>{const row=catalog?.prices?.[serviceId];if(!row)throw new Error('Current pricing for an applicable preparation service is unavailable.');return {serviceId,label:row.label,price:row.price,pricingVersion:row.version,source:'taxPricingConfig'};});
+  return {breakdown,total:breakdown.reduce((sum,row)=>sum+row.price,0),source:catalog.source,catalogVersion:catalog.catalogVersion};
 }
 
 /* friendly form display names */
@@ -2728,7 +2719,7 @@ function buildLeadPayload(){
     amendedReturn: state.leadType==='Amended Return Review' ? {
       need: state.amendNeed || '', taxYear: state.amendYear || '', scope: state.amendScope || '', state: state.amendState || '',
       originalPreparedByPct: state.amendPreparedByPct || '', hasFiledReturnCopy: state.amendHasFiledReturn || '', notes: safeTrim(state.amendNotes),
-      reasons: selectedAmendedReasons(), estimatedFee: state.amendFee || 349, feeBreakdown: state.amendFeeBreakdown || []
+      reasons: selectedAmendedReasons(), estimatedFee: null, officialQuoteStatus:'PENDING_DOCUMENT_REVIEW', feeBreakdown: []
     } : null,
     extension: state.leadType==='Extension Request' ? {
       entity: state.extEntity || '', scope: state.extScope || '', taxYear: state.extYear || '', state: state.extState || '', filingStatus: state.extStatus || '',
@@ -2914,7 +2905,7 @@ function validateContactForWorkflow(label){
 
 /* =================== LEAD CAPTURE -> RESULT =================== */
 function validEmail(e){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);}
-function unlockEstimate(){
+async function unlockEstimate(){
   if(!state.firstName||!state.lastName||!validEmail(state.email)||state.phone.replace(/\D/g,'').length<7){
     showErr(5,true);return;
   }
@@ -2925,15 +2916,14 @@ function unlockEstimate(){
   }
   showErr(5,false);
   state.leadType = state.leadType || 'Instant Estimate';
-  renderResult();
-  persistLead('instant_estimate_unlocked');
   showScreen('screen-result');
+  await renderResult();
 }
 
-function renderResult(){
+async function renderResult(forcePricing){
   const est=computeEstimate();
   const forms=detectForms(est.eitc);
-  state.estimate={...est,prepCost:forms.total,forms:forms.keys,breakdown:forms.breakdown};
+  state.estimate={...est,prepCost:null,forms:forms.keys,breakdown:[],pricingStatus:'loading',unmappedPricingItems:forms.unmapped};
 
   $('#resultGreeting').textContent = state.firstName? (state.firstName+L(", here\u2019s your preview",", aquí está tu vista previa")) : L("Here\u2019s your preview","Aquí está tu vista previa");
   const brand=agentClientBrand(state.agentProfile);
@@ -2946,18 +2936,36 @@ function renderResult(){
   else {$('#resState').textContent='\u2014';$('#resState').className='nv';$('#resStateLbl').textContent='No state income tax';}
   // total
   setNum('resTotal','resTotalLbl',est.total);
-  // prep
-  $('#resPrep').textContent=money(forms.total);
-  $('#resPrep2').textContent=money(forms.total);
-
   // forms
-  $('#resForms').innerHTML = forms.keys.map(k=>'<span class="form-tag"><span class="d"></span>'+(FORM_DISPLAY[k]||pctPriceList[k].label)+'</span>').join('');
-  // breakdown
-  let bd=forms.breakdown.map(b=>'<div class="bd-row"><span>'+b.label+'</span><span>'+money(b.price)+'</span></div>').join('');
-  bd+='<div class="bd-row total"><span>Estimated total</span><span>'+money(forms.total)+'</span></div>';
-  $('#resBreakdown').innerHTML=bd;
+  $('#resForms').innerHTML=forms.keys.map(k=>'<span class="form-tag"><span class="d"></span>'+(FORM_DISPLAY[k]||k)+'</span>').join('');
+  $('#resPrep').textContent='—';$('#resPrep2').textContent='—';
+  $('#resBreakdown').innerHTML='<div class="small">Loading current PCT preparation pricing…</div>';
+  $('#resPricingStatus').textContent='Loading current preparation pricing…';
+  try{
+    const catalog=await loadCanonicalPricing(!!forcePricing),quote=canonicalEstimateCost(forms,catalog);
+    state.estimate={...est,prepCost:quote.total,forms:forms.keys,breakdown:quote.breakdown,pricingStatus:'ready',pricingSource:quote.source,pricingCatalogVersion:quote.catalogVersion,unmappedPricingItems:forms.unmapped};
+    $('#resPrep').textContent=money(quote.total);$('#resPrep2').textContent=money(quote.total);
+    $('#resBreakdown').innerHTML=quote.breakdown.map(b=>'<div class="bd-row"><span>'+uploadText(b.label)+'</span><span>'+money(b.price)+'</span></div>').join('')+'<div class="bd-row total"><span>Estimated preparation total</span><span>'+money(quote.total)+'</span></div>';
+    $('#resPricingStatus').textContent='Current PCT pricing loaded.';
+  }catch(error){
+    state.estimate={...state.estimate,pricingStatus:'unavailable',pricingError:String(error?.message||'Pricing unavailable')};
+    $('#resPrep').textContent='Unavailable';$('#resPrep2').textContent='Unavailable';
+    $('#resBreakdown').innerHTML='<div class="warnbox">Your tax estimate is ready, but we couldn\'t load current preparation pricing. Please retry to view your filing-cost estimate.</div><button type="button" class="btn btn-soft btn-sm" onclick="retryEstimatePricing()">RETRY CURRENT PRICING</button>';
+    $('#resPricingStatus').textContent='Current preparation pricing could not be loaded.';
+  }
   translateNow();
+  return state.estimate;
 }
+function retryEstimatePricing(){return renderResult(true);}
+function prepareUniversalIntakeFromEstimate(){
+  const f=state.flags||{},o=state.organizerFlags||(state.organizerFlags={});
+  if(state.incomeSource||Number(state.numW2)>0)o.employment=true;
+  if(f.selfEmployment)o.business=true;if(f.unemployment)o.government=true;if(f.retirement||f.socialSecurity)o.retirement=true;
+  if(f.interestDividends)o.interest=true;if(f.stockCrypto){o.investments=true;o.digitalAssets=true;}if(f.rental)o.rental=true;
+  if(f.education)o.education=true;if(state.childcare==='yes')o.childcare=true;if(f.marketplace)o.marketplace=true;if(f.hsa)o.hsa=true;if(f.additionalState)o.manyStates=true;
+  if(state.leadType!=='Returning Client Drop-Off')state.leadType='New Client Drop-Off';state.estimateConvertedToFiling=true;state.completenessConfirmed=false;state.expectedChecklistOpened=false;state.intakeWizardStep=1;
+}
+function beginFilingFromEstimate(){prepareUniversalIntakeFromEstimate();return goUpload('estimate_conversion');}
 function setNum(idV,idL,val){
   const el=$('#'+idV);
   el.textContent=money(val);
@@ -2983,6 +2991,12 @@ function organizerSetStep(step){
 }
 function expectedInformation(){
   const f=state.organizerFlags||{}, items=[]; const add=(id,label,detail,critical=true)=>items.push({id,label,detail,critical});
+  if(state.leadType==='Amended Return Review'){
+    add('amended_original_return','Original filed return — '+String(state.amendYear||state.taxYear||'selected year'),'Upload the complete return originally filed for the year being amended.');
+    add('amended_corrected_forms','Corrected or missing forms','Upload every corrected, late, or previously omitted tax form connected to the requested change.');
+    add('amended_change_support','Documents supporting the amendment','Upload records related to what should be corrected, including applicable dependent, education, childcare, business, investment, rental, or Marketplace documents.');
+    if(state.flags?.amendIrsLetter)add('amended_notice','IRS or state notice','Upload every page of the notice or letter connected to this amendment.');
+  }
   if(f.employment){const n=Math.max(1,parseInt(state.organizerEmployerCount,10)||1);for(let i=1;i<=n;i++){const name=(state.organizerEmployerNames||'').split(',')[i-1]?.trim();add('w2_'+i,'W-2 — Employer '+i,name||'Upload the W-2 for this employer'+(name?' ('+name+')':'')+'; do not type W-2 dollar amounts.');}}
   if(f.business)add('business_organizer','Business organizer','Business details, annual income totals, and annual expense categories.',true);
   if(f.government)add('government_income','Unemployment / government payment record','Upload the applicable 1099-G or government statement.');
@@ -3010,10 +3024,22 @@ function checklistStatus(id){return state.checklistResponses?.[id]?.status||''}
 function setChecklistStatus(id,status){state.checklistResponses[id]={...(state.checklistResponses[id]||{}),status};renderExpectedChecklist();}
 function uploadChecklistNow(itemId){state.activeExpectedItemId=itemId||'';state.documentSource='checklist';setUploadContext();renderDocumentList();showScreen('screen-upload');}
 function setChecklistNote(id,value){state.checklistResponses[id]={...(state.checklistResponses[id]||{}),note:value};}
+function fastTrackIdentityRequirements(){
+  const returning=state.leadType==='Returning Client Drop-Off'&&state.profileVerified===true,p=state.fastTrackProfile||{},c=state.fastTrackConfirm||{},changes=state.changes||{},selectedDependents=Array.isArray(c.dependentIds)?c.dependentIds:[],dependentCount=Math.max(0,Number(state.numDeps)||0);
+  const photoReusable=returning&&p.photoId?.onFile===true&&c.photoId==='SAME'&&!changes.chgID;
+  const spouseReusable=!p.spouse?.onFile||(c.spouse==='SAME'&&p.identityDocumentsOnFile===true&&!changes.chgSpouse);
+  const ssnReusable=returning&&p.ssnRecords?.onFile===true&&c.ssnRecords==='SAME'&&!changes.chgSSN;
+  const dependentIdentityReusable=returning&&p.identityDocumentsOnFile===true&&!changes.chgDeps&&!changes.chgDepSituation&&!changes.chgSSN&&dependentCount<=selectedDependents.length;
+  return {returning,photoRequired:!photoReusable||!spouseReusable,ssnRequired:!ssnReusable,dependentIdentityRequired:dependentCount>0&&!dependentIdentityReusable,photoReusable,ssnReusable,dependentIdentityReusable};
+}
 function renderChecklistInstructions(){
   const host=$('#checklistInstructions');if(!host)return;
-  const filingStatus=String(state.filingStatus||'').toLowerCase(),spouseApplies=filingStatus==='mfj'||/married filing jointly/.test(filingStatus)||!!state.spouseFullName,hasDependents=Math.max(0,Number(state.numDeps)||0)>0;
-  host.innerHTML='<p>Please upload the required identification and all tax documents you received for this tax year. We’ll also show anything else your answers specifically flagged for your preparer.</p><div class="checklist-group"><h4>REQUIRED IDENTIFICATION</h4><p><strong>Primary taxpayer:</strong></p><ul><li>Government-issued photo ID</li><li>Driver\'s license or state ID is acceptable</li></ul>' +(spouseApplies?'<p><strong>If spouse applies / Married Filing Jointly:</strong></p><ul><li>Government-issued photo ID for spouse</li><li>Driver\'s license or state ID is acceptable</li></ul>':'')+'</div>' +(hasDependents?'<div class="checklist-group"><h4>DEPENDENTS</h4><p>For child dependents included on the return:</p><ul><li>Social Security card</li><li>Birth certificate</li></ul></div>':'')+'<div class="checklist-group"><h4>TAX DOCUMENTS</h4><p>Upload ALL current-year tax documents received by:</p><ul><li>primary taxpayer</li><li>spouse, when applicable</li></ul><p>W-2<br>1099<br>1098<br>1095-A<br>SSA-1099<br>K-1<br>and any other tax forms received</p></div><div class="checklist-group"><h4>SUPPORTING DOCUMENTS</h4><p>Also upload supporting records that apply to something reported in the intake, such as:</p><ul><li>receipts</li><li>statements</li><li>childcare records</li><li>education records</li><li>business records</li><li>mileage records</li><li>rental records</li><li>other applicable proof</li></ul></div><div class="checklist-group"><h4>ADDITIONAL REQUIREMENTS</h4><p>The existing document requirements flagged by your answers are listed below.</p></div>';
+  const filingStatus=String(state.filingStatus||'').toLowerCase(),spouseApplies=filingStatus==='mfj'||/married filing jointly/.test(filingStatus)||!!state.spouseFullName,hasDependents=Math.max(0,Number(state.numDeps)||0)>0,reuse=fastTrackIdentityRequirements();
+  let identity='';
+  if(reuse.returning&&!reuse.photoRequired&&!reuse.ssnRequired)identity='<div class="checklist-group"><h4>VERIFIED IDENTITY DOCUMENTS</h4><p>Your unchanged photo ID and Social Security records are already verified for this Fast Track intake. You do not need to upload them again.</p></div>';
+  else identity='<div class="checklist-group"><h4>IDENTIFICATION'+(reuse.returning?' — UPDATES ONLY':'')+'</h4>'+(reuse.photoRequired?'<p><strong>Upload current photo identification where needed:</strong></p><ul><li>Government-issued photo ID for the primary taxpayer'+(spouseApplies?' and spouse when applicable':'')+'</li></ul>':'<p>Your verified unchanged photo ID does not need to be uploaded again.</p>')+(reuse.ssnRequired?'<p>Upload updated Social Security documentation only when the record changed or was corrected.</p>':'<p>Your verified unchanged Social Security record does not need to be uploaded again.</p>')+'</div>';
+  const dependents=hasDependents?'<div class="checklist-group"><h4>DEPENDENTS</h4>'+(reuse.dependentIdentityRequired?'<p>Provide applicable current documentation for a new dependent or changed identifying information.</p><ul><li>Social Security card or other applicable identity record</li><li>Birth, custody, or residency support when applicable</li></ul>':'<p>Verified unchanged dependent identity documents do not need to be uploaded again. Current-year dependent questions still must be completed.</p>')+'</div>':'';
+  host.innerHTML='<p>Please upload all tax documents you received for this tax year. We’ll also show anything else your answers specifically flagged for your preparer.</p>'+identity+dependents+'<div class="checklist-group"><h4>TAX DOCUMENTS</h4><p>Upload ALL current-year tax documents received by:</p><ul><li>primary taxpayer</li><li>spouse, when applicable</li></ul><p>W-2<br>1099<br>1098<br>1095-A<br>SSA-1099<br>K-1<br>and any other tax forms received</p></div><div class="checklist-group"><h4>SUPPORTING DOCUMENTS</h4><p>Also upload supporting records that apply to something reported in the intake, such as:</p><ul><li>receipts</li><li>statements</li><li>childcare records</li><li>education records</li><li>business records</li><li>mileage records</li><li>rental records</li><li>other applicable proof</li></ul></div><div class="checklist-group"><h4>ADDITIONAL REQUIREMENTS</h4><p>The existing document requirements flagged by your answers are listed below.</p></div>';
 }
 function renderExpectedChecklist(){
   renderChecklistInstructions();
@@ -3055,7 +3081,7 @@ function formatDocumentSize(bytes){return bytes<1024*1024?Math.max(1,Math.round(
 const UPLOAD_SECTION_CONFIG=Object.freeze({identity:{inputId:'identityDocumentFileInput',previewId:'identityDocumentPreview',listId:'identityDocumentList'},tax:{inputId:'taxDocumentFileInput',previewId:'taxDocumentPreview',listId:'taxDocumentList'},supporting:{inputId:'supportingDocumentFileInput',previewId:'supportingDocumentPreview',listId:'supportingDocumentList'}});
 function documentUploadSection(value){return Object.prototype.hasOwnProperty.call(UPLOAD_SECTION_CONFIG,value)?value:'tax';}
 function documentSectionConfig(value){return UPLOAD_SECTION_CONFIG[documentUploadSection(value)];}
-function renderUploadSectionGuidance(){const reminder=$('#photoIdSpouseReminder');if(!reminder)return;const filingStatus=String(state.filingStatus||'').toLowerCase();reminder.hidden=!(filingStatus==='mfj'||/married filing jointly/.test(filingStatus)||!!state.spouseFullName);}
+function renderUploadSectionGuidance(){const reminder=$('#photoIdSpouseReminder'),section=document.querySelector('.upload-section.identity'),ready=document.querySelector('.upload-ready p'),filingStatus=String(state.filingStatus||'').toLowerCase(),spouseApplies=filingStatus==='mfj'||/married filing jointly/.test(filingStatus)||!!state.spouseFullName,reuse=fastTrackIdentityRequirements(),identityRequired=reuse.photoRequired||reuse.ssnRequired||reuse.dependentIdentityRequired;if(reminder)reminder.hidden=!spouseApplies||!reuse.photoRequired;if(section)section.hidden=reuse.returning&&!identityRequired;if(ready)ready.textContent=reuse.returning&&!identityRequired?'Make sure you’ve added all current-year tax forms and any updated supporting documents that apply.':'Make sure you’ve added the identity updates, tax forms, and supporting documents that apply.';}
 function handleDocumentSelected(file,uploadSection){handleDocumentsSelected(file?[file]:[],uploadSection);}
 function handleDocumentsSelected(files,uploadSection){
   const selected=Array.from(files||[]),section=documentUploadSection(uploadSection);if(!selected.length)return;
@@ -3153,7 +3179,7 @@ function setUploadContext(){
     ctx.innerHTML=I1+'<div>'+L('<strong>New client checklist:</strong> photo ID, Social Security cards / ITIN letters, prior-year return, and all current-year tax documents.','<strong>Lista para cliente nuevo:</strong> identificaci\u00f3n con foto, tarjetas de Seguro Social / cartas de ITIN, declaraci\u00f3n del a\u00f1o anterior y todos los documentos fiscales del a\u00f1o actual.')+'</div>';
   } else if(state.leadType==='Returning Client Drop-Off'){
     ctx.style.display='flex';
-    const noChange=Object.values(state.changes).every(v=>!v);
+    const reuse=fastTrackIdentityRequirements(),noChange=reuse.photoReusable&&reuse.ssnReusable&&!reuse.dependentIdentityRequired;
     const body = noChange
       ? L('<strong>Nothing changed?</strong> You can skip re-uploading ID and Social Security cards for now. Please still upload all current-year tax documents so PCT_AGENT_NAME can prepare your official quote.','<strong>\u00bfNada cambi\u00f3?</strong> Puedes omitir volver a subir tu identificaci\u00f3n y tarjetas de Seguro Social por ahora. A\u00fan as\u00ed, sube todos los documentos fiscales del a\u00f1o actual para que PCT_AGENT_NAME prepare tu cotizaci\u00f3n oficial.')
       : L('<strong>Some things changed.</strong> Please include updated documents for the items you flagged, plus all current-year tax documents.','<strong>Algunas cosas cambiaron.</strong> Incluye documentos actualizados de lo que marcaste, adem\u00e1s de todos los documentos fiscales del a\u00f1o actual.');
@@ -3233,31 +3259,22 @@ function selectedAmendedReasons(){
   return Object.keys(state.flags||{}).filter(k=>state.flags[k] && k.indexOf('amend')===0).map(k=>labels[k]||k);
 }
 function computeAmendedFee(){
-  const bd=[]; let fee=0;
-  const add=(label,price)=>{bd.push({label,price});fee+=price;};
-  if(state.amendNeed==='past_due' || state.amendNeed==='sfr') add(pctPriceList.priorYearComplianceReview.label,pctPriceList.priorYearComplianceReview.price);
-  else {const amended=state.amendPreparedByPct==='no'?'form1040XOther':'form1040X';add(pctPriceList[amended].label,pctPriceList[amended].price);}
-  if(state.amendScope==='state' || state.amendScope==='both' || state.amendScope==='unsure') add(pctPriceList.amendedStateReturn.label,pctPriceList.amendedStateReturn.price);
-  if(state.flags.amendIrsLetter) add(pctPriceList.taxLetterReview.label,pctPriceList.taxLetterReview.price);
-  if(state.flags.amendSelfEmployment) add('Schedule C / business amendment review',75);
-  if(state.flags.amendInvestments) add('Schedule D / capital asset amendment review',75);
-  if(state.flags.amendRentalK1) add('Schedule E / K-1 amendment review',75);
-  if(state.flags.amendMarketplace) add('Marketplace / 1095-A amendment review',50);
-  state.amendFee=fee||349; state.amendFeeBreakdown=bd;
-  return {fee:state.amendFee,breakdown:bd};
+  state.amendFee=null;state.amendFeeBreakdown=[];
+  return {fee:null,breakdown:[],reviewRequired:true};
 }
 function refreshAmended(){
-  const fee=computeAmendedFee();
+  computeAmendedFee();
   const disp=$('#amendFeeDisplay'), bdEl=$('#amendFeeBreakdown'), note=$('#amendFeeNote');
-  if(disp) disp.textContent=money(fee.fee);
-  if(note){
-    note.textContent = state.amendNeed==='past_due' ? 'Past-due return review estimate; official quote after document review.' : (state.amendNeed==='sfr' ? 'Substitute-return / IRS compliance review estimate.' : 'Federal Form 1040-X review estimate.');
-  }
-  if(bdEl){
-    let h=fee.breakdown.map(b=>'<div class="bd-row"><span>'+b.label+'</span><span>'+money(b.price)+'</span></div>').join('');
-    h+='<div class="bd-row total"><span>Estimated total</span><span>'+money(fee.fee)+'</span></div>';
-    bdEl.innerHTML=h;
-  }
+  if(disp){disp.textContent='Review required';disp.style.fontSize='26px';}
+  if(note)note.textContent='PCT will confirm the official preparation quote after reviewing the originally filed return and correction documents.';
+  if(bdEl)bdEl.innerHTML='<div class="small">No final preparation amount is due from this review request.</div>';
+}
+function prepareAmendedUniversalIntake(){
+  const f=state.flags||{},o=state.organizerFlags||(state.organizerFlags={});
+  state.taxYear=String(state.amendYear||'');state.state=state.amendState||state.state||'';state.intakeWizardStep=1;state.amendedIntakeContextPrepared=true;
+  if(f.amendMissingW2)o.employment=true;if(f.amendSelfEmployment)o.business=true;if(f.amendInvestments){o.investments=true;o.digitalAssets=true;}if(f.amendRentalK1)o.rental=true;
+  if(f.amendEducation)o.education=true;if(f.amendChildcare)o.childcare=true;if(f.amendMarketplace)o.marketplace=true;if(f.amendIrsLetter)o.unsureForm=true;
+  syncMirror('taxYear',state.taxYear);setSeg('taxYear',state.taxYear);
 }
 function submitAmended(){
   state.leadType='Amended Return Review';
@@ -3266,6 +3283,7 @@ function submitAmended(){
     showErr('amend',true); return;
   }
   showErr('amend',false);
+  prepareAmendedUniversalIntake();
   goUpload('amended');
 }
 
@@ -3346,7 +3364,7 @@ function buildAlerts(){
     if(state.flags.amendDependents) a.push({t:'info',m:'Dependent/credit correction — due diligence and proof may be required'});
     if(state.flags.amendSelfEmployment) a.push({t:'info',m:'Business amendment — income/expense records required'});
     if(state.flags.amendIrsLetter) a.push({t:'info',m:'IRS/state letter selected — upload notice'});
-    a.push({t:'info',m:'Estimated amended review fee: '+money(state.amendFee||349)});
+    a.push({t:'info',m:'Amended-return official quote pending document review'});
     return a;
   }
   if(state.leadType==='Amended Return Review'){
@@ -3374,9 +3392,9 @@ ${selectedAmendedReasons().length?selectedAmendedReasons().map(x=>'- '+x).join('
 Client Notes:
 ${state.amendNotes||'—'}
 
-Estimated Amended Return Review Fee: ${money(state.amendFee||349)}
+Official Preparation Quote: Pending review of the original return and correction documents
 Pricing Breakdown:
-${(state.amendFeeBreakdown||[]).map(b=>'- '+b.label+': '+money(b.price)).join('\n')||'- Form 1040-X review: $349'}
+- No final preparation amount has been quoted yet
 
 Documents to request/upload:
 - Copy of original filed return for the year being amended
@@ -3467,9 +3485,10 @@ Admin Alerts:
 ${buildAlerts().map(x=>'- '+x.m).join('\n')}`;
   }
   const e=state.estimate;
+  const pricingReady=e?.pricingStatus==='ready';
   const fs=fsMap[state.filingStatus]||'\u2014';
   const forms=e?e.forms.map(k=>FORM_DISPLAY[k]||k).join(', '):'\u2014';
-  const bd=e?e.breakdown.map(b=>'  '+b.label+' \u2014 $'+b.price).join('\n')+'\n  Estimated Total \u2014 $'+e.prepCost:'\u2014';
+  const bd=pricingReady?e.breakdown.map(b=>'  '+b.label+' \u2014 $'+b.price).join('\n')+'\n  Estimated Total \u2014 $'+e.prepCost:'Current pricing unavailable';
   return `PCT TAX ESTIMATE / INTAKE SUMMARY
 
 Lead Type: ${state.leadType||'\u2014'}
@@ -3488,7 +3507,7 @@ Federal: ${e?money(e.federal):'\u2014'}
 State: ${e?(e.stateApplies?money(e.state):'No state income tax'):'\u2014'}
 Total: ${e?money(e.total):'\u2014'}
 
-Estimated PCT Prep Cost: ${e?money(e.prepCost):'\u2014'}
+Estimated PCT Prep Cost: ${pricingReady?money(e.prepCost):'Current pricing unavailable'}
 Likely Forms: ${forms}
 Pricing Breakdown:
 ${bd}
@@ -3502,6 +3521,7 @@ ${buildAlerts().map(x=>'- '+x.m).join('\n')}`;
 function taxSoftwareSummaryText(){
   const fsMap={single:'Single',mfj:'Married Filing Jointly',hoh:'Head of Household',mfs:'Married Filing Separately',qss:'Qualifying Surviving Spouse',unsure:'Not sure'};
   const e=state.estimate;
+  const pricingReady=e?.pricingStatus==='ready';
   const name=(state.firstName+' '+state.lastName).trim()||'—';
   const likely=e?e.forms.map(k=>FORM_DISPLAY[k]||k).join('\n- '):'—';
   const flags=selectedFlagLabels();
@@ -3567,14 +3587,14 @@ ESTIMATE PREVIEW
 Estimated Federal: ${e?money(e.federal):'—'}
 Estimated State: ${e?(e.stateApplies?money(e.state):'No state income tax'):'—'}
 Estimated Total: ${e?money(e.total):'—'}
-Estimated Prep Cost: ${e?money(e.prepCost):'—'}
+Estimated Prep Cost: ${pricingReady?money(e.prepCost):'Current pricing unavailable'}
 
 LIKELY FORMS / QUOTE BUILD
 - ${likely}
 
 PRICING BREAKDOWN
-${e?e.breakdown.map(b=>'- '+b.label+': '+money(b.price)).join('\n'):'—'}
-${e?'Estimated Total Prep Cost: '+money(e.prepCost):''}
+${pricingReady?e.breakdown.map(b=>'- '+b.label+': '+money(b.price)).join('\n'):'Current pricing unavailable'}
+${pricingReady?'Estimated Total Prep Cost: '+money(e.prepCost):''}
 
 WORKFLOW STATUS
 Upload Status: ${state.uploadStatus}
@@ -3601,7 +3621,7 @@ function openAdmin(){
       +'<div class="admin-mini-grid">'
       +'<div class="admin-pill"><strong>Lead ID</strong>'+(state.leadId||currentLeadId())+'</div>'
       +'<div class="admin-pill"><strong>Status</strong>'+(state.leadType||'Session lead')+'</div>'
-      +'<div class="admin-pill"><strong>Estimated Prep</strong>'+(est?money(est.prepCost):'—')+'</div>'
+      +'<div class="admin-pill"><strong>Estimated Prep</strong>'+(est?.pricingStatus==='ready'?money(est.prepCost):'Current pricing unavailable')+'</div>'
       +'<div class="admin-pill"><strong>Upload</strong>'+(state.uploadStatus||'Pending')+'</div>'
       +'</div>'
       +'<div class="admin-section-title">Copy for tax software / quote build</div>'
@@ -3644,9 +3664,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAdmin();});
    The access code lives only in this page's memory.  The server persists
    its one-way hash, the non-sensitive draft, and protected identity data
    separately.  Neither browser storage nor URLs carry workspace credentials. */
-const pctWorkspaceDraftFields=['leadType','taxYear','state','filingStatus','over65','blind','claimedDependent','incomeSource','wages','fedWithholding','stateWithholding','numW2','yearJobCount','allTaxDocsConfirmed','missingTaxDocNotes','marketplaceAwareness','marketplaceLookupPlan','numDeps','depsLived','childcare','childcarePaid','seIncome','seExpenses','otherIncomeAmt','itemizedTotal','refundProduct','contactMethod','consentContact','consentPromo','firstName','lastName','email','phone','estimateDependentsUnder17','estimateDependents17Plus','wantEstimate','readyUpload','hasNewDocs','organizerStep','businessOrganizerOpened','organizerEmployerCount','organizerEmployerNames','organizerNotes','taxpayerMiddleName','taxpayerSuffix','taxpayerOccupation','taxpayerStreet','taxpayerCity','taxpayerZip','spouseFullName','spouseOccupation','businessOwner','businessName','businessAddress','businessDescription','businessActivityCode','businessGrossReceipts','businessCashIncome','business1099Income','businessOtherIncome','businessVehicleMiles','businessTotalVehicleMiles','businessHomeOfficeDetails','businessAssetsDetails','businessContractorDetails','businessEstimatedTaxPayments','businessExpense_advertising','businessExpense_commissionsFees','businessExpense_contractLabor','businessExpense_insurance','businessExpense_legalProfessional','businessExpense_office','businessExpense_rentLease','businessExpense_repairs','businessExpense_supplies','businessExpense_taxesLicenses','businessExpense_travel','businessExpense_meals','businessExpense_utilities','businessExpense_software','businessExpense_vehicleMileage','businessExpense_other','completenessConfirmed','completenessConfirmedAt','phase17Proceed','phase17ClientAttestation','phase17PctAuthorizationAccepted','phase17RefundAdvanceInterest','phase17RefundTransferInterest','phase17BankConsentDecision','phase17SelfEmploymentInterest','amendNeed','amendYear','amendScope','amendState','amendPreparedByPct','amendHasFiledReturn','amendNotes','amendFee','extEntity','extScope','extYear','extState','extStatus','extFiledLast','extOwe','extWantEstimate','extMissedDeadline','extWages','extFedWH','extSEIncome','extExpenses','extOtherIncome','extEstPayments','extFee','extCustom'];
-const pctWorkspaceDraftObjects=['flags','changes','organizerFlags','checklistResponses','phase17General','phase17Credits','phase17ScheduleC','fastTrackConfirm','scheduleCInterview','v2Draft','v2NarrativeAnswers'];
-const pctWorkspaceDraftArrays=['depAges','amendFeeBreakdown','extFeeBreakdown'];
+const pctWorkspaceDraftFields=['leadType','taxYear','state','filingStatus','over65','blind','claimedDependent','incomeSource','wages','fedWithholding','stateWithholding','numW2','yearJobCount','allTaxDocsConfirmed','missingTaxDocNotes','marketplaceAwareness','marketplaceLookupPlan','numDeps','depsLived','childcare','childcarePaid','seIncome','seExpenses','otherIncomeAmt','itemizedTotal','refundProduct','contactMethod','consentContact','consentPromo','firstName','lastName','email','phone','estimateDependentsUnder17','estimateDependents17Plus','wantEstimate','readyUpload','hasNewDocs','organizerStep','intakeWizardStep','estimateConvertedToFiling','amendedIntakeContextPrepared','profileVerified','businessOrganizerOpened','organizerEmployerCount','organizerEmployerNames','organizerNotes','taxpayerMiddleName','taxpayerSuffix','taxpayerOccupation','taxpayerStreet','taxpayerCity','taxpayerZip','spouseFullName','spouseOccupation','businessOwner','businessName','businessAddress','businessDescription','businessActivityCode','businessGrossReceipts','businessCashIncome','business1099Income','businessOtherIncome','businessVehicleMiles','businessTotalVehicleMiles','businessHomeOfficeDetails','businessAssetsDetails','businessContractorDetails','businessEstimatedTaxPayments','businessExpense_advertising','businessExpense_commissionsFees','businessExpense_contractLabor','businessExpense_insurance','businessExpense_legalProfessional','businessExpense_office','businessExpense_rentLease','businessExpense_repairs','businessExpense_supplies','businessExpense_taxesLicenses','businessExpense_travel','businessExpense_meals','businessExpense_utilities','businessExpense_software','businessExpense_vehicleMileage','businessExpense_other','completenessConfirmed','completenessConfirmedAt','phase17Proceed','phase17ClientAttestation','phase17PctAuthorizationAccepted','phase17RefundAdvanceInterest','phase17RefundTransferInterest','phase17BankConsentDecision','phase17SelfEmploymentInterest','amendNeed','amendYear','amendScope','amendState','amendPreparedByPct','amendHasFiledReturn','amendNotes','amendFee','extEntity','extScope','extYear','extState','extStatus','extFiledLast','extOwe','extWantEstimate','extMissedDeadline','extWages','extFedWH','extSEIncome','extExpenses','extOtherIncome','extEstPayments','extFee','extCustom'];
+const pctWorkspaceDraftObjects=['flags','changes','organizerFlags','checklistResponses','phase17General','phase17Credits','phase17ScheduleC','fastTrackConfirm','fastTrackProfile','estimate','scheduleCInterview','v2Draft','v2NarrativeAnswers'];
+const pctWorkspaceDraftArrays=['depAges','amendFeeBreakdown','extFeeBreakdown','expectedInformationSnapshot'];
 const pctWorkspaceDependentFields=['v2SubjectId','fullName','relationship','monthsLived','supportDetails','temporaryAbsence','student','disability','marriedJointReturn','competingClaimant','custodyDetails'];
 let pctWorkspaceAutosaveTimer=null;
 let pctWorkspaceSaveRunner=null;
@@ -3769,7 +3789,13 @@ function pctWorkspaceShowReady(continueIntake){
   const access=state.workspaceAccess,{card}=pctWorkspacePanel('screen-workspace-ready','RETURN WORKSPACE READY','Your Return Workspace is ready.','Save these details before continuing. You will use the same Case ID and Access Code to resume unfinished intake and for later PCT return steps.');
   pctWorkspaceDetails(card,access);
   const actions=document.createElement('div'),copy=document.createElement('button'),continueButton=document.createElement('button'),status=document.createElement('p');
-  actions.className='actions';copy.type='button';copy.className='btn btn-soft';copy.textContent='COPY ACCESS DETAILS';copy.onclick=()=>pctWorkspaceCopyDetails(status);continueButton.type='button';continueButton.className='btn btn-gold';continueButton.textContent='CONTINUE MY INTAKE';continueButton.onclick=()=>{continueIntake?.();pctWorkspaceSetSaveButton();};status.className='small';actions.append(copy,continueButton);card.append(actions,status);showScreen('screen-workspace-ready');
+  actions.className='actions';copy.type='button';copy.className='btn btn-soft';copy.textContent='COPY ACCESS DETAILS';copy.onclick=()=>pctWorkspaceCopyDetails(status);continueButton.type='button';continueButton.className='btn btn-gold';continueButton.textContent='CONTINUE MY INTAKE';continueButton.onclick=()=>pctWorkspaceReadyContinue(continueButton,status,continueIntake);status.className='small';status.setAttribute('role','status');actions.append(copy,continueButton);card.append(actions,status);showScreen('screen-workspace-ready');
+}
+async function pctWorkspaceReadyContinue(button,status,continueIntake){
+  if(state.workspaceContinuePromise)return state.workspaceContinuePromise;
+  const originalLabel=button.textContent;button.disabled=true;button.textContent='CONTINUING…';status.textContent='Opening your secure intake…';
+  state.workspaceContinuePromise=(async()=>{try{if(typeof continueIntake!=='function')throw new Error('The intake destination is unavailable.');await Promise.resolve(continueIntake());if(document.querySelector('.screen.active')?.id==='screen-workspace-ready')throw new Error('The next intake screen did not open.');pctWorkspaceSetSaveButton();return {ok:true};}catch(error){status.textContent=pctWorkspaceError(error,'We could not continue to the next intake step. Please try again.');button.disabled=false;button.textContent=originalLabel;return {ok:false};}finally{state.workspaceContinuePromise=null;}})();
+  return state.workspaceContinuePromise;
 }
 function pctWorkspaceShowSaved(){
   const access=state.workspaceAccess,{card}=pctWorkspacePanel('screen-save-finish-later','PROGRESS SAVED ✓','Your progress is saved.','You can come back anytime and continue where you left off.');
@@ -3808,11 +3834,13 @@ async function pctWorkspaceCreate(){
   try{return await state.workspaceCreatePromise;}finally{state.workspaceCreatePromise=null;}
 }
 async function pctWorkspaceBegin(continueIntake){
-  const result=await pctWorkspaceCreate();if(!result.ok){toast(result.message||'Your Return Workspace could not be created.');return;}
-  if(result.created)pctWorkspaceShowReady(continueIntake);else continueIntake?.();
+  if(state.workspaceBeginPromise)return state.workspaceBeginPromise;
+  state.workspaceBeginPromise=(async()=>{const result=await pctWorkspaceCreate();if(!result.ok){toast(result.message||'Your Return Workspace could not be created.');return result;}if(result.created)pctWorkspaceShowReady(continueIntake);else await Promise.resolve(continueIntake?.());return result;})();
+  try{return await state.workspaceBeginPromise;}finally{state.workspaceBeginPromise=null;}
 }
 function pctWorkspaceRestore(draft,identity,documents){
   const restored=draft&&typeof draft==='object'?draft:{};Object.keys(restored).forEach(key=>{if(key!=='workspaceDraftVersion'&&key!=='workspaceCurrentScreen'&&key!=='workspaceCurrentStep'&&key!=='workspaceCompletedSections')state[key]=restored[key];});
+  if(state.workspaceAccess?.workflowType==='AMENDED_RETURN'){state.taxYear=String(state.workspaceAccess.taxYear||state.amendYear||state.taxYear||'');state.amendYear=state.taxYear;state.amendedIntakeContextPrepared=true;}
   const protectedIdentity=identity&&typeof identity==='object'?identity:{},taxpayer=protectedIdentity.taxpayer||{},spouse=protectedIdentity.spouse||{};
   state.taxpayerIdType=String(taxpayer.identificationType||state.taxpayerIdType||'');state.taxpayerIdNumber=String(taxpayer.identificationNumber||taxpayer.ssn||taxpayer.itin||'');state.taxpayerDob=String(taxpayer.dob||state.taxpayerDob||'');
   state.spouseIdType=String(spouse.identificationType||state.spouseIdType||'');state.spouseIdNumber=String(spouse.identificationNumber||spouse.ssn||spouse.itin||'');state.spouseDob=String(spouse.dob||state.spouseDob||'');
@@ -3834,7 +3862,6 @@ showScreen=function(id){pctWorkspaceOriginalShowScreen(id);pctWorkspaceSetSaveBu
 const pctWorkspaceOriginalGoUpload=goUpload;
 goUpload=function(source){if(state.workspaceAccess?.accessCode)return pctWorkspaceOriginalGoUpload(source);return pctWorkspaceBegin(()=>pctWorkspaceOriginalGoUpload(source));};
 const pctWorkspaceOriginalGoEstimate=goEstimate;
-goEstimate=function(){if(state.workspaceAccess?.accessCode)return pctWorkspaceOriginalGoEstimate();return pctWorkspaceBegin(pctWorkspaceOriginalGoEstimate);};
 const pctWorkspaceOriginalPersistLead=persistLead;
 persistLead=async function(reason){if(state.workspaceAccess?.accessCode){const saved=await pctWorkspaceSaveDraft();if(reason==='native_documents_uploaded'&&saved.ok)renderTaxYearIntegrityPanel('additional',state.taxYear);return saved;}return pctWorkspaceOriginalPersistLead(reason);};
 const pctWorkspaceOriginalSubmitIntake=submitIntake;
