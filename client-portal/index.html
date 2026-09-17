@@ -733,7 +733,7 @@
         }
         if (payment.method === "PAY_INVOICE" && payment.invoice) {
           const total = document.createElement("p");
-          total.textContent = "FINAL CLIENT PRICE " + money(payment.invoice.grossAmountCents) + (payment.invoice.discountAmountCents ? " · PAY NOW DISCOUNT −" + money(payment.invoice.discountAmountCents) : "") + " · AMOUNT DUE TODAY " + money(payment.invoice.amountCents);
+          total.textContent = "FINAL TAX PREPARATION FEE " + money(payment.invoice.grossAmountCents) + (payment.invoice.priorPaymentCreditCents ? " · EXTENSION FEE ALREADY PAID −" + money(payment.invoice.priorPaymentCreditCents) : "") + (payment.invoice.discountAmountCents ? " · PAY NOW DISCOUNT −" + money(payment.invoice.discountAmountCents) : "") + " · REMAINING PREPARATION BALANCE " + money(payment.invoice.amountCents);
           host.append(total);
           if (payment.canPay && payment.paymentLink) {
             const link = document.createElement("a");

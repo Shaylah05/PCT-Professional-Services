@@ -764,7 +764,7 @@ function detectForms(lead){
   const forms=[]; const add=(form,reason,price,missing)=>{if(!forms.some(f=>f.form===form)) forms.push({form,reason,price,missing})};
   const q=lead.quickEstimateInputs||{}; const filing=lead.filing||{};
   if(lead.amendedReturn){add('Form 1040-X','Amended return review requested',349,'Filed original return copy, IRS/state letters, and corrected tax documents'); if(lead.amendedReturn.scope==='state'||lead.amendedReturn.scope==='both') add('State amended return','State amendment selected',99,'State original return and state notice/documents'); return forms;}
-  if(lead.extension){add(lead.extension.entity==='business'?'Form 7004':'Form 4868','Extension request selected',lead.extension.entity==='selfemployed'?99:49,'SSN/DOB/entity details and invoice paid before transmission'); if(lead.extension.scope==='state'||lead.extension.scope==='both') add('State extension','State extension selected',25,'Confirm state extension rules and payment need'); return forms;}
+  if(lead.extension){const authoritative=Number(lead.extensionWorkflow?.pricing?.amountCents);add(lead.extension.entity==='business'?'Form 7004':'Form 4868',Number.isSafeInteger(authoritative)&&authoritative>0?'Authoritative Extension fee resolved':'Extension pricing review required',Number.isSafeInteger(authoritative)?authoritative/100:0,'SSN/DOB/entity details, acknowledgement, authoritative pricing, and verified upfront payment before transmission'+((lead.extension.scope==='state'||lead.extension.scope==='both')?'; state Extension pricing review required':''));return forms;}
   add('Form 1040','Base individual federal return',189,'Confirm taxpayer identity, DOB, SSN before filing');
   if(filing.state && filing.state!=='none') add('State Return','State selected on intake',69,'Confirm resident/nonresident state forms');
   if(num(q.numDeps)>0){add('Form 8812','Dependents selected; child/other dependent credit review',39,'Dependent DOB/SSN, relationship, months in home');add('Due Diligence / Form 8867','Refundable credit/dependent review may apply',0,'Residency/support proof if needed')}
@@ -2114,5 +2114,6 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
   window.addEventListener('DOMContentLoaded',upgrade);setTimeout(upgrade,0);
 })();
 </script>
+<script src="../assets/pct-extension-agent-workspace.js?v=20260916-phase2"></script>
 </body>
 </html>
