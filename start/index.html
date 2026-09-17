@@ -3804,6 +3804,7 @@ function pctWorkspaceShowSaved(){
   status.className='small';status.style.marginTop='12px';actions.append(copy,email,saveMyself,done);card.append(actions,status);showScreen('screen-save-finish-later');
 }
 async function pctWorkspaceSaveAndFinish(){
+  window.clearTimeout(pctWorkspaceAutosaveTimer);pctWorkspaceAutosaveTimer=null;
   const saved=await pctWorkspaceSaveDraft();if(!saved.ok){toast(saved.message||'Your progress could not be saved yet.');return;}
   pctWorkspaceShowSaved();
 }
