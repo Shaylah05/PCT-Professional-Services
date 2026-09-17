@@ -375,13 +375,25 @@
           returnId: s.item.returnId,
         };
       }
+      function resumeIntakeDestination(workspace) {
+        const route=workspace?.resumeIntakeRoute&&typeof workspace.resumeIntakeRoute==="object"?workspace.resumeIntakeRoute:{},mode=String(route.intakeMode||"").toUpperCase();
+        let path=String(route.path||""),agentPublicId=String(route.agentPublicId||"").trim();
+        if(!path){try{const source=new URL(String(workspace?.sourceLink||"")),storedPublicId=String(workspace?.agentPublicId||"").trim();if(source.origin===location.origin&&/^\/start\/?$/.test(source.pathname)){const candidate=String(source.searchParams.get("pro")||"").trim();if(/^agent-[a-f0-9]{12}$/i.test(candidate)&&candidate===storedPublicId){path=`/start/?pro=${encodeURIComponent(candidate)}`;agentPublicId=candidate;}}}catch(_){}}
+        const agentRoute=mode==="AGENT"||Boolean(path&&agentPublicId);
+        if(agentRoute&&!/^agent-[a-f0-9]{12}$/i.test(agentPublicId))throw new Error("The saved intake route is unavailable.");
+        const destination=new URL(agentRoute?"/start/":"/",location.origin);if(agentRoute)destination.searchParams.set("pro",agentPublicId);destination.hash="";
+        return {destination,agentPublicId:agentRoute?agentPublicId:""};
+      }
       function showResumeIntake(workspace) {
         const card=$("resumeIntakeCard"),button=$("resumeIntake");
         s.resumeWorkspace=workspace;card.classList.remove("hidden");$("loginmsg").textContent="Your intake is saved. Continue it before using later return-review steps.";
         button.onclick=()=>once("resume-intake",button,async()=>{
-          const agentPublicId=String(workspace.agentPublicId||"").replace(/[^A-Za-z0-9_-]/g,"");
-          const handoff={leadId:String(s.q.leadId||""),accessCode:String(s.q.accessCode||""),agentPublicId,createdAt:Date.now()};
-          try{sessionStorage.setItem("pctWorkspaceResumeHandoffV1",JSON.stringify(handoff));const destination=new URL("/start/",location.origin);if(agentPublicId)destination.searchParams.set("pro",agentPublicId);location.assign(destination.toString());}
+          try{
+            const {destination,agentPublicId}=resumeIntakeDestination(workspace);
+            const handoff={leadId:String(s.q.leadId||""),accessCode:String(s.q.accessCode||""),agentPublicId,createdAt:Date.now()};
+            sessionStorage.setItem("pctWorkspaceResumeHandoffV1",JSON.stringify(handoff));
+            location.assign(destination.toString());
+          }
           catch(_){try{sessionStorage.removeItem("pctWorkspaceResumeHandoffV1");}catch(_){}$("resumeIntakeMsg").textContent="Your intake could not be reopened in this tab. Please use the same Case ID and Access Code on the intake page.";}
         });
         show("login");
