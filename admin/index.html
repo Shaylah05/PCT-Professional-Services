@@ -1778,7 +1778,8 @@ function downloadSelectedJson(){const lead=selectedLead(); if(!lead){toast('Sele
     const selected=workspace()?.classList.contains('workspace-mode');
     root.classList.toggle('hidden',!workspace()||workspace().classList.contains('hidden')||selected);
     const back=workspace()?.querySelector('.return-workspace-head button[onclick*="backToClientDashboard"]');
-    if(back)back.textContent=ownerOnly?'← BACK TO OWNER TAX RETURNS':'← BACK TO ALL RETURNS';
+    const backLabel=ownerOnly?'← BACK TO OWNER TAX RETURNS':'← BACK TO ALL RETURNS';
+    if(back&&back.textContent!==backLabel)back.textContent=backLabel;
   }
   const priorOpen=window.openReturnWorkspace;
   if(typeof priorOpen==='function')window.openReturnWorkspace=function(){
