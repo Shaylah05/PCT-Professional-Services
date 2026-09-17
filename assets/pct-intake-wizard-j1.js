@@ -153,6 +153,8 @@
       state.phase17RefundTransferInterest = value;
       renderRefundOptions();
     };
+    window.pctJ1RefreshRefundOptions = renderRefundOptions;
+    window.pctJ1ShowStage = showStage;
     renderRefundOptions();
     showStage(stageNumber(), {focus: false});
   }

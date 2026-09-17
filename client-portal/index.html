@@ -169,6 +169,12 @@
         ><label>Review access code<input id="code" /></label
         ><button id="open">Open My Return Workspace</button>
         <div id="loginmsg" class="msg"></div>
+        <div id="resumeIntakeCard" class="card hidden" style="margin:20px 0 0;background:#eef8f0">
+          <h2 style="font-size:18px">YOUR INTAKE IS STILL IN PROGRESS</h2>
+          <p>Your saved answers and documents are ready in this same Return Workspace.</p>
+          <button id="resumeIntake" type="button">RESUME MY INTAKE</button>
+          <div id="resumeIntakeMsg" class="msg" aria-live="polite"></div>
+        </div>
         <div class="card" style="margin:20px 0 0;background:#fffaf0">
           <h2 style="font-size:16px">DON'T HAVE YOUR RETURN ID OR ACCESS CODE?</h2>
           <button id="showRecovery" class="plain" type="button">SEND MY PORTAL ACCESS</button>
@@ -324,7 +330,8 @@
       messages: httpsCallable(f, "getClientPortalMessages"),
       sendMessage: httpsCallable(f, "sendClientPortalMessage"),
       messageAttachmentUrl: httpsCallable(f, "getClientMessageAttachmentUrl"),
-      recover: httpsCallable(f, "sendClientPortalAccess"),
+          recover: httpsCallable(f, "sendClientPortalAccess"),
+          resumeWorkspace: httpsCallable(f, "loadPublicTaxIntakeWorkspace"),
         },
         s = {
           q: null,
@@ -368,8 +375,24 @@
           returnId: s.item.returnId,
         };
       }
+      function showResumeIntake(workspace) {
+        const card=$("resumeIntakeCard"),button=$("resumeIntake");
+        s.resumeWorkspace=workspace;card.classList.remove("hidden");$("loginmsg").textContent="Your intake is saved. Continue it before using later return-review steps.";
+        button.onclick=()=>once("resume-intake",button,async()=>{
+          const agentPublicId=String(workspace.agentPublicId||"").replace(/[^A-Za-z0-9_-]/g,"");
+          const handoff={leadId:String(s.q.leadId||""),accessCode:String(s.q.accessCode||""),agentPublicId,createdAt:Date.now()};
+          try{sessionStorage.setItem("pctWorkspaceResumeHandoffV1",JSON.stringify(handoff));const destination=new URL("/start/",location.origin);if(agentPublicId)destination.searchParams.set("pro",agentPublicId);location.assign(destination.toString());}
+          catch(_){try{sessionStorage.removeItem("pctWorkspaceResumeHandoffV1");}catch(_){}$("resumeIntakeMsg").textContent="Your intake could not be reopened in this tab. Please use the same Case ID and Access Code on the intake page.";}
+        });
+        show("login");
+      }
+      async function loadResumableIntake() {
+        try{const workspace=(await c.resumeWorkspace({...s.q,agentPublicId:""})).data||{};if(workspace.ok&&workspace.workspaceStatus==="INTAKE_IN_PROGRESS"&&!workspace.readOnly)return workspace;}catch(_){/* A submitted return is expected to use the normal portal path. */}
+        return null;
+      }
       async function load() {
         try {
+          const resumable=await loadResumableIntake();if(resumable){showResumeIntake(resumable);return;}
           s.data = (await c.home(s.q)).data;
           $("welcome").textContent =
             "Welcome, " + (s.data.client.firstName || "");

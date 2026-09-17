@@ -4,7 +4,7 @@
   'use strict';
 
   const sourceVersion = 'TAXSLAYER_PROVIDED_UNDATED_PAGE_1';
-  const title = 'CONSENT TO USE AND DISCLOSER OF THE TAX RETURN';
+  const title = 'CONSENT TO USE AND DISCLOSURE OF THE TAX RETURN';
   const pageLabel = 'Page 1';
   const preparerLabel = 'Name of tax preparer:';
   const legalParagraphs = Object.freeze([
@@ -58,4 +58,5 @@
     pageLabel,
     render
   });
+  window.dispatchEvent(new CustomEvent('pct-taxslayer-bank-disclosure-ready'));
 }());
