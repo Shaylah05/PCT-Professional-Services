@@ -17,7 +17,7 @@
   function installStyle() {
     if (document.getElementById('pctV2ReviewStyle')) return;
     const style = document.createElement('style'); style.id = 'pctV2ReviewStyle';
-    style.textContent = '.pct-v2-review{max-width:930px;margin:0 auto;padding:28px 18px 56px}.pct-v2-review-head{margin-bottom:22px}.pct-v2-review-head h1{margin:0 0 8px}.pct-v2-review-card{margin:14px 0;padding:18px;border:1px solid #e0d8c7;border-radius:14px;background:#fff}.pct-v2-review-card-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}.pct-v2-review-card h2{font-size:1.1rem;margin:0}.pct-v2-review-status{display:inline-block;margin-top:7px;padding:4px 8px;border-radius:999px;background:#eaf6ef;color:#205c38;font-size:.74rem;font-weight:800;letter-spacing:.04em}.pct-v2-review-status.attention{background:#fff4df;color:#75520a}.pct-v2-review-edit{flex:0 0 auto;min-height:40px}.pct-v2-review-summary{margin:14px 0 0;line-height:1.55}.pct-v2-review-list{margin:12px 0 0;padding-left:20px;line-height:1.55}.pct-v2-review-dependent,.pct-v2-review-answer{margin-top:14px;padding:14px;border-radius:10px;background:#faf8f3}.pct-v2-review-dependent h3{margin:0 0 8px;font-size:1rem}.pct-v2-review-answer-label{font-size:.76rem;font-weight:800;letter-spacing:.05em;color:#604516}.pct-v2-review-answer-question{margin:6px 0;font-weight:700}.pct-v2-review-answer pre{margin:8px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;line-height:1.5}.pct-v2-review-submit{margin-top:24px;padding:22px;border-radius:14px;background:#f8f3e6}.pct-v2-review-submit h2{margin-top:0}.pct-v2-review-message{margin:12px 0 0;color:#8b251c;font-weight:700}.pct-v2-review-empty{color:#665f52}.pct-v2-review-screen{background:var(--cream,#f7f4ed)}@media(max-width:640px){.pct-v2-review{padding:20px 14px 40px}.pct-v2-review-card-head{align-items:stretch;flex-direction:column}.pct-v2-review-edit{width:100%}}';
+    style.textContent = '.pct-v2-review{max-width:930px;margin:0 auto;padding:28px 18px 56px}.pct-v2-review-head{margin-bottom:22px}.pct-v2-review-head h1{margin:0 0 8px}.pct-v2-review-card{margin:14px 0;padding:18px;border:1px solid #e0d8c7;border-radius:14px;background:#fff}.pct-v2-review-card-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}.pct-v2-review-card h2{font-size:1.1rem;margin:0}.pct-v2-review-status{display:inline-block;margin-top:7px;padding:4px 8px;border-radius:999px;background:#eaf6ef;color:#205c38;font-size:.74rem;font-weight:800;letter-spacing:.04em}.pct-v2-review-status.attention{background:#fff4df;color:#75520a}.pct-v2-review-status.neutral{background:#f0eee8;color:#5e584e}.pct-v2-review-edit{flex:0 0 auto;min-height:40px}.pct-v2-review-summary{margin:14px 0 0;line-height:1.55}.pct-v2-review-list{margin:12px 0 0;padding-left:20px;line-height:1.55}.pct-v2-review-dependent,.pct-v2-review-answer{margin-top:14px;padding:14px;border-radius:10px;background:#faf8f3}.pct-v2-review-dependent h3{margin:0 0 8px;font-size:1rem}.pct-v2-review-answer-label{font-size:.76rem;font-weight:800;letter-spacing:.05em;color:#604516}.pct-v2-review-answer-question{margin:6px 0;font-weight:700}.pct-v2-review-answer pre{margin:8px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;line-height:1.5}.pct-v2-review-submit{margin-top:24px;padding:22px;border-radius:14px;background:#f8f3e6}.pct-v2-review-submit h2{margin-top:0}.pct-v2-review-message{margin:12px 0 0;color:#8b251c;font-weight:700}.pct-v2-review-empty{color:#665f52}.pct-v2-review-screen{background:var(--cream,#f7f4ed)}@media(max-width:640px){.pct-v2-review{padding:20px 14px 40px}.pct-v2-review-card-head{align-items:stretch;flex-direction:column}.pct-v2-review-edit{width:100%}}';
     document.head.appendChild(style);
   }
   function questionsBySection(state) {
@@ -37,9 +37,18 @@
     const item = (narrative?.getVisibleQuestions?.(state) || []).find(candidate => candidate.key === prepared.focusKey);
     return {section:item ? categorySection(item.question.category) : 'other', focusKey:prepared.focusKey || '', message:prepared.message || 'Please complete the requested details before submitting.'};
   }
-  function status(label, attention) { return `<span class="pct-v2-review-status${attention ? ' attention' : ''}">${attention ? 'NEEDS YOUR ATTENTION' : label}</span>`; }
-  function card({title, section, summary, body, attention, edit}) {
-    return `<section class="pct-v2-review-card"><div class="pct-v2-review-card-head"><div><h2>${esc(title)}</h2>${status(attention ? '': 'COMPLETE', attention)}</div><button class="btn btn-ghost pct-v2-review-edit" type="button" data-pct-v2-review-edit="${esc(section)}">EDIT</button></div><div class="pct-v2-review-summary">${summary}</div>${body || ''}</section>`;
+  function status(label, attention, neutral) { return `<span class="pct-v2-review-status${attention ? ' attention' : ''}${neutral ? ' neutral' : ''}">${attention ? 'NEEDS YOUR ATTENTION' : esc(label)}</span>`; }
+  function card({title, section, summary, body, attention, statusLabel, neutralStatus, editLabel}) {
+    const renderedStatus = statusLabel === undefined ? status('COMPLETE', attention) : status(statusLabel, false, neutralStatus);
+    return `<section class="pct-v2-review-card"><div class="pct-v2-review-card-head"><div><h2>${esc(title)}</h2>${renderedStatus}</div><button class="btn btn-ghost pct-v2-review-edit" type="button" data-pct-v2-review-edit="${esc(section)}">${esc(editLabel || 'EDIT')}</button></div><div class="pct-v2-review-summary">${summary}</div>${body || ''}</section>`;
+  }
+  function uploadedDocumentsForSession(state) {
+    const returnId = text(state.workspaceAccess?.returnId);
+    return (state.documents || []).filter(document => {
+      const uploaded = document?.persisted === true || document?.metadataStatus === 'METADATA_SAVED';
+      const documentReturnId = text(document?.returnId);
+      return uploaded && (!returnId || !documentReturnId || documentReturnId === returnId);
+    });
   }
   function narrativeMarkup(items) {
     if (!items.length) return '';
@@ -74,9 +83,7 @@
     const personalComplete = ['firstName','lastName','email','phone'].every(key => text(state[key]));
     const address = [state.taxpayerStreet,state.taxpayerCity,state.state,state.taxpayerZip].filter(text).map(esc).join(', ');
     const filingComplete = !!text(state.filingStatus);
-    const docs = state.documents || [], expected = typeof window.expectedInformation === 'function' ? window.expectedInformation() : [];
-    const provided = Object.values(state.checklistResponses || {}).filter(row => row?.status === 'provided').length;
-    const missing = Math.max(0, expected.length - provided);
+    const docs = uploadedDocumentsForSession(state), documentCount = docs.length;
     const businessSelected = state.flags?.selfEmployment === true || state.organizerFlags?.business === true;
     const flagNames = otherFlags(state);
     const sections = [
@@ -87,7 +94,7 @@
       card({title:'Self-Employment / Business',section:'business',attention:issue?.section === 'business',summary:businessSelected ? 'Business or self-employment information was selected for preparer review.' : 'Not applicable based on the current intake selections.',body:businessSelected ? narrativeMarkup(groups.business) : ''}),
       card({title:'Education / Credits',section:'education',attention:issue?.section === 'education',summary:groups.education.length ? 'Education information needing additional context is included below.' : 'No V2 education narrative is currently requested.',body:narrativeMarkup(groups.education)}),
       card({title:'Other Tax Situations',section:'other',attention:issue?.section === 'other',summary:flagNames.length ? `Selected items: ${esc(flagNames.join(', '))}` : 'No additional organizer items are selected for this review.',body:narrativeMarkup(groups.other)}),
-      card({title:'Documents',section:'documents',attention:docs.length === 0 || missing > 0,summary:docs.length ? `${docs.length} document${docs.length === 1 ? '' : 's'} added for secure upload.` : 'No documents have been added yet.',body:`${docs.length ? `<ul class="pct-v2-review-list">${docs.map(doc => `<li>${esc(doc.originalFileName || 'Document')} ${doc.documentType ? `— ${esc(doc.documentType)}` : ''}</li>`).join('')}</ul>` : ''}${missing > 0 ? `<div class="pct-v2-review-empty">${missing} checklist item${missing === 1 ? '' : 's'} may still need attention.</div>` : ''}`})
+      card({title:'Documents Uploaded',section:'documents',statusLabel:`${documentCount} document${documentCount === 1 ? '' : 's'}`,neutralStatus:true,editLabel:'View / Add Documents',summary:documentCount ? `${documentCount} document${documentCount === 1 ? '' : 's'} uploaded.` : 'No documents uploaded yet. You can add documents anytime.'})
     ];
     screen.innerHTML = `<div class="pct-v2-review"><header class="pct-v2-review-head"><div class="kicker">PCT PRO SERVICES</div><h1>REVIEW YOUR INTAKE</h1><p>Please review your information before submitting it to your preparer. You can go back and make changes to any section.</p><p>Your tax preparer may contact you if additional information or documentation is needed.</p></header>${sections.join('')}<section class="pct-v2-review-submit"><h2>READY TO SEND TO YOUR PREPARER?</h2><p>By submitting your intake, you’re sending the information and documents you provided to your tax preparer for review. Your preparer may contact you if additional information is needed before your return can be completed.</p><button type="button" class="btn btn-gold" data-pct-v2-review-submit>SUBMIT TO MY TAX PRO</button><div class="pct-v2-review-message" aria-live="polite"></div></section></div>`;
     screen.querySelectorAll('[data-pct-v2-review-edit]').forEach(button => button.addEventListener('click', () => hooks.edit(button.dataset.pctV2ReviewEdit)));

@@ -82,17 +82,15 @@
   }
 
   function currentSectionReady(stage) {
-    if (stage === 4) return window.validateIdentityDetails?.() !== false;
     if (stage === 5) {
       if (!state.phase17Proceed) { window.toast?.('Choose “Yes, I’m ready to continue” when you are ready for the next step.'); return false; }
-      if (!state.phase17SelfEmploymentInterest) { window.toast?.('Please answer whether you had any income outside a W-2 job before continuing.'); return false; }
       if (!state.phase17ClientAttestation) { window.toast?.('Please confirm that the information you shared is complete to the best of your knowledge.'); return false; }
     }
     if (stage === 6) return window.validatePhase17FilingIntake?.() !== false;
     if (stage === 7) {
-      if (!one('#completenessConfirm')?.checked) { window.toast?.('Please review your checklist and confirm what you have today before continuing.'); return false; }
-      state.completenessConfirmed = true;
-      state.completenessConfirmedAt = state.completenessConfirmedAt || new Date().toISOString();
+      state.completenessConfirmed = !!one('#completenessConfirm')?.checked;
+      state.completenessConfirmedAt = state.completenessConfirmed ? (state.completenessConfirmedAt || new Date().toISOString()) : '';
+      state.intakeWizardReadyForUpload = true;
     }
     return true;
   }
@@ -130,9 +128,9 @@
     };
     const originalGoUpload = window.goUpload;
     window.goUpload = function patchedGoUpload(source) {
-      if (!state.completenessConfirmed) state.intakeWizardStep = 1;
+      if (!state.intakeWizardReadyForUpload) state.intakeWizardStep = 1;
       const result = originalGoUpload.apply(this, arguments);
-      if (!state.completenessConfirmed) showStage(1, {focus: false});
+      if (!state.intakeWizardReadyForUpload) showStage(1, {focus: false});
       return result;
     };
     const originalReviewEdit = window.pctV2ReviewEdit;

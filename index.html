@@ -1997,7 +1997,7 @@ const state = {
   firstName:"", lastName:"", email:"", phone:"", profileEmail:"", profileSsn:"", profileVerified:false, fastTrackToken:"", fastTrackProfile:null, fastTrackConfirm:{contact:"",photoId:"",ssnRecords:"",bank:"",spouse:"",dependentIds:[]}, estimateDependentsUnder17:"0", estimateDependents17Plus:"0",
   wantEstimate:"", readyUpload:"", hasNewDocs:"",
   changes:{}, estimate:null, uploadStatus:"Pending", documents:[], pendingDocument:null, documentSource:"",
-  organizerFlags:{}, organizerStep:1, businessOrganizerOpened:false, expectedChecklistOpened:false, expectedInformationSnapshot:[], activeExpectedItemId:"", organizerEmployerCount:"", organizerEmployerNames:"", organizerNotes:"", taxpayerMiddleName:"", taxpayerSuffix:"", taxpayerIdType:"", taxpayerIdNumber:"", taxpayerDob:"", taxpayerOccupation:"", taxpayerStreet:"", taxpayerCity:"", taxpayerZip:"", spouseFullName:"", spouseIdType:"", spouseIdNumber:"", spouseDob:"", spouseOccupation:"", dependentDetails:[], businessOwner:"", businessName:"", businessEin:"", businessAddress:"", businessDescription:"", businessActivityCode:"", businessGrossReceipts:"", businessCashIncome:"", business1099Income:"", businessOtherIncome:"", businessVehicleMiles:"", businessTotalVehicleMiles:"", businessHomeOfficeDetails:"", businessAssetsDetails:"", businessContractorDetails:"", businessEstimatedTaxPayments:"", businessExpense_advertising:"", businessExpense_commissionsFees:"", businessExpense_contractLabor:"", businessExpense_insurance:"", businessExpense_legalProfessional:"", businessExpense_office:"", businessExpense_rentLease:"", businessExpense_repairs:"", businessExpense_supplies:"", businessExpense_taxesLicenses:"", businessExpense_travel:"", businessExpense_meals:"", businessExpense_utilities:"", businessExpense_software:"", businessExpense_vehicleMileage:"", businessExpense_other:"", checklistResponses:{}, completenessConfirmed:false, completenessConfirmedAt:"", phase17Proceed:false, phase17ClientAttestation:false, phase17General:{}, phase17Credits:{}, phase17ScheduleC:{}, phase17PctAuthorizationAccepted:false, phase17RefundAdvanceInterest:"", phase17RefundTransferInterest:"", phase17BankConsentDecision:"", phase17SelfEmploymentInterest:"",
+  organizerFlags:{}, organizerStep:1, intakeWizardReadyForUpload:false, businessOrganizerOpened:false, expectedChecklistOpened:false, expectedInformationSnapshot:[], activeExpectedItemId:"", organizerEmployerCount:"", organizerEmployerNames:"", organizerNotes:"", taxpayerMiddleName:"", taxpayerSuffix:"", taxpayerIdType:"", taxpayerIdNumber:"", taxpayerDob:"", taxpayerOccupation:"", taxpayerStreet:"", taxpayerCity:"", taxpayerZip:"", spouseFullName:"", spouseIdType:"", spouseIdNumber:"", spouseDob:"", spouseOccupation:"", dependentDetails:[], businessOwner:"", businessName:"", businessEin:"", businessAddress:"", businessDescription:"", businessActivityCode:"", businessGrossReceipts:"", businessCashIncome:"", business1099Income:"", businessOtherIncome:"", businessVehicleMiles:"", businessTotalVehicleMiles:"", businessHomeOfficeDetails:"", businessAssetsDetails:"", businessContractorDetails:"", businessEstimatedTaxPayments:"", businessExpense_advertising:"", businessExpense_commissionsFees:"", businessExpense_contractLabor:"", businessExpense_insurance:"", businessExpense_legalProfessional:"", businessExpense_office:"", businessExpense_rentLease:"", businessExpense_repairs:"", businessExpense_supplies:"", businessExpense_taxesLicenses:"", businessExpense_travel:"", businessExpense_meals:"", businessExpense_utilities:"", businessExpense_software:"", businessExpense_vehicleMileage:"", businessExpense_other:"", checklistResponses:{}, completenessConfirmed:false, completenessConfirmedAt:"", phase17Proceed:false, phase17ClientAttestation:false, phase17General:{}, phase17Credits:{}, phase17ScheduleC:{}, phase17PctAuthorizationAccepted:false, phase17RefundAdvanceInterest:"", phase17RefundTransferInterest:"", phase17BankConsentDecision:"", phase17SelfEmploymentInterest:"",
   amendNeed:"", amendYear:"", amendScope:"", amendState:"", amendPreparedByPct:"", amendHasFiledReturn:"", amendNotes:"", amendFee:null, amendFeeBreakdown:[],
   extEntity:"", extScope:"", extYear:"2025", extState:"", extStatus:"", extFiledLast:"", extOwe:"", extWantEstimate:"", extMissedDeadline:"",
   extWages:"", extFedWH:"", extSEIncome:"", extExpenses:"", extOtherIncome:"", extEstPayments:"",
@@ -2265,9 +2265,8 @@ function pctV2ReviewEdit(section,focusKey){
 }
 function validIdChoice(type,value){if(type==='none')return true;return (type==='ssn'||type==='itin')&&String(value||'').replace(/\D/g,'').length===9;}
 function validateIdentityDetails(){
-  if(!validIdChoice(state.taxpayerIdType,state.taxpayerIdNumber)){toast('Enter the taxpayer full 9-digit SSN/ITIN, or choose No SSN / ITIN yet.');return false;}
-  const married=/married|joint/i.test(String(state.filingStatus||'')); if(married&&!validIdChoice(state.spouseIdType,state.spouseIdNumber)){toast('Enter the spouse full 9-digit SSN/ITIN, or choose No SSN / ITIN yet.');return false;}
-  for(let i=0;i<pctCommittedDependentCount();i++){const d=state.dependentDetails[i]||{};if(!d.fullName||!d.relationship||!validIdChoice(d.idType,d.idNumber)||!d.dob){toast('Complete each dependent’s full name, relationship, SSN/ITIN information, and date of birth before continuing.');return false;}}
+  // Identity gaps are preserved for Owner follow-up instead of blocking a
+  // partial intake.  The protected identity payload remains session-scoped.
   return true;
 }
 
@@ -2631,14 +2630,33 @@ function validatePhase17FilingIntake(){
   if(!state.phase17Proceed){toast('Choose YES, I’M READY TO FILE to submit the committed filing intake.');return false;}
   if(!state.phase17ClientAttestation){toast('Please confirm the factual-information attestation before continuing.');return false;}
   const c=phase17ConsentsPayload();if(!c.pctAuthorizationAccepted||!c.taxpayerName||!phase17HasSignature(c.taxpayerSignature)){toast('Read and sign the PCT Tax Preparation Authorization before submitting.');return false;}
-  if(phase17JointReturn()&&(!c.jointTaxpayerName||!phase17HasSignature(c.jointTaxpayerSignature))){toast('Add the joint taxpayer name and signature for this joint filing intake.');return false;}
-  if(phase17RefundOptionsApplicable()&&(!c.refundAdvanceInterest||!c.refundTransferInterest)){toast('Answer both conditional refund-option questions before submitting.');return false;}
   if(phase17BankRequired()&&(!c.bankDisclosureTaxpayerName||!phase17HasSignature(c.bankDisclosureTaxpayerSignature))){toast('Review and sign the TaxSlayer bank-product disclosure before submitting.');return false;}
-  if(phase17BankRequired()&&phase17JointReturn()&&(!c.bankDisclosureJointTaxpayerName||!phase17HasSignature(c.bankDisclosureJointTaxpayerSignature))){toast('Add the joint taxpayer name and signature to the TaxSlayer bank-product disclosure.');return false;}
   return true;
+}
+function ownerIntakeCompletenessReview(){
+  const items=[],add=(code,message,section)=>{if(!items.some(item=>item.code===code))items.push({code,message,section});};
+  if(!state.taxpayerDob||!validIdChoice(state.taxpayerIdType,state.taxpayerIdNumber))add('TAXPAYER_IDENTITY_INCOMPLETE','Taxpayer identity details need Owner follow-up.','identity');
+  if(phase17JointReturn()&&(!state.spouseFullName||!state.spouseDob||!validIdChoice(state.spouseIdType,state.spouseIdNumber)))add('SPOUSE_INFORMATION_INCOMPLETE','Spouse information needs Owner follow-up.','identity');
+  for(let i=0;i<pctCommittedDependentCount();i++){const d=state.dependentDetails[i]||{};if(!d.fullName||!d.relationship||!d.dob||!validIdChoice(d.idType,d.idNumber)){add('DEPENDENT_INFORMATION_INCOMPLETE','One or more dependent records need Owner follow-up.','dependents');break;}}
+  const taxQuestionKeys=['phase17General_nonresidentAlien','phase17General_claimedByAnother','phase17General_qualifyingChildOfAnother','phase17General_competingClaimant','phase17General_priorCreditDisallowance','phase17Credits_headOfHousehold','phase17Credits_educationCredit'];
+  if(taxQuestionKeys.some(key=>!String(state[key]||'').trim())||!state.phase17SelfEmploymentInterest)add('TAX_INTERVIEW_INCOMPLETE','One or more tax-interview questions were left unanswered.','tax_interview');
+  if(state.organizerFlags?.business&&!businessOrganizerComplete())add('CONDITIONAL_ORGANIZER_INCOMPLETE','A conditional organizer section needs Owner follow-up.','conditional');
+  const expected=expectedInformation(),unresolved=expected.filter(item=>state.checklistResponses?.[item.id]?.status!=='provided');
+  if(unresolved.length)add('EXPECTED_INFORMATION_INCOMPLETE','One or more expected information or document items still need attention.','documents');
+  if(!(state.documents||[]).length)add('NO_DOCUMENTS_UPLOADED','No supporting documents were uploaded with this intake.','documents');
+  if(!state.completenessConfirmed)add('CLIENT_CHECKLIST_NOT_CONFIRMED','The client did not confirm that the checklist was complete.','documents');
+  if(phase17RefundOptionsApplicable()&&(!state.phase17RefundAdvanceInterest||!state.phase17RefundTransferInterest))add('REFUND_OPTIONS_UNANSWERED','Refund-option questions need Owner follow-up.','bank_options');
+  if(state.leadType==='Returning Client Drop-Off'){
+    const p=state.fastTrackProfile||{},c=state.fastTrackConfirm||{};
+    if(!c.contact||!state.filingStatus||(p.photoId?.onFile&&!c.photoId)||(p.ssnRecords?.onFile&&!c.ssnRecords)||(p.bank?.onFile&&!c.bank)||(p.spouse?.onFile&&!c.spouse))add('FAST_TRACK_REVIEW_INCOMPLETE','Fast Track current-year confirmations need Owner follow-up.','fast_track');
+    const reuse=fastTrackIdentityRequirements(),identityUploads=(state.documents||[]).filter(document=>documentUploadSection(document.uploadSection)==='identity');
+    if(reuse.photoRequired&&!identityUploads.length)add('UPDATED_PHOTO_ID_MISSING','A current photo ID is still needed for this Fast Track intake.','documents');
+  }
+  return {status:items.length?'OWNER_FOLLOW_UP_REQUIRED':'CLIENT_PROVIDED',itemCount:items.length,items,generatedAtClient:new Date().toISOString()};
 }
 function buildLeadPayload(){
   const v2Narrative=pctV2PrepareNarrativePayload();
+  const incompleteReview=ownerIntakeCompletenessReview();
   const e=state.estimate || null;
   const emailNormalized=normalizeEmailForLookup(state.email);
   const lastNameNormalized=normalizeLastNameForLookup(state.lastName);
@@ -2688,7 +2706,7 @@ function buildLeadPayload(){
       dob: state.taxpayerDob || '', occupation: safeTrim(state.taxpayerOccupation), address: {street:safeTrim(state.taxpayerStreet), city:safeTrim(state.taxpayerCity), state:state.state||'', zip:safeTrim(state.taxpayerZip)}
     },
     spouse: {fullName:safeTrim(state.spouseFullName), identificationType:state.spouseIdType||'', identificationNumber:safeTrim(state.spouseIdNumber), ssn:state.spouseIdType==='ssn'?safeTrim(state.spouseIdNumber):'', itin:state.spouseIdType==='itin'?safeTrim(state.spouseIdNumber):'', dob:state.spouseDob||'', occupation:safeTrim(state.spouseOccupation)},
-    dependents: (state.dependentDetails||[]).slice(0,pctCommittedDependentCount()).map(d=>({...((window.PCT_INTAKE_V2_CONFIG?.enabled===true&&d.v2SubjectId)?{v2SubjectId:String(d.v2SubjectId).trim()}:{}),fullName:safeTrim(d.fullName),relationship:safeTrim(d.relationship),monthsLived:safeTrim(d.monthsLived),supportDetails:safeTrim(d.supportDetails),identificationType:d.idType||'',identificationNumber:safeTrim(d.idNumber),ssn:d.idType==='ssn'?safeTrim(d.idNumber):'',itin:d.idType==='itin'?safeTrim(d.idNumber):'',dob:d.dob||''})),
+    dependents: (state.dependentDetails||[]).slice(0,pctCommittedDependentCount()).map(d=>({...((window.PCT_INTAKE_V2_CONFIG?.enabled===true&&d.v2SubjectId)?{v2SubjectId:String(d.v2SubjectId).trim()}:{}),...(d.fastTrackSourceId?{fastTrackSourceId:String(d.fastTrackSourceId).trim()}:{}),fullName:safeTrim(d.fullName),relationship:safeTrim(d.relationship),monthsLived:safeTrim(d.monthsLived),supportDetails:safeTrim(d.supportDetails),identificationType:d.idType||'',identificationNumber:safeTrim(d.idNumber),ssn:d.idType==='ssn'?safeTrim(d.idNumber):'',itin:d.idType==='itin'?safeTrim(d.idNumber):'',dob:d.dob||''})),
     documents: (state.documents||[]).map(d=>({documentId:d.documentId||'',taxYear:d.taxYear||state.taxYear||'',originalFileName:d.originalFileName||'',contentType:d.contentType||'',size:Number(d.size)||0,uploadedAtClient:d.uploadedAtClient||'',uploadedBy:d.uploadedBy||'',clientLegibilityConfirmed:!!d.clientLegibilityConfirmed,expectedItemId:d.expectedItemId||'',documentType:d.documentType||'',reviewStatus:d.reviewStatus||''})),
     quickEstimateInputs: {
       incomeSource: state.incomeSource || '',
@@ -2739,6 +2757,7 @@ function buildLeadPayload(){
       confirmationVersion:'phase2-v1',
       unresolvedItemResponses:state.checklistResponses||{}
     },
+    intakeCompletenessReview:incompleteReview,
     amendedReturn: state.leadType==='Amended Return Review' ? {
       need: state.amendNeed || '', taxYear: state.amendYear || '', scope: state.amendScope || '', state: state.amendState || '',
       originalPreparedByPct: state.amendPreparedByPct || '', hasFiledReturnCopy: state.amendHasFiledReturn || '', notes: safeTrim(state.amendNotes),
@@ -2768,7 +2787,7 @@ function buildLeadPayload(){
       clientPortalPhoneLast4:last4,
       dashboardStatus: state.leadType==='Extension Request' ? 'Extension request received - invoice needed' : 'Lead received - official quote needed after document review'
     },
-    adminAlerts: buildAlerts().map(a=>a.m),
+    adminAlerts: [...new Set([...buildAlerts().map(a=>a.m),...incompleteReview.items.map(item=>item.message)])],
     security: {
       ssnCollectedInThisForm:!!(state.taxpayerIdType&&state.taxpayerIdType!=='none'),
       dobCollectedInThisForm:!!state.taxpayerDob,
@@ -2987,7 +3006,10 @@ function prepareUniversalIntakeFromEstimate(){
   if(f.selfEmployment)o.business=true;if(f.unemployment)o.government=true;if(f.retirement||f.socialSecurity)o.retirement=true;
   if(f.interestDividends)o.interest=true;if(f.stockCrypto){o.investments=true;o.digitalAssets=true;}if(f.rental)o.rental=true;
   if(f.education)o.education=true;if(state.childcare==='yes')o.childcare=true;if(f.marketplace)o.marketplace=true;if(f.hsa)o.hsa=true;if(f.additionalState)o.manyStates=true;
-  if(state.leadType!=='Returning Client Drop-Off')state.leadType='New Client Drop-Off';state.estimateConvertedToFiling=true;state.completenessConfirmed=false;state.expectedChecklistOpened=false;state.intakeWizardStep=1;
+  if(!state.phase17RefundAdvanceInterest)state.phase17RefundAdvanceInterest=state.refundProduct==='yes'?'YES':'NO';
+  if(!state.phase17RefundTransferInterest)state.phase17RefundTransferInterest='NO';
+  window.pctJ1RefreshRefundOptions?.();
+  if(state.leadType!=='Returning Client Drop-Off')state.leadType='New Client Drop-Off';state.estimateConvertedToFiling=true;state.completenessConfirmed=false;state.intakeWizardReadyForUpload=false;state.expectedChecklistOpened=false;state.intakeWizardStep=1;
 }
 function beginFilingFromEstimate(){prepareUniversalIntakeFromEstimate();return goUpload('estimate_conversion');}
 function setNum(idV,idL,val){
@@ -3078,10 +3100,8 @@ function organizerNext(){
   if(state.organizerFlags.business&&!state.businessOrganizerOpened){state.businessOrganizerOpened=true;$('#businessOrganizer').classList.add('show');organizerSetStep(3);renderExpectedChecklist();return;}
   if(!state.expectedChecklistOpened){state.expectedChecklistOpened=true;$('#expectedChecklist').classList.add('show');renderExpectedChecklist();organizerSetStep(3);return;}
   renderReturnDependentDetails();
-  if(!validateIdentityDetails())return;
   if(!validatePhase17FilingIntake())return;
-  if(!$('#completenessConfirm')?.checked){toast('Please review your checklist and confirm it before uploading.');return;}
-  state.completenessConfirmed=true;state.completenessConfirmedAt=state.completenessConfirmedAt||new Date().toISOString();
+  state.completenessConfirmed=!!$('#completenessConfirm')?.checked;state.completenessConfirmedAt=state.completenessConfirmed?(state.completenessConfirmedAt||new Date().toISOString()):'';state.intakeWizardReadyForUpload=true;
   goUpload(state.documentSource||'organizer');
 }
 function goUpload(source){
@@ -3089,7 +3109,7 @@ function goUpload(source){
   state.uploadStatus='Ready for native document upload';
   setUploadContext();
   renderDocumentList();
-  if(!state.completenessConfirmed){state.documentSource=source||'upload';showScreen('screen-organizer');organizerSetStep(1);renderExpectedChecklist();return;}
+  if(!state.intakeWizardReadyForUpload){state.documentSource=source||'upload';showScreen('screen-organizer');organizerSetStep(1);renderExpectedChecklist();return;}
   showScreen('screen-upload');
   state.uploadStartPersist=persistLead('secure_upload_started_'+(source||'upload'));
 }
@@ -3135,7 +3155,7 @@ function renderDocumentList(){
   renderUploadSectionGuidance();
   const btn=$('#sendDocumentsBtn');
   Object.entries(UPLOAD_SECTION_CONFIG).forEach(([section,config])=>{const list=$('#'+config.listId);if(!list)return;const documents=state.documents.map((document,index)=>({document,index})).filter(({document})=>documentUploadSection(document.uploadSection)===section);list.innerHTML=documents.length?documents.map(({document,index})=>'<div class="document-row"><div class="document-row-main"><div class="document-row-name">'+uploadText(document.originalFileName)+'</div><div class="document-row-meta">'+uploadText(document.documentType==='unclassified'?'Document':document.documentType)+' · '+uploadText(document.taxYear||'Tax year')+' · '+uploadText(documentUploadStatusText(document))+'</div></div><div class="preview-actions"><button type="button" class="btn btn-soft btn-sm" onclick="inspectDocument('+index+')">Inspect</button><button type="button" class="btn btn-ghost btn-sm" onclick="removeDocument('+index+')">Remove</button></div></div>').join(''):'<div class="small">No documents added in this section yet.</div>';});
-  if(btn)btn.disabled=!state.documents.length;
+  if(btn)btn.disabled=false;
 }
 function safeStorageName(name){return String(name||'document').normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,120)||'document';}
 async function sendDocumentsToPCT(){
@@ -3226,13 +3246,19 @@ function newClientNext(){
   if(!state.wantEstimate){toast('Please choose whether you want a quick estimate before upload.');return;}
   if(!state.readyUpload){toast('Please choose whether you are ready to upload documents.');return;}
   if(state.wantEstimate==='yes'){state.leadType='New Client Drop-Off'; goEstimate(); return;}
+  if(!state.workspaceAccess?.accessCode){state.intakeWizardReadyForUpload=false;state.intakeWizardStep=1;}
   goUpload('new');
 }
 
 /* =================== RETURNING CLIENT =================== */
 function invalidateFastTrackMatch(){state.profileVerified=false;state.fastTrackToken='';state.fastTrackProfile=null;state.fastTrackConfirm={contact:'',photoId:'',ssnRecords:'',bank:'',spouse:'',dependentIds:[]};const host=$('#fastTrackConfirmation');if(host){host.style.display='none';host.innerHTML='';}}
 function fastTrackEsc(value){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));}
-function renderFastTrackConfirmation(){const host=$('#fastTrackConfirmation'),p=state.fastTrackProfile;if(!host||!p)return;const choice=(key,label,a,b)=>'<label class="field"><span class="field-label">'+fastTrackEsc(label)+'</span><select data-fast-track-choice="'+key+'"><option value="">Choose one</option><option value="SAME">'+fastTrackEsc(a)+'</option><option value="CHANGED">'+fastTrackEsc(b)+'</option></select></label>',deps=(p.dependents||[]).map(row=>'<label class="consent-row"><input type="checkbox" data-fast-track-dependent="'+fastTrackEsc(row.dependentId)+'"> <span>'+fastTrackEsc(row.name)+' · '+fastTrackEsc(row.relationship||'Dependent')+' — claim this year</span></label>').join('');host.style.display='block';host.innerHTML='<div class="callout gold"><div><strong>Fast Track match confirmed ✓</strong><div class="small">Review the masked information from your '+fastTrackEsc(p.sourceTaxYear)+' PCT profile. Nothing below becomes current-year tax information until you confirm it.</div></div></div><div class="grid-2" style="margin-top:16px">'+choice('contact','Contact and address on file: '+[p.primary?.phone,p.primary?.email].filter(Boolean).join(' · '),'Still correct','Something changed')+(p.photoId?.onFile?choice('photoId','Photo ID on file'+(p.photoId.expirationDate?' · expires '+p.photoId.expirationDate:''),'Still current','I have a new ID'):'')+(p.ssnRecords?.onFile?choice('ssnRecords','Social Security information on file '+(p.ssnRecords.masked||'✓'),'Still current','Replacement document needed'):'')+(p.bank?.onFile?choice('bank','Bank account on file ending in '+fastTrackEsc(p.bank.accountLast4),'Use this account this year','I need to update it'):'')+(p.spouse?.onFile?choice('spouse','Spouse on file: '+fastTrackEsc(p.spouse.name||'Spouse'),'Same filing relationship','Something changed'):'')+'<label class="field"><span class="field-label">Last year you filed as '+fastTrackEsc(p.priorFilingStatus||'not recorded')+'. Confirm this year.</span><select data-fast-track-filing><option value="">Choose current-year filing status</option><option value="single">Single</option><option value="mfj">Married Filing Jointly</option><option value="hoh">Head of Household</option><option value="mfs">Married Filing Separately</option><option value="qss">Qualifying Surviving Spouse</option></select></label></div>'+(deps?'<div class="field"><span class="field-label">Prior dependents — select only those you still expect to claim</span><div class="consent">'+deps+'</div></div>':'')+(p.priorJobsForms?'<div class="profile-privacy"><strong>Prior jobs/forms reference only:</strong> '+fastTrackEsc(p.priorJobsForms)+'<br>This year’s income, forms, amounts, IP PIN, signatures, and filing choices must be provided again.</div>':'');host.querySelectorAll('[data-fast-track-choice]').forEach(el=>el.onchange=()=>state.fastTrackConfirm[el.dataset.fastTrackChoice]=el.value);host.querySelector('[data-fast-track-filing]').onchange=event=>{state.filingStatus=event.target.value;syncSeg('filingStatus',event.target.value)};host.querySelectorAll('[data-fast-track-dependent]').forEach(el=>el.onchange=()=>{state.fastTrackConfirm.dependentIds=[...host.querySelectorAll('[data-fast-track-dependent]:checked')].map(row=>row.dataset.fastTrackDependent)});}
+function syncFastTrackDependentReview(){
+  const selected=new Set((state.fastTrackConfirm?.dependentIds||[]).map(String)),prior=state.fastTrackProfile?.dependents||[],existing=state.dependentDetails||[],manual=existing.filter(row=>!row.fastTrackSourceId),bySource=new Map(existing.filter(row=>row.fastTrackSourceId).map(row=>[String(row.fastTrackSourceId),row]));
+  const reused=prior.filter(row=>selected.has(String(row.dependentId))).map(row=>({...bySource.get(String(row.dependentId)),fastTrackSourceId:String(row.dependentId),fullName:bySource.get(String(row.dependentId))?.fullName||row.name||'',relationship:bySource.get(String(row.dependentId))?.relationship||row.relationship||''}));
+  state.dependentDetails=[...reused,...manual].slice(0,10);state.numDeps=String(state.dependentDetails.length);renderReturnDependentDetails();
+}
+function renderFastTrackConfirmation(){const host=$('#fastTrackConfirmation'),p=state.fastTrackProfile;if(!host||!p)return;const choice=(key,label,a,b)=>'<label class="field"><span class="field-label">'+fastTrackEsc(label)+'</span><select data-fast-track-choice="'+key+'"><option value="">Choose one</option><option value="SAME">'+fastTrackEsc(a)+'</option><option value="CHANGED">'+fastTrackEsc(b)+'</option></select></label>',deps=(p.dependents||[]).map(row=>'<label class="consent-row"><input type="checkbox" data-fast-track-dependent="'+fastTrackEsc(row.dependentId)+'"> <span>'+fastTrackEsc(row.name)+' · '+fastTrackEsc(row.relationship||'Dependent')+' — claim this year</span></label>').join('');host.style.display='block';host.innerHTML='<div class="callout gold"><div><strong>Fast Track match confirmed ✓</strong><div class="small">Review the masked information from your '+fastTrackEsc(p.sourceTaxYear)+' PCT profile. Nothing below becomes current-year tax information until you confirm it.</div></div></div><div class="grid-2" style="margin-top:16px">'+choice('contact','Contact and address on file: '+[p.primary?.phone,p.primary?.email].filter(Boolean).join(' · '),'Still correct','Something changed')+(p.photoId?.onFile?choice('photoId','Photo ID on file'+(p.photoId.expirationDate?' · expires '+p.photoId.expirationDate:''),'Still current','I have a new ID'):'')+(p.ssnRecords?.onFile?choice('ssnRecords','Social Security information on file '+(p.ssnRecords.masked||'✓'),'Still current','Replacement document needed'):'')+(p.bank?.onFile?choice('bank','Bank account on file ending in '+fastTrackEsc(p.bank.accountLast4),'Use this account this year','I need to update it'):'')+(p.spouse?.onFile?choice('spouse','Spouse on file: '+fastTrackEsc(p.spouse.name||'Spouse'),'Same filing relationship','Something changed'):'')+'<label class="field"><span class="field-label">Last year you filed as '+fastTrackEsc(p.priorFilingStatus||'not recorded')+'. Confirm this year.</span><select data-fast-track-filing><option value="">Choose current-year filing status</option><option value="single">Single</option><option value="mfj">Married Filing Jointly</option><option value="hoh">Head of Household</option><option value="mfs">Married Filing Separately</option><option value="qss">Qualifying Surviving Spouse</option></select></label></div>'+(deps?'<div class="field"><span class="field-label">Prior dependents — select only those you still expect to claim</span><div class="consent">'+deps+'</div></div>':'')+(p.priorJobsForms?'<div class="profile-privacy"><strong>Prior jobs/forms reference only:</strong> '+fastTrackEsc(p.priorJobsForms)+'<br>This year’s income, forms, amounts, IP PIN, signatures, and filing choices must be provided again.</div>':'');host.querySelectorAll('[data-fast-track-choice]').forEach(el=>el.onchange=()=>{const key=el.dataset.fastTrackChoice;state.fastTrackConfirm[key]=el.value;if(key==='spouse'&&el.value==='SAME'&&p.spouse?.name)state.spouseFullName=state.spouseFullName||p.spouse.name;});host.querySelector('[data-fast-track-filing]').onchange=event=>{state.filingStatus=event.target.value;syncSeg('filingStatus',event.target.value)};host.querySelectorAll('[data-fast-track-dependent]').forEach(el=>el.onchange=()=>{state.fastTrackConfirm.dependentIds=[...host.querySelectorAll('[data-fast-track-dependent]:checked')].map(row=>row.dataset.fastTrackDependent);syncFastTrackDependentReview();});}
 async function verifyReturningProfile(){
   const email=String(state.profileEmail||'').trim(),ssn=String(state.profileSsn||'').replace(/\D/g,''),status=$('#matchStatus'),input=document.querySelector('[data-bind="profileSsn"]');
   invalidateFastTrackMatch();
@@ -3266,12 +3292,10 @@ function renderReturning(){
 async function returningNext(){
   state.leadType='Returning Client Drop-Off';
   if(!state.profileVerified){if(!await verifyReturningProfile())return;}
-  const p=state.fastTrackProfile||{},c=state.fastTrackConfirm;if(!c.contact||!state.filingStatus||(p.photoId?.onFile&&!c.photoId)||(p.ssnRecords?.onFile&&!c.ssnRecords)||(p.bank?.onFile&&!c.bank)||(p.spouse?.onFile&&!c.spouse)){toast('Review each available saved item and confirm your current-year filing status.');return;}
   if(!state.email) syncMirror('email',state.profileEmail);
   if(!validateContactForWorkflow('returning_client')) return;
-  if(!state.hasNewDocs){toast('Please choose whether you have new tax documents to upload.');return;}
-  if(!state.wantEstimate){toast('Please choose whether you want a quick estimate before upload.');return;}
   if(state.wantEstimate==='yes'){goEstimate();return;}
+  if(!state.workspaceAccess?.accessCode){state.intakeWizardReadyForUpload=false;state.intakeWizardStep=1;}
   goUpload('returning');
 }
 
@@ -3295,7 +3319,7 @@ function refreshAmended(){
 }
 function prepareAmendedUniversalIntake(){
   const f=state.flags||{},o=state.organizerFlags||(state.organizerFlags={});
-  state.taxYear=String(state.amendYear||'');state.state=state.amendState||state.state||'';state.intakeWizardStep=1;state.amendedIntakeContextPrepared=true;
+  state.taxYear=String(state.amendYear||'');state.state=state.amendState||state.state||'';state.intakeWizardStep=1;state.intakeWizardReadyForUpload=false;state.amendedIntakeContextPrepared=true;
   if(f.amendMissingW2)o.employment=true;if(f.amendSelfEmployment)o.business=true;if(f.amendInvestments){o.investments=true;o.digitalAssets=true;}if(f.amendRentalK1)o.rental=true;
   if(f.amendEducation)o.education=true;if(f.amendChildcare)o.childcare=true;if(f.amendMarketplace)o.marketplace=true;if(f.amendIrsLetter)o.unsureForm=true;
   syncMirror('taxYear',state.taxYear);setSeg('taxYear',state.taxYear);
@@ -3366,6 +3390,7 @@ function submitExtension(){
   state.leadType='Extension Request';
   if(!state.consentContact){toast('Please approve contact permission so Shaylah can prepare your extension invoice.');return;}
   refreshExtension();
+  if(!state.workspaceAccess?.accessCode){state.intakeWizardReadyForUpload=false;state.intakeWizardStep=1;}
   goUpload('extension');
 }
 
@@ -3682,10 +3707,10 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAdmin();});
    The access code lives only in this page's memory.  The server persists
    its one-way hash, the non-sensitive draft, and protected identity data
    separately.  No permanent browser storage or URL carries workspace credentials. */
-const pctWorkspaceDraftFields=['leadType','taxYear','state','filingStatus','over65','blind','claimedDependent','incomeSource','wages','fedWithholding','stateWithholding','numW2','yearJobCount','allTaxDocsConfirmed','missingTaxDocNotes','marketplaceAwareness','marketplaceLookupPlan','numDeps','depsLived','childcare','childcarePaid','seIncome','seExpenses','otherIncomeAmt','itemizedTotal','refundProduct','contactMethod','consentContact','consentPromo','firstName','lastName','email','phone','estimateDependentsUnder17','estimateDependents17Plus','wantEstimate','readyUpload','hasNewDocs','organizerStep','intakeWizardStep','estimateConvertedToFiling','amendedIntakeContextPrepared','profileVerified','businessOrganizerOpened','organizerEmployerCount','organizerEmployerNames','organizerNotes','taxpayerMiddleName','taxpayerSuffix','taxpayerOccupation','taxpayerStreet','taxpayerCity','taxpayerZip','spouseFullName','spouseOccupation','businessOwner','businessName','businessAddress','businessDescription','businessActivityCode','businessGrossReceipts','businessCashIncome','business1099Income','businessOtherIncome','businessVehicleMiles','businessTotalVehicleMiles','businessHomeOfficeDetails','businessAssetsDetails','businessContractorDetails','businessEstimatedTaxPayments','businessExpense_advertising','businessExpense_commissionsFees','businessExpense_contractLabor','businessExpense_insurance','businessExpense_legalProfessional','businessExpense_office','businessExpense_rentLease','businessExpense_repairs','businessExpense_supplies','businessExpense_taxesLicenses','businessExpense_travel','businessExpense_meals','businessExpense_utilities','businessExpense_software','businessExpense_vehicleMileage','businessExpense_other','completenessConfirmed','completenessConfirmedAt','phase17Proceed','phase17ClientAttestation','phase17PctAuthorizationAccepted','phase17RefundAdvanceInterest','phase17RefundTransferInterest','phase17BankConsentDecision','phase17SelfEmploymentInterest','amendNeed','amendYear','amendScope','amendState','amendPreparedByPct','amendHasFiledReturn','amendNotes','amendFee','extEntity','extScope','extYear','extState','extStatus','extFiledLast','extOwe','extWantEstimate','extMissedDeadline','extWages','extFedWH','extSEIncome','extExpenses','extOtherIncome','extEstPayments','extFee','extCustom'];
+const pctWorkspaceDraftFields=['leadType','taxYear','state','filingStatus','over65','blind','claimedDependent','incomeSource','wages','fedWithholding','stateWithholding','numW2','yearJobCount','allTaxDocsConfirmed','missingTaxDocNotes','marketplaceAwareness','marketplaceLookupPlan','numDeps','depsLived','childcare','childcarePaid','seIncome','seExpenses','otherIncomeAmt','itemizedTotal','refundProduct','contactMethod','consentContact','consentPromo','firstName','lastName','email','phone','estimateDependentsUnder17','estimateDependents17Plus','wantEstimate','readyUpload','hasNewDocs','organizerStep','intakeWizardStep','intakeWizardReadyForUpload','estimateConvertedToFiling','amendedIntakeContextPrepared','profileVerified','businessOrganizerOpened','organizerEmployerCount','organizerEmployerNames','organizerNotes','taxpayerMiddleName','taxpayerSuffix','taxpayerOccupation','taxpayerStreet','taxpayerCity','taxpayerZip','spouseFullName','spouseOccupation','businessOwner','businessName','businessAddress','businessDescription','businessActivityCode','businessGrossReceipts','businessCashIncome','business1099Income','businessOtherIncome','businessVehicleMiles','businessTotalVehicleMiles','businessHomeOfficeDetails','businessAssetsDetails','businessContractorDetails','businessEstimatedTaxPayments','businessExpense_advertising','businessExpense_commissionsFees','businessExpense_contractLabor','businessExpense_insurance','businessExpense_legalProfessional','businessExpense_office','businessExpense_rentLease','businessExpense_repairs','businessExpense_supplies','businessExpense_taxesLicenses','businessExpense_travel','businessExpense_meals','businessExpense_utilities','businessExpense_software','businessExpense_vehicleMileage','businessExpense_other','completenessConfirmed','completenessConfirmedAt','phase17Proceed','phase17ClientAttestation','phase17PctAuthorizationAccepted','phase17RefundAdvanceInterest','phase17RefundTransferInterest','phase17BankConsentDecision','phase17SelfEmploymentInterest','amendNeed','amendYear','amendScope','amendState','amendPreparedByPct','amendHasFiledReturn','amendNotes','amendFee','extEntity','extScope','extYear','extState','extStatus','extFiledLast','extOwe','extWantEstimate','extMissedDeadline','extWages','extFedWH','extSEIncome','extExpenses','extOtherIncome','extEstPayments','extFee','extCustom'];
 const pctWorkspaceDraftObjects=['flags','changes','organizerFlags','checklistResponses','phase17General','phase17Credits','phase17ScheduleC','fastTrackConfirm','fastTrackProfile','estimate','scheduleCInterview','v2Draft','v2NarrativeAnswers'];
 const pctWorkspaceDraftArrays=['depAges','amendFeeBreakdown','extFeeBreakdown','expectedInformationSnapshot'];
-const pctWorkspaceDependentFields=['v2SubjectId','fullName','relationship','monthsLived','supportDetails','temporaryAbsence','student','disability','marriedJointReturn','competingClaimant','custodyDetails'];
+const pctWorkspaceDependentFields=['v2SubjectId','fastTrackSourceId','fullName','relationship','monthsLived','supportDetails','temporaryAbsence','student','disability','marriedJointReturn','competingClaimant','custodyDetails'];
 let pctWorkspaceAutosaveTimer=null;
 let pctWorkspaceSaveRunner=null;
 let pctWorkspaceQueuedSave=null;
@@ -3749,7 +3774,8 @@ function pctWorkspaceWorkflow(){
 }
 function pctWorkspaceCreationPayload(){
   const workflowType=pctWorkspaceWorkflow(),taxYear=String(workflowType==='EXTENSION'?state.extYear:workflowType==='AMENDED_RETURN'?state.amendYear:state.taxYear||'');
-  return {workflowType,taxYear,client:{firstName:String(state.firstName||''),lastName:String(state.lastName||''),email:String(state.email||''),phone:String(state.phone||'')},filing:{taxYear},extension:{taxYear},amendedReturn:{taxYear},returningVerification:state.extensionReturnToken?{extensionReturnToken:state.extensionReturnToken}:null};
+  const returningVerification=state.extensionReturnToken?{extensionReturnToken:state.extensionReturnToken}:state.leadType==='Returning Client Drop-Off'?{fastTrackToken:String(state.fastTrackToken||''),profileEmail:String(state.profileEmail||state.email||''),confirmations:{...(state.fastTrackConfirm||{}),filingStatusCurrent:state.filingStatus||''}}:null;
+  return {workflowType,taxYear,client:{firstName:String(state.firstName||''),lastName:String(state.lastName||''),email:String(state.email||''),phone:String(state.phone||'')},filing:{taxYear},extension:{taxYear},amendedReturn:{taxYear},returningVerification};
 }
 function pctWorkspaceSaveRequest(){
   const access=state.workspaceAccess;if(!access?.leadId||!access?.accessCode)return null;
@@ -3833,7 +3859,7 @@ async function pctWorkspaceSaveAndFinish(){
 }
 function pctWorkspaceSetSaveButton(){
   let button=document.getElementById('pctWorkspaceSaveFinishButton');if(!button){button=document.createElement('button');button.id='pctWorkspaceSaveFinishButton';button.type='button';button.className='btn btn-soft';button.style.cssText='display:none;position:fixed;right:18px;bottom:18px;z-index:1200;box-shadow:0 8px 24px rgba(0,0,0,.16)';button.textContent='SAVE & FINISH LATER';button.onclick=pctWorkspaceSaveAndFinish;document.body.append(button);}
-  const active=document.querySelector('.screen.active')?.id||'';button.style.display=state.workspaceAccess?.accessCode&&!/^screen-(workspace-ready|save-finish-later|intake-confirmation)$/.test(active)?'block':'none';
+  const active=document.querySelector('.screen.active')?.id||'';button.style.display=state.workspaceAccess?.accessCode&&!/^screen-(workspace-ready|save-finish-later|intake-confirmation|extension-workspace|extension-review)$/.test(active)?'block':'none';
 }
 async function pctWorkspaceCreate(){
   if(state.workspaceAccess?.accessCode)return {ok:true,created:false};
