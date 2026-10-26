@@ -1679,7 +1679,11 @@ details.breakdown[open] summary .tw{transform:rotate(90deg)}
           <div class="completion-box"><label><input type="checkbox" onchange="phase17Set('pctAuthorization',this.checked)"> <span>I have read and agree to the PCT Tax Preparation Authorization above.</span></label></div>
           </div>
           <section id="phase17BankProductsPage" class="organizer-followup" hidden aria-label="Refund and bank products">
-          <div class="kicker" style="margin-top:20px">Refund &amp; Bank Products</div><h3 style="font-size:22px">Refund &amp; Bank Products</h3><p class="small">Review and sign the TaxSlayer bank-product authorization for the refund option you selected.</p>
+          <div class="kicker" style="margin-top:20px">Refund &amp; Bank Products</div><h3 style="font-size:22px">Refund &amp; Bank Products</h3><p class="small">Choose the refund option that fits you. If you select a bank product, review and sign the TaxSlayer bank-product authorization below.</p>
+          <div class="organizer-followup show" data-pct-j1-refund-options>
+            <div class="field"><label>Would you like a Refund Advance?</label><p class="small">A Refund Advance is an optional loan. Approval is not guaranteed.</p><select data-pct-j1-refund-advance onchange="pctJ1SetRefundAdvance(this.value)"><option value="">Select one</option><option value="YES">Yes</option><option value="NO">No</option></select></div>
+            <div data-pct-j1-pay-by-refund></div>
+          </div>
           <div id="phase17BankConsent" class="organizer-followup"></div>
           </section>
         </div>
@@ -3006,8 +3010,6 @@ function prepareUniversalIntakeFromEstimate(){
   if(f.selfEmployment)o.business=true;if(f.unemployment)o.government=true;if(f.retirement||f.socialSecurity)o.retirement=true;
   if(f.interestDividends)o.interest=true;if(f.stockCrypto){o.investments=true;o.digitalAssets=true;}if(f.rental)o.rental=true;
   if(f.education)o.education=true;if(state.childcare==='yes')o.childcare=true;if(f.marketplace)o.marketplace=true;if(f.hsa)o.hsa=true;if(f.additionalState)o.manyStates=true;
-  if(!state.phase17RefundAdvanceInterest)state.phase17RefundAdvanceInterest=state.refundProduct==='yes'?'YES':'NO';
-  if(!state.phase17RefundTransferInterest)state.phase17RefundTransferInterest='NO';
   window.pctJ1RefreshRefundOptions?.();
   if(state.leadType!=='Returning Client Drop-Off')state.leadType='New Client Drop-Off';state.estimateConvertedToFiling=true;state.completenessConfirmed=false;state.intakeWizardReadyForUpload=false;state.expectedChecklistOpened=false;state.intakeWizardStep=1;
 }
@@ -3957,10 +3959,12 @@ window.addEventListener('DOMContentLoaded',()=>{init(); initFirebaseIfReady(); l
       if(Number(state?.intakeWizardStep)!==6)return originalNext.apply(this,arguments);
       const bank=one('#phase17BankProductsPage');
       if(bank&&!bank.hidden){
-        if(!window.phase17TaxSlayerDisclosureComplete?.()){window.toast?.('Review and sign the TaxSlayer bank-product disclosure before continuing.');return;}
+        if(!refundChoicesReady())return;
+        if(window.phase17BankRequired?.()&&!window.phase17TaxSlayerDisclosureComplete?.()){window.toast?.('Review and sign the TaxSlayer bank-product disclosure before continuing.');return;}
         return originalNext.apply(this,arguments);
       }
-      if(!pctAuthorizationReady()||!refundChoicesReady())return;
+      if(!pctAuthorizationReady())return;
+      if(window.phase17RefundOptionsApplicable?.()!==false&&(!state?.phase17RefundAdvanceInterest||!state?.phase17RefundTransferInterest)){showBankProductsPage();return;}
       if(window.phase17BankRequired?.()){showBankProductsPage();return;}
       return originalNext.apply(this,arguments);
     };
